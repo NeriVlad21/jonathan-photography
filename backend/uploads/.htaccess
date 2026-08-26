@@ -1,0 +1,8 @@
+# Prevent any script execution inside the uploads directory,
+# even if a malicious file somehow ends up here.
+<FilesMatch "\.(php|phtml|php\d|pl|py|cgi|asp|sh)$">
+    Require all denied
+</FilesMatch>
+
+# Nginx equivalent (paste into your server block if using nginx):
+# location ^~ /uploads/ { location ~ \.php$ { deny all; } }

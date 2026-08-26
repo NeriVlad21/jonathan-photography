@@ -1,0 +1,19 @@
+# --- Frontend ---
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/*.local
+
+# --- Backend ---
+backend/vendor/
+backend/.env
+backend/uploads/portfolio/*
+!backend/uploads/portfolio/.gitkeep
+backend/uploads/portfolio/demo/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
