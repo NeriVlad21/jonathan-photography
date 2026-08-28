@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { bookingsApi } from '../services/api.js'
 import { peso, formatDate } from '../utils/format.js'
@@ -6,14 +6,14 @@ import { useToast } from '../context/ToastContext.jsx'
 
 const SHOOT_TYPES = [
   'Wedding', 'Engagement', 'Birthday', 'Christening', 'Debut',
-  'Burial', 'Event', 'Portrait', 'Photo Booth', 'Photo & Video', 'Other',
+  'Burial', 'Event', 'Portrait', 'Photo Booth', 'Photo & Video', 'Other'
 ]
 
 const initialState = {
   name: '', email: '', phone: '', facebook: '',
   shoot_type: '', preferred_date: '', location: '', guest_count: '', message: '',
   privacy_agreed: false,
-  website: '', // honeypot
+  website: '' // honeypot
 }
 
 export default function BookingForm() {
@@ -24,14 +24,27 @@ export default function BookingForm() {
 
   const [form, setForm] = useState({
     ...initialState,
-    shoot_type: estimate?.service_type || '',
+    shoot_type: estimate?.service_type || ''
   })
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
+  
+  // Privacy Scroll State
+  const [isScrolledToBottom, setIsScrolledToBottom] = useState(false)
+  const privacyRef = useRef(null)
 
   const update = (field) => (e) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value
     setForm((f) => ({ ...f, [field]: value }))
+  }
+
+  const handlePrivacyScroll = () => {
+    if (!privacyRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = privacyRef.current;
+    // Check if user has scrolled to the bottom (with a 2px buffer for rendering decimals)
+    if (scrollTop + clientHeight >= scrollHeight - 2) {
+      setIsScrolledToBottom(true);
+    }
   }
 
   const validate = () => {
@@ -56,8 +69,8 @@ export default function BookingForm() {
     try {
       const payload = {
         ...form,
-        estimate_total: estimate?.total ?? null,
-        estimate_breakdown: estimate || null,
+        estimate_total: estimate?.total || null,
+        estimate_breakdown: estimate || null
       }
       const data = await bookingsApi.create(payload)
       navigate('/booking/success', { state: { name: form.name, reference: data.reference } })
@@ -134,13 +147,62 @@ export default function BookingForm() {
           {errors.message && <span className="field-error">{errors.message}</span>}
         </div>
 
-        <label className="checkbox-row" htmlFor="privacy_agreed" style={{ marginTop: 10, marginBottom: 24 }}>
-          <input id="privacy_agreed" type="checkbox" checked={form.privacy_agreed} onChange={update('privacy_agreed')} />
-          <span>
-            I agree to the collection and use of my information for the purpose of responding to my booking request.
-            {errors.privacy_agreed && <><br /><span className="field-error">{errors.privacy_agreed}</span></>}
-          </span>
-        </label>
+        <h4 className="fieldset-title display">Data Privacy Agreement</h4>
+        <div className="field">
+          <div 
+            ref={privacyRef} 
+            onScroll={handlePrivacyScroll}
+            style={{ 
+              maxHeight: '150px', 
+              overflowY: 'scroll', 
+              padding: '1rem', 
+              border: '1px solid var(--c-hairline, #e5e5e5)', 
+              borderRadius: '4px',
+              backgroundColor: '#fafafa',
+              fontSize: '0.85rem',
+              lineHeight: '1.6'
+            }}
+          >
+            <strong>Data Privacy Policy</strong>
+            <p style={{ marginTop: '0.5rem' }}>By submitting this form, you consent to the collection and processing of your personal information in accordance with the Data Privacy Act of 2012.</p>
+            <p style={{ marginTop: '0.5rem' }}>We use this data solely to communicate with you regarding your booking inquiry, provide accurate estimates, and deliver our photography services.</p>
+            <p style={{ marginTop: '0.5rem' }}>Your information will be securely stored within our internal system and will not be shared, sold, or distributed to any third parties without your explicit, written consent.</p>
+            <br/><br/><br/>
+            <p style={{ color: 'var(--c-gray)' }}><em>Please scroll to the bottom to acknowledge and enable the agreement checkbox.</em></p>
+          </div>
+
+          <label 
+            className="checkbox-row" 
+            htmlFor="privacy_agreed" 
+            style={{ 
+              marginTop: 12, 
+              marginBottom: 24, 
+              cursor: isScrolledToBottom ? 'pointer' : 'not-allowed',
+              opacity: isScrolledToBottom ? 1 : 0.6 
+            }}
+          >
+            <input 
+              id="privacy_agreed" 
+              type="checkbox" 
+              disabled={!isScrolledToBottom}
+              checked={form.privacy_agreed} 
+              onChange={update('privacy_agreed')} 
+            />
+            <span>
+              I have read and agree to the Data Privacy Policy.
+              {!isScrolledToBottom && (
+                <span style={{ display: 'block', fontSize: '0.75rem', marginTop: '4px', color: '#dc2626' }}>
+                  (Please scroll through the policy above to enable this checkbox)
+                </span>
+              )}
+              {errors.privacy_agreed && (
+                <span className="field-error" style={{ display: 'block', marginTop: '4px' }}>
+                  {errors.privacy_agreed}
+                </span>
+              )}
+            </span>
+          </label>
+        </div>
 
         <button type="submit" className="btn btn--primary" disabled={submitting}>
           {submitting ? 'Sending Request…' : 'Send Booking Request'}
@@ -150,13 +212,13 @@ export default function BookingForm() {
       <aside className="booking-summary-card">
         <h4>{estimate ? 'Your Estimate' : 'This is a request, not a reservation'}</h4>
         {estimate ? (
-          <>
+          <div>
             {estimate.hours && (
               <div className="estimate-summary__line" style={{ color: '#1A1A1A', borderColor: 'var(--c-hairline)' }}>
                 <span>{estimate.hours.label}</span><span>{peso(estimate.hours.price)}</span>
               </div>
             )}
-            {estimate.addons.map((a) => (
+            {estimate.addons && estimate.addons.map((a) => (
               <div className="estimate-summary__line" style={{ color: '#1A1A1A', borderColor: 'var(--c-hairline)' }} key={a.label}>
                 <span>{a.label}</span><span>{peso(a.price)}</span>
               </div>
@@ -164,7 +226,7 @@ export default function BookingForm() {
             <div className="estimate-summary__total" style={{ color: '#0A0A0A' }}>
               <span>Total</span><strong style={{ color: '#0A0A0A' }}>{peso(estimate.total)}</strong>
             </div>
-          </>
+          </div>
         ) : (
           <p style={{ color: 'var(--c-gray)', fontSize: '0.9rem', lineHeight: 1.6 }}>
             Submitting this form sends us an inquiry — it doesn't lock in a date.

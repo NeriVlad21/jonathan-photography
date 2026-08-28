@@ -5,6 +5,7 @@ import { peso } from '../utils/format.js'
 import { estimatorApi } from '../services/api.js'
 import { useToast } from '../context/ToastContext.jsx'
 import LoadingState from './LoadingState.jsx'
+import PrivacyModal from './PrivacyModal.jsx'
 
 const SERVICE_TYPES = [
   'Wedding', 'Engagement', 'Birthday', 'Debut', 'Christening',
@@ -14,7 +15,9 @@ const SERVICE_TYPES = [
 export default function Estimator({ estimator }) {
   const navigate = useNavigate()
   const { showToast } = useToast()
+  
   const [emailModalOpen, setEmailModalOpen] = useState(false)
+  const [privacyModalOpen, setPrivacyModalOpen] = useState(false)
   const [leadName, setLeadName] = useState('')
   const [leadEmail, setLeadEmail] = useState('')
   const [sendingLead, setSendingLead] = useState(false)
@@ -28,14 +31,21 @@ export default function Estimator({ estimator }) {
     navigate('/booking', { state: { estimate: breakdown } })
   }
 
-  const handleEmailEstimate = async (e) => {
+  // Step 1: Intercept the form submission and open the Privacy Modal instead
+  const handleFormSubmit = (e) => {
     e.preventDefault()
+    setPrivacyModalOpen(true)
+  }
+
+  // Step 2: Actually send the data ONLY after they accept the privacy policy
+  const handleFinalSubmit = async () => {
+    setPrivacyModalOpen(false)
     setSendingLead(true)
     try {
       await estimatorApi.saveLead({
         name: leadName,
         email: leadEmail,
-        hours: breakdown.hours?.hours ?? null,
+        hours: breakdown.hours?.hours || null,
         service_type: serviceType,
         addons: breakdown.addons,
         total,
@@ -155,12 +165,13 @@ export default function Estimator({ estimator }) {
         </div>
       </div>
 
+      {/* Email Collection Modal */}
       {emailModalOpen && (
         <div className="modal-backdrop" onClick={() => setEmailModalOpen(false)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
             <h3>Email this estimate</h3>
             <p>We'll send the full breakdown to your inbox — no obligation to book.</p>
-            <form onSubmit={handleEmailEstimate}>
+            <form onSubmit={handleFormSubmit}>
               <div className="field">
                 <label htmlFor="lead-name">Name</label>
                 <input id="lead-name" required value={leadName} onChange={(e) => setLeadName(e.target.value)} />
@@ -179,6 +190,13 @@ export default function Estimator({ estimator }) {
           </div>
         </div>
       )}
+
+      {/* Reusable Data Privacy Popup */}
+      <PrivacyModal 
+        isOpen={privacyModalOpen} 
+        onClose={() => setPrivacyModalOpen(false)} 
+        onAccept={handleFinalSubmit} 
+      />
     </div>
   )
 }

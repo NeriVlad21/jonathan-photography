@@ -25,13 +25,27 @@ import PortfolioManager from './admin/PortfolioManager.jsx'
 import ServicesManager from './admin/ServicesManager.jsx'
 import EstimatorSettings from './admin/EstimatorSettings.jsx'
 import ContactManager from './admin/ContactManager.jsx'
+import Archive from './admin/Archive.jsx'
 
 function NotFound() {
   return (
-    <div style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: 40 }}>
+    <div
+      style={{
+        minHeight: '70vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
+        padding: 40
+      }}
+    >
       <div>
-        <h1 className="display" style={{ fontSize: '3rem' }}>404</h1>
-        <p style={{ color: 'var(--c-gray)', marginTop: 10 }}>That page doesn't exist.</p>
+        <h1 className="display" style={{ fontSize: '3rem' }}>
+          404
+        </h1>
+        <p style={{ color: 'var(--c-gray)', marginTop: 10 }}>
+          That page doesn't exist.
+        </p>
       </div>
     </div>
   )
@@ -47,18 +61,29 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/portfolio/photo/:id" element={<PhotoView />} />
-            <Route path="/portfolio/:category" element={<PortfolioCategory />} />
-            <Route path="/portfolio/:category/:shoot" element={<PortfolioShoot />} />
+            <Route
+              path="/portfolio/:category"
+              element={<PortfolioCategory />}
+            />
+            <Route
+              path="/portfolio/:category/:shoot"
+              element={<PortfolioShoot />}
+            />
             <Route path="/services" element={<Services />} />
             <Route path="/estimator" element={<EstimatorPage />} />
             <Route path="/booking" element={<Booking />} />
-            <Route path="/booking/success" element={<BookingSuccess />} />
+            <Route
+              path="/booking/success"
+              element={<BookingSuccess />}
+            />
             <Route path="/contact" element={<Contact />} />
             <Route path="*" element={<NotFound />} />
           </Route>
 
-          {/* Admin */}
+          {/* Admin Login */}
           <Route path="/admin/login" element={<AdminLogin />} />
+
+          {/* Protected Admin */}
           <Route element={<ProtectedRoute />}>
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<Dashboard />} />
@@ -68,8 +93,14 @@ export default function App() {
               <Route path="leads" element={<EstimatorLeads />} />
               <Route path="portfolio" element={<PortfolioManager />} />
               <Route path="services" element={<ServicesManager />} />
-              <Route path="estimator-settings" element={<EstimatorSettings />} />
+              <Route
+                path="estimator-settings"
+                element={<EstimatorSettings />}
+              />
               <Route path="contacts" element={<ContactManager />} />
+
+              {/* Archive */}
+              <Route path="archive" element={<Archive />} />
             </Route>
           </Route>
         </Routes>

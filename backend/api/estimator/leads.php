@@ -1,10 +1,12 @@
 <?php
 /**
- * GET  /api/estimator/leads.php   — admin: list every estimator lead,
+ * GET  /api/estimator/leads.php   — admin: list estimator leads (with date filters),
  *      with a live-computed "booked" flag (true if that email later
  *      submitted a booking).
  * POST /api/estimator/leads.php   — public: "Email me this estimate"
  *      Body: { name, email, hours, addons: [...], service_type, total }
+ * PUT  /api/estimator/leads.php   — admin: Update lead status
+ *      Body: { id, status }
  */
 
 declare(strict_types=1);
@@ -19,17 +21,59 @@ require_once __DIR__ . '/../../email/mailer.php';
 $pdo = Database::connect();
 $method = $_SERVER['REQUEST_METHOD'];
 
+// Handle Date Filters & Listing
 if ($method === 'GET') {
     require_admin();
-    $stmt = $pdo->query(
-        'SELECT l.*,
-                EXISTS(SELECT 1 FROM bookings b WHERE b.email = l.email) AS booked_live
-         FROM estimator_leads l
-         ORDER BY l.created_at DESC'
-    );
+    
+    $timeframe = $_GET['timeframe'] ?? 'all';
+    $whereClause = '';
+    
+    // Apply date filters based on dropdown selection
+    if ($timeframe === 'today') {
+        $whereClause = 'WHERE l.created_at >= CURDATE()';
+    } elseif ($timeframe === 'last_week') {
+        $whereClause = 'WHERE l.created_at >= DATE_SUB(NOW(), INTERVAL 1 WEEK)';
+    } elseif ($timeframe === 'last_month') {
+        $whereClause = 'WHERE l.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)';
+    } elseif ($timeframe === 'last_3_months') {
+        $whereClause = 'WHERE l.created_at >= DATE_SUB(NOW(), INTERVAL 3 MONTH)';
+    } elseif ($timeframe === 'last_quarter') {
+        $whereClause = 'WHERE l.created_at >= DATE_SUB(NOW(), INTERVAL 1 QUARTER)';
+    } elseif ($timeframe === 'last_year') {
+        $whereClause = 'WHERE l.created_at >= DATE_SUB(NOW(), INTERVAL 1 YEAR)';
+    }
+
+    $query = "SELECT l.*,
+                     EXISTS(SELECT 1 FROM bookings b WHERE b.email = l.email) AS booked_live
+              FROM estimator_leads l
+              $whereClause
+              ORDER BY l.created_at DESC";
+              
+    $stmt = $pdo->query($query);
     json_success($stmt->fetchAll());
 }
 
+// Handle Status Updates from the Admin Dashboard
+if ($method === 'PUT') {
+    require_admin();
+    $input = json_input();
+
+    $v = new Validator($input);
+    $v->required('id', 'Lead ID')->required('status', 'Status');
+    if ($v->fails()) {
+        json_error('Please provide a valid ID and status.', 422, $v->errors());
+    }
+
+    $stmt = $pdo->prepare('UPDATE estimator_leads SET status = :status WHERE id = :id');
+    $stmt->execute([
+        'status' => clean_string($input['status']),
+        'id'     => (int) $input['id']
+    ]);
+
+    json_success(['updated' => true]);
+}
+
+// Handle New Estimator Leads from the Public Website
 if ($method === 'POST') {
     $input = json_input();
 
@@ -46,6 +90,7 @@ if ($method === 'POST') {
     $v->required('name', 'your name')->required('email', 'your email')->email('email')->required('total');
     if ($v->fails()) json_error('Please fix the errors below.', 422, $v->errors());
 
+    // Status defaults to 'New' inside the database
     $stmt = $pdo->prepare(
         'INSERT INTO estimator_leads (name, email, hours, addons, service_type, total)
          VALUES (:name, :email, :hours, :addons, :service, :total)'
