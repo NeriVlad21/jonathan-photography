@@ -6,25 +6,34 @@ import EmptyState from '../components/EmptyState.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import html2pdf from 'html2pdf.js'
 
+const TIMEFRAMES = [
+  { value: 'today', label: 'Today' },
+  { value: 'last_week', label: 'Last Week' },
+  { value: 'last_month', label: 'Last Month' },
+  { value: 'last_3_months', label: 'Last 3 Months' },
+  { value: 'last_quarter', label: 'Last Quarter' },
+  { value: 'last_year', label: 'Last Year' },
+  { value: 'all', label: 'All Time / Archive' }
+]
+
 export default function EstimatorLeads() {
   const [leads, setLeads] = useState(null)
-  const [timeframe, setTimeframe] = useState('all')
+  const [timeframe, setTimeframe] = useState('today')
   const { showToast } = useToast()
 
   useEffect(() => {
     document.title = 'Admin — Estimator Leads'
     fetchLeads()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeframe])
 
   const fetchLeads = () => {
     setLeads(null)
-    // We will update the API service next to accept this timeframe parameter
     estimatorApi.leads(timeframe).then(setLeads).catch(() => setLeads([]))
   }
 
   const handleStatusChange = async (id, newStatus) => {
     try {
-      // We will add this update method to api.js next
       await estimatorApi.updateLeadStatus(id, newStatus)
       showToast('Lead status updated successfully', 'success')
       setLeads(leads.map(l => l.id === id ? { ...l, status: newStatus } : l))
@@ -45,33 +54,37 @@ export default function EstimatorLeads() {
     html2pdf().set(opt).from(element).save()
   }
 
+  const timeframeLabel = TIMEFRAMES.find((item) => item.value === timeframe)?.label || 'All Time / Archive'
+
   return (
     <>
-      <header className="admin-header"><h1>Estimator Leads</h1></header>
+      <header className="admin-header">
+        <div>
+          <h1 style={{ margin: 0 }}>Estimator Leads</h1>
+          <p style={{ margin: '5px 0 0 0', color: '#6b7280', fontSize: '0.9rem' }}>
+            People who priced a package but haven't necessarily submitted a booking yet.
+          </p>
+        </div>
+      </header>
+      
       <div className="admin-content" style={{ maxWidth: 1100 }}>
-        <p style={{ color: 'var(--c-gray)', marginBottom: 20 }}>
-          People who priced a package but haven't necessarily submitted a booking yet.
-        </p>
-
+        
         {/* Date Filter & Export Controls */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center' }}>
-          <div className="field" style={{ margin: 0 }}>
+        <div className="admin-toolbar" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', alignItems: 'center', background: '#fff', padding: '15px 20px', borderRadius: '8px', border: '1px solid var(--c-hairline)', flexWrap: 'wrap', gap: '15px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+            <span style={{ fontSize: '0.9rem', fontWeight: '500', color: '#4b5563' }}>Filter Data:</span>
             <select 
               value={timeframe} 
               onChange={(e) => setTimeframe(e.target.value)} 
-              style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--c-hairline)' }}
+              style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #d1d5db', background: '#f9fafb', outline: 'none', cursor: 'pointer' }}
             >
-              <option value="all">All Time / Archive</option>
-              <option value="today">Today</option>
-              <option value="last_week">Last Week</option>
-              <option value="last_month">Last Month</option>
-              <option value="last_3_months">Last 3 Months</option>
-              <option value="last_quarter">Last Quarter</option>
-              <option value="last_year">Last Year</option>
+              {TIMEFRAMES.map((item) => (
+                <option key={item.value} value={item.value}>{item.label}</option>
+              ))}
             </select>
           </div>
-          <button onClick={exportToPDF} className="btn btn--primary" style={{ padding: '8px 16px' }}>
-            Download PDF
+          <button onClick={exportToPDF} className="btn btn--primary" style={{ padding: '8px 20px' }}>
+            Download PDF Report
           </button>
         </div>
 
@@ -82,7 +95,16 @@ export default function EstimatorLeads() {
         
         {leads && leads.length > 0 && (
           <div className="admin-panel" id="export-container" style={{ padding: '10px' }}>
-            <h3 style={{ marginBottom: '15px', display: 'none' }} className="pdf-title">Estimator Leads Report</h3>
+            
+            {/* Hidden PDF Header - Only shows in downloaded file */}
+            <div className="pdf-title" style={{ display: 'none', marginBottom: '25px', borderBottom: '2px solid #111827', paddingBottom: '15px' }}>
+              <h2 style={{ margin: 0, fontSize: '1.8rem', color: '#111827' }}>Jonathan Photography — Estimator Leads Report</h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', color: '#4b5563', fontSize: '0.95rem' }}>
+                <span><strong>Timeframe:</strong> {timeframeLabel}</span>
+                <span><strong>Generated:</strong> {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}</span>
+              </div>
+            </div>
+
             <div className="data-table-wrap">
               <table className="data-table">
                 <thead>

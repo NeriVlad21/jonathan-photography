@@ -8,9 +8,19 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend 
 } from 'recharts'
 
+const TIMEFRAME_LABELS = {
+  today: 'Today',
+  last_week: 'Last Week',
+  last_month: 'Last Month',
+  last_3_months: 'Last 3 Months',
+  last_quarter: 'Last Quarter',
+  last_year: 'Last Year',
+  all: 'All Time / Archive'
+}
+
 export default function Dashboard() {
   const [stats, setStats] = useState(null)
-  const [timeframe, setTimeframe] = useState('all')
+  const [timeframe, setTimeframe] = useState('today')
 
   useEffect(() => {
     document.title = 'Admin — Dashboard'
@@ -20,12 +30,16 @@ export default function Dashboard() {
 
   const loadStats = () => {
     setStats(null)
-    // Passes the timeframe to the backend
     dashboardApi.stats(timeframe).then(setStats).catch(() => {})
   }
 
   const exportToPDF = () => {
     const element = document.getElementById('export-container')
+    const header = document.getElementById('pdf-header')
+    
+    // Briefly show the header so html2canvas can capture it
+    if (header) header.style.display = 'block'
+
     const opt = {
       margin: 0.5,
       filename: `Business_Dashboard_${timeframe}.pdf`,
@@ -33,7 +47,11 @@ export default function Dashboard() {
       html2canvas: { scale: 2 },
       jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
     }
-    html2pdf().set(opt).from(element).save()
+    
+    html2pdf().set(opt).from(element).save().then(() => {
+      // Hide it again immediately after processing
+      if (header) header.style.display = 'none'
+    })
   }
 
   if (!stats) return <LoadingState label="Loading dashboard…" />
@@ -42,34 +60,49 @@ export default function Dashboard() {
 
   return (
     <>
-      <header className="admin-header"><h1>Dashboard</h1></header>
+      <header className="admin-header">
+        <div>
+          <h1 style={{ margin: 0 }}>Dashboard</h1>
+          <p style={{ margin: '5px 0 0 0', color: '#6b7280', fontSize: '0.9rem' }}>Overview of your studio's performance.</p>
+        </div>
+      </header>
+      
       <div className="admin-content">
         
         {/* Filters and Export Toolbar */}
-        <div className="admin-toolbar" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center' }}>
-          <div className="field" style={{ margin: 0 }}>
+        <div className="admin-toolbar" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', alignItems: 'center', background: '#fff', padding: '15px 20px', borderRadius: '8px', border: '1px solid var(--c-hairline)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+            <span style={{ fontSize: '0.9rem', fontWeight: '500', color: '#4b5563' }}>Filter Data:</span>
             <select 
               value={timeframe} 
               onChange={(e) => setTimeframe(e.target.value)} 
-              style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--c-hairline)' }}
+              style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #d1d5db', background: '#f9fafb', outline: 'none', cursor: 'pointer' }}
             >
-              <option value="all">All Time / Archive</option>
               <option value="today">Today</option>
               <option value="last_week">Last Week</option>
               <option value="last_month">Last Month</option>
               <option value="last_3_months">Last 3 Months</option>
               <option value="last_quarter">Last Quarter</option>
               <option value="last_year">Last Year</option>
+              <option value="all">All Time / Archive</option>
             </select>
           </div>
-          <button onClick={exportToPDF} className="btn btn--primary" style={{ padding: '8px 16px' }}>
+          <button onClick={exportToPDF} className="btn btn--primary" style={{ padding: '8px 20px' }}>
             Download PDF Report
           </button>
         </div>
 
-        {/* PDF Export Container wrapping the stats, graph, and recent activity */}
+        {/* PDF Export Container */}
         <div id="export-container" style={{ padding: '10px' }}>
-          <h2 style={{ display: 'none', marginBottom: '15px' }} className="pdf-title">Business Dashboard Report</h2>
+          
+          {/* Dynamic PDF Header */}
+          <div id="pdf-header" style={{ display: 'none', marginBottom: '25px', borderBottom: '2px solid #111827', paddingBottom: '15px' }}>
+            <h2 style={{ margin: 0, fontSize: '1.8rem', color: '#111827' }}>Business Dashboard Report</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', color: '#4b5563', fontSize: '0.95rem' }}>
+              <span><strong>Timeframe:</strong> {TIMEFRAME_LABELS[timeframe]}</span>
+              <span><strong>Generated:</strong> {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}</span>
+            </div>
+          </div>
           
           <div className="stat-cards">
             <div className="stat-card">
@@ -96,11 +129,11 @@ export default function Dashboard() {
 
           {/* Business Analytics Graph */}
           {chart_data && chart_data.length > 0 && (
-            <div className="admin-panel" style={{ marginTop: '30px', padding: '20px' }}>
-              <div className="admin-panel__head" style={{ marginBottom: '20px' }}>
-                <h2>Lead Volume vs Bookings</h2>
+            <div className="admin-panel" style={{ marginTop: '30px', padding: '25px' }}>
+              <div className="admin-panel__head" style={{ marginBottom: '25px' }}>
+                <h2 style={{ fontSize: '1.2rem' }}>Lead Volume vs Bookings</h2>
               </div>
-              <div style={{ width: '100%', height: 300 }}>
+              <div style={{ width: '100%', height: 320 }}>
                 <ResponsiveContainer>
                   <BarChart data={chart_data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
@@ -108,7 +141,7 @@ export default function Dashboard() {
                     <YAxis axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}} />
                     <Tooltip 
                       cursor={{fill: '#f3f4f6'}}
-                      contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'}}
+                      contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}
                     />
                     <Legend wrapperStyle={{paddingTop: '20px'}} />
                     <Bar dataKey="leads" name="Estimator Leads" fill="#9ca3af" radius={[4, 4, 0, 0]} />
@@ -120,25 +153,33 @@ export default function Dashboard() {
           )}
 
           <div className="admin-panel" style={{ marginTop: '30px' }}>
-            <div className="admin-panel__head"><h2>Recent Activity</h2></div>
-            <div className="admin-panel__body">
-              {recent_activity.length === 0 && <p style={{ color: 'var(--c-gray)' }}>Nothing yet — new bookings and estimator leads will show up here.</p>}
+            <div className="admin-panel__head" style={{ padding: '20px 25px' }}>
+              <h2 style={{ fontSize: '1.2rem', margin: 0 }}>Recent Activity</h2>
+            </div>
+            <div className="admin-panel__body" style={{ padding: 0 }}>
+              {recent_activity.length === 0 && (
+                <div style={{ padding: '30px', textAlign: 'center', color: '#6b7280' }}>
+                  Nothing yet — new bookings and estimator leads will show up here.
+                </div>
+              )}
               {recent_activity.map((item) => (
-                <div key={`${item.type}-${item.id}`} className="inline-edit-row" style={{ justifyContent: 'space-between' }}>
+                <div key={`${item.type}-${item.id}`} className="inline-edit-row" style={{ padding: '15px 25px', borderBottom: '1px solid #f3f4f6', margin: 0 }}>
                   <div>
-                    <strong style={{ color: item.type === 'booking' ? '#111827' : '#6b7280' }}>
-                      {item.type === 'booking' ? 'New booking' : 'Estimator lead'}
-                    </strong>
-                    {' — '}
+                    <span style={{ 
+                      display: 'inline-block', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', marginRight: '12px',
+                      background: item.type === 'booking' ? '#111827' : '#f3f4f6', color: item.type === 'booking' ? '#fff' : '#4b5563'
+                    }}>
+                      {item.type === 'booking' ? 'Booking' : 'Lead'}
+                    </span>
                     {item.type === 'booking' ? (
-                      <Link to={`/admin/bookings/${item.id}`} className="text-link" style={{ color: 'inherit', borderColor: 'var(--c-hairline)' }}>
+                      <Link to={`/admin/bookings/${item.id}`} className="text-link" style={{ color: '#111827', fontWeight: '500', textDecoration: 'none' }}>
                         {item.name} ({item.shoot_type})
                       </Link>
                     ) : (
-                      <span>{item.name} — {peso(item.total)}</span>
+                      <span style={{ color: '#4b5563' }}>{item.name} — {peso(item.total)}</span>
                     )}
                   </div>
-                  <span style={{ color: 'var(--c-gray)', fontSize: '0.82rem' }}>{formatDateTime(item.created_at)}</span>
+                  <span style={{ color: '#9ca3af', fontSize: '0.85rem' }}>{formatDateTime(item.created_at)}</span>
                 </div>
               ))}
             </div>

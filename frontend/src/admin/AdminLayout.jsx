@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
   CalendarCheck,
@@ -11,8 +11,10 @@ import {
   LogOut,
   Search,
   X,
-  Archive
+  Archive,
+  User
 } from 'lucide-react'
+
 import { useAdminAuth } from '../context/AdminAuthContext.jsx'
 import { searchApi } from '../services/api.js'
 
@@ -87,19 +89,28 @@ const NAV = [
 export default function AdminLayout() {
   const { admin, logout } = useAdminAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
-  // Global Search State
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState(null)
   const [isSearching, setIsSearching] = useState(false)
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+
   const searchRef = useRef(null)
+
+  const showSearch = [
+    '/admin',
+    '/admin/dashboard',
+    '/admin/bookings',
+    '/admin/leads',
+    '/admin/archive'
+  ].includes(location.pathname)
 
   const handleLogout = async () => {
     await logout()
     navigate('/admin/login')
   }
 
-  // Handle Search Fetching (with 300ms debounce to prevent spamming the database)
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSearchResults(null)
@@ -112,8 +123,12 @@ export default function AdminLayout() {
     const delay = setTimeout(async () => {
       try {
         const results = await searchApi.global(searchQuery)
-        setSearchResults(results)
-      } catch (err) {
+
+        setSearchResults({
+          bookings: results?.bookings || [],
+          leads: results?.leads || []
+        })
+      } catch {
         setSearchResults({
           bookings: [],
           leads: []
@@ -126,12 +141,13 @@ export default function AdminLayout() {
     return () => clearTimeout(delay)
   }, [searchQuery])
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (searchRef.current && !searchRef.current.contains(e.target)) {
-        setSearchQuery('')
-        setSearchResults(null)
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(e.target)
+      ) {
+        setIsSearchOpen(false)
       }
     }
 
@@ -142,169 +158,285 @@ export default function AdminLayout() {
     }
   }, [])
 
+  const clearSearch = () => {
+    setSearchQuery('')
+    setSearchResults(null)
+    setIsSearchOpen(false)
+  }
+
   return (
     <div className="admin-shell">
+
+      {/* SIDEBAR */}
       <aside className="admin-sidebar">
+
         <div className="admin-sidebar__brand">
           JONATHAN <span>Photography</span>
         </div>
 
-        <nav className="admin-sidebar__nav">
+        <nav
+          className="admin-sidebar__nav"
+          style={{ flex: 1 }}
+        >
           {NAV.map((group) => (
             <div key={group.section}>
+
               <div className="admin-sidebar__section">
                 {group.section}
               </div>
 
-              {group.links.map((l) => (
-                <NavLink
-                  key={l.to}
-                  to={l.to}
-                  className={({ isActive }) =>
-                    `admin-sidebar__link ${isActive ? 'active' : ''}`
-                  }
-                >
-                  <l.icon size={17} />
-                  {l.label}
-                </NavLink>
-              ))}
+              {group.links.map((l) => {
+                const Icon = l.icon
+
+                return (
+                  <NavLink
+                    key={l.to}
+                    to={l.to}
+                    className={({ isActive }) =>
+                      `admin-sidebar__link ${
+                        isActive ? 'active' : ''
+                      }`
+                    }
+                  >
+                    <Icon size={17} />
+                    {l.label}
+                  </NavLink>
+                )
+              })}
+
             </div>
           ))}
         </nav>
 
-        <div className="admin-sidebar__footer">
+        {/* ADMIN FOOTER */}
+        <div
+          className="admin-sidebar__footer"
+          style={{
+            borderTop: '1px solid rgba(255,255,255,0.05)',
+            padding: '20px'
+          }}
+        >
           <div
             style={{
-              color: 'rgba(247,247,245,0.5)',
-              fontSize: '0.78rem',
-              marginBottom: 10
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              marginBottom: '15px'
             }}
           >
-            Signed in as{' '}
-            <strong style={{ color: '#fff' }}>
-              {admin?.username}
-            </strong>
+            <div
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                background: '#F5D000',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#111827',
+                fontWeight: 'bold',
+                fontSize: '1.2rem',
+                flexShrink: 0
+              }}
+            >
+              {admin?.username
+                ? admin.username.charAt(0).toUpperCase()
+                : <User size={20} />
+              }
+            </div>
+
+            <div style={{ overflow: 'hidden' }}>
+              <div
+                style={{
+                  fontSize: '0.7rem',
+                  color: 'rgba(255,255,255,0.5)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                  marginBottom: '2px'
+                }}
+              >
+                Workspace
+              </div>
+
+              <div
+                style={{
+                  color: '#fff',
+                  fontWeight: '600',
+                  fontSize: '0.95rem',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}
+              >
+                Hi, {admin?.username || 'Admin'}!
+              </div>
+            </div>
           </div>
 
           <button
             onClick={handleLogout}
-            className="admin-sidebar__link"
             style={{
               width: '100%',
-              border: 0,
-              background: 'none',
-              textAlign: 'left',
-              cursor: 'pointer'
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(255,255,255,0.05)',
+              color: '#d1d5db',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              cursor: 'pointer',
+              fontSize: '0.85rem',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background =
+                'rgba(255,255,255,0.1)'
+              e.currentTarget.style.color = '#fff'
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background =
+                'rgba(255,255,255,0.05)'
+              e.currentTarget.style.color = '#d1d5db'
             }}
           >
-            <LogOut size={17} />
+            <LogOut size={16} />
             Logout
           </button>
         </div>
       </aside>
 
       <div className="admin-main">
-        {/* Top Bar containing the Global Search */}
-        <div
-          style={{
-            padding: '1rem 2rem',
-            borderBottom: '1px solid var(--c-hairline, #e5e5e5)',
-            background: '#fff',
-            display: 'flex',
-            justifyContent: 'flex-end',
-            position: 'sticky',
-            top: 0,
-            zIndex: 40
-          }}
-        >
+
+        {/* SEARCH BAR */}
+        {showSearch && (
           <div
-            ref={searchRef}
             style={{
-              position: 'relative',
-              width: '350px'
+              padding: '1rem 2rem',
+              borderBottom:
+                '1px solid var(--c-hairline, #e5e5e5)',
+              background: '#fff',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              position: 'sticky',
+              top: 0,
+              zIndex: 40
             }}
           >
-            <div style={{ position: 'relative' }}>
-              <Search
-                size={18}
-                style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#9ca3af'
-                }}
-              />
+            <div
+              ref={searchRef}
+              style={{
+                position: 'relative',
+                width: '350px'
+              }}
+            >
 
-              <input
-                type="text"
-                placeholder="Search clients, emails, or bookings..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px 35px',
-                  borderRadius: '20px',
-                  border: '1px solid #d1d5db',
-                  outline: 'none',
-                  fontSize: '0.9rem',
-                  backgroundColor: '#f9fafb'
-                }}
-              />
+              <div style={{ position: 'relative' }}>
 
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
+                <Search
+                  size={18}
                   style={{
                     position: 'absolute',
-                    right: '12px',
+                    left: '12px',
                     top: '50%',
                     transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: '#9ca3af'
+                    color: '#9ca3af',
+                    pointerEvents: 'none'
                   }}
-                >
-                  <X size={16} />
-                </button>
-              )}
-            </div>
+                />
 
-            {/* Search Results Dropdown */}
-            {searchQuery && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '100%',
-                  right: 0,
-                  left: 0,
-                  background: '#fff',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                  marginTop: '8px',
-                  maxHeight: '400px',
-                  overflowY: 'auto'
-                }}
-              >
-                {isSearching ? (
-                  <div
+                <input
+                  type="text"
+                  placeholder="Search clients, emails, or bookings..."
+                  value={searchQuery}
+                  onFocus={() => {
+                    if (searchQuery.trim()) {
+                      setIsSearchOpen(true)
+                    }
+                  }}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value)
+                    setIsSearchOpen(true)
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '10px 35px',
+                    borderRadius: '20px',
+                    border: '1px solid #d1d5db',
+                    outline: 'none',
+                    fontSize: '0.9rem',
+                    backgroundColor: '#f9fafb',
+                    boxSizing: 'border-box'
+                  }}
+                />
+
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault()
+                    }}
+                    onClick={clearSearch}
                     style={{
-                      padding: '1rem',
-                      textAlign: 'center',
-                      color: '#6b7280',
-                      fontSize: '0.9rem'
+                      position: 'absolute',
+                      right: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#9ca3af',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: 0
                     }}
                   >
-                    Searching...
-                  </div>
-                ) : searchResults ? (
-                  <>
-                    {/* Bookings Results */}
-                    {searchResults.bookings &&
-                      searchResults.bookings.length > 0 && (
+                    <X size={16} />
+                  </button>
+                )}
+
+              </div>
+
+              {/* RESULTS */}
+              {searchQuery && isSearchOpen && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    left: 0,
+                    background: '#fff',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    boxShadow:
+                      '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                    marginTop: '8px',
+                    maxHeight: '400px',
+                    overflowY: 'auto',
+                    zIndex: 50
+                  }}
+                >
+
+                  {isSearching ? (
+                    <div
+                      style={{
+                        padding: '1rem',
+                        textAlign: 'center',
+                        color: '#6b7280',
+                        fontSize: '0.9rem'
+                      }}
+                    >
+                      Searching...
+                    </div>
+                  ) : searchResults ? (
+                    <>
+
+                      {/* BOOKINGS */}
+                      {searchResults.bookings?.length > 0 && (
                         <div style={{ padding: '0.5rem' }}>
+
                           <div
                             style={{
                               fontSize: '0.75rem',
@@ -325,20 +457,24 @@ export default function AdminLayout() {
                                 padding: '0.75rem',
                                 cursor: 'pointer',
                                 borderRadius: '6px',
-                                borderBottom: '1px solid #f3f4f6'
+                                borderBottom:
+                                  '1px solid #f3f4f6'
+                              }}
+                              onMouseDown={(e) => {
+                                e.preventDefault()
                               }}
                               onClick={() => {
-                                navigate('/admin/bookings')
-                                setSearchQuery('')
+                                navigate(`/admin/bookings/${b.id}`)
+                                clearSearch()
                               }}
-                              onMouseOver={(e) =>
-                                (e.currentTarget.style.backgroundColor =
-                                  '#f3f4f6')
-                              }
-                              onMouseOut={(e) =>
-                                (e.currentTarget.style.backgroundColor =
-                                  'transparent')
-                              }
+                              onMouseOver={(e) => {
+                                e.currentTarget.style.backgroundColor =
+                                  '#f3f4f6'
+                              }}
+                              onMouseOut={(e) => {
+                                e.currentTarget.style.backgroundColor =
+                                  'transparent'
+                              }}
                             >
                               <div
                                 style={{
@@ -346,7 +482,10 @@ export default function AdminLayout() {
                                   color: '#111827'
                                 }}
                               >
-                                {b.name}
+                                {b.name ||
+                                  b.client_name ||
+                                  b.full_name ||
+                                  'Unnamed Client'}
                               </div>
 
                               <div
@@ -355,16 +494,20 @@ export default function AdminLayout() {
                                   color: '#6b7280'
                                 }}
                               >
-                                {b.email} • {b.shoot_type}
+                                {b.email || 'No email'}
+                                {' • '}
+                                {b.shoot_type ||
+                                  b.service_type ||
+                                  'Booking'}
                               </div>
                             </div>
                           ))}
+
                         </div>
                       )}
 
-                    {/* Estimator Leads Results */}
-                    {searchResults.leads &&
-                      searchResults.leads.length > 0 && (
+                      {/* LEADS */}
+                      {searchResults.leads?.length > 0 && (
                         <div
                           style={{
                             padding: '0.5rem',
@@ -374,6 +517,7 @@ export default function AdminLayout() {
                                 : 'none'
                           }}
                         >
+
                           <div
                             style={{
                               fontSize: '0.75rem',
@@ -394,20 +538,24 @@ export default function AdminLayout() {
                                 padding: '0.75rem',
                                 cursor: 'pointer',
                                 borderRadius: '6px',
-                                borderBottom: '1px solid #f3f4f6'
+                                borderBottom:
+                                  '1px solid #f3f4f6'
+                              }}
+                              onMouseDown={(e) => {
+                                e.preventDefault()
                               }}
                               onClick={() => {
                                 navigate('/admin/leads')
-                                setSearchQuery('')
+                                clearSearch()
                               }}
-                              onMouseOver={(e) =>
-                                (e.currentTarget.style.backgroundColor =
-                                  '#f3f4f6')
-                              }
-                              onMouseOut={(e) =>
-                                (e.currentTarget.style.backgroundColor =
-                                  'transparent')
-                              }
+                              onMouseOver={(e) => {
+                                e.currentTarget.style.backgroundColor =
+                                  '#f3f4f6'
+                              }}
+                              onMouseOut={(e) => {
+                                e.currentTarget.style.backgroundColor =
+                                  'transparent'
+                              }}
                             >
                               <div
                                 style={{
@@ -415,7 +563,10 @@ export default function AdminLayout() {
                                   color: '#111827'
                                 }}
                               >
-                                {l.name}
+                                {l.name ||
+                                  l.client_name ||
+                                  l.full_name ||
+                                  'Unnamed Lead'}
                               </div>
 
                               <div
@@ -424,36 +575,44 @@ export default function AdminLayout() {
                                   color: '#6b7280'
                                 }}
                               >
-                                {l.email} • Status: {l.status || 'New'}
+                                {l.email || 'No email'}
+                                {' • Status: '}
+                                {l.status || 'New'}
                               </div>
                             </div>
                           ))}
+
                         </div>
                       )}
 
-                    {/* No Results */}
-                    {!searchResults.bookings?.length &&
-                      !searchResults.leads?.length && (
-                        <div
-                          style={{
-                            padding: '1rem',
-                            textAlign: 'center',
-                            color: '#6b7280',
-                            fontSize: '0.9rem'
-                          }}
-                        >
-                          No results found for "{searchQuery}".
-                        </div>
-                      )}
-                  </>
-                ) : null}
-              </div>
-            )}
+                      {/* NO RESULTS */}
+                      {!searchResults.bookings?.length &&
+                        !searchResults.leads?.length && (
+                          <div
+                            style={{
+                              padding: '1rem',
+                              textAlign: 'center',
+                              color: '#6b7280',
+                              fontSize: '0.9rem'
+                            }}
+                          >
+                            No results found for "{searchQuery}".
+                          </div>
+                        )}
+
+                    </>
+                  ) : null}
+
+                </div>
+              )}
+
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Page Content */}
+        {/* PAGE CONTENT */}
         <Outlet />
+
       </div>
     </div>
   )

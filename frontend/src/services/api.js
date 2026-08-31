@@ -1,17 +1,28 @@
-// Central API client.
+// ============================================================
+// CENTRAL API CLIENT
+// ============================================================
 //
-// In development, Vite proxies /api/* to the PHP backend.
-// In production, VITE_API_URL can point directly to the backend API.
+// Development:
+// Vite proxies /api/* to the PHP backend.
+//
+// Production:
+// VITE_API_URL can point directly to the backend API.
+//
+// ============================================================
 
-const BASE_URL = import.meta.env.VITE_API_URL || '/api'
+const BASE_URL =
+  import.meta.env.VITE_API_URL || '/api'
 
-// Full backend URL used for uploaded assets such as portfolio images.
+// Full backend URL used for uploaded assets.
 const BACKEND_URL = (
   import.meta.env.VITE_BACKEND_URL ||
   'http://localhost/jonathan-photography/backend'
 ).replace(/\/$/, '')
 
-// Convert stored image paths into a URL served by the PHP backend.
+// ============================================================
+// ASSET URL HELPER
+// ============================================================
+
 export function assetUrl(path) {
   if (!path) return ''
 
@@ -25,6 +36,10 @@ export function assetUrl(path) {
   }`
 }
 
+// ============================================================
+// CSRF
+// ============================================================
+
 let csrfToken = null
 
 export function setCsrfToken(token) {
@@ -35,6 +50,10 @@ export function getCsrfToken() {
   return csrfToken
 }
 
+// ============================================================
+// API ERROR
+// ============================================================
+
 class ApiError extends Error {
   constructor(message, status, errors) {
     super(message)
@@ -44,9 +63,17 @@ class ApiError extends Error {
   }
 }
 
+// ============================================================
+// REQUEST
+// ============================================================
+
 async function request(
   path,
-  { method = 'GET', body, isForm = false } = {}
+  {
+    method = 'GET',
+    body,
+    isForm = false
+  } = {}
 ) {
   const headers = {}
 
@@ -58,14 +85,30 @@ async function request(
     headers['X-CSRF-Token'] = csrfToken
   }
 
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method,
-    headers,
-    credentials: 'include',
-    body: body
-      ? (isForm ? body : JSON.stringify(body))
-      : undefined,
-  })
+  let res
+
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      method,
+      headers,
+      credentials: 'include',
+      body: body
+        ? (
+            isForm
+              ? body
+              : JSON.stringify(body)
+          )
+        : undefined
+    })
+  } catch (error) {
+    throw new ApiError(
+      'Unable to connect to the server.',
+      0,
+      {
+        originalError: error
+      }
+    )
+  }
 
   let json
 
@@ -78,9 +121,10 @@ async function request(
     )
   }
 
-  if (!json.success) {
+  if (!res.ok || !json.success) {
     throw new ApiError(
-      json.message || 'Something went wrong.',
+      json.message ||
+        `Request failed with status ${res.status}.`,
       res.status,
       json.errors
     )
@@ -89,7 +133,12 @@ async function request(
   return json.data
 }
 
-const get = (path) => request(path)
+// ============================================================
+// BASIC HTTP HELPERS
+// ============================================================
+
+const get = (path) =>
+  request(path)
 
 const post = (path, body) =>
   request(path, {
@@ -108,20 +157,58 @@ const del = (path) =>
     method: 'DELETE'
   })
 
-const uploadForm = (path, formData) =>
+const uploadForm = (
+  path,
+  formData
+) =>
   request(path, {
     method: 'POST',
     body: formData,
     isForm: true
   })
 
-// ---------------- Auth ----------------
+// ============================================================
+// NORMALIZE API COLLECTIONS
+// ============================================================
+
+function toArray(value, keys = []) {
+  if (Array.isArray(value)) {
+    return value
+  }
+
+  if (!value || typeof value !== 'object') {
+    return []
+  }
+
+  for (const key of keys) {
+    if (Array.isArray(value[key])) {
+      return value[key]
+    }
+  }
+
+  if (Array.isArray(value.data)) {
+    return value.data
+  }
+
+  if (Array.isArray(value.results)) {
+    return value.results
+  }
+
+  return []
+}
+
+// ============================================================
+// AUTH
+// ============================================================
 
 export const authApi = {
   check: () =>
     get('/auth/check.php'),
 
-  login: (username, password) =>
+  login: (
+    username,
+    password
+  ) =>
     post('/auth/login.php', {
       username,
       password
@@ -131,150 +218,347 @@ export const authApi = {
     post('/auth/logout.php')
 }
 
-// ---------------- Portfolio ----------------
+// ============================================================
+// PORTFOLIO
+// ============================================================
 
 export const portfolioApi = {
-  categories: (all = false) =>
+  categories: (
+    all = false
+  ) =>
     get(
       `/portfolio/categories.php${
         all ? '?all=1' : ''
       }`
     ),
 
-  createCategory: (data) =>
-    post('/portfolio/categories.php', data),
+  createCategory: (
+    data
+  ) =>
+    post(
+      '/portfolio/categories.php',
+      data
+    ),
 
-  updateCategory: (data) =>
-    put('/portfolio/categories.php', data),
+  updateCategory: (
+    data
+  ) =>
+    put(
+      '/portfolio/categories.php',
+      data
+    ),
 
-  deleteCategory: (id) =>
-    del(`/portfolio/categories.php?id=${id}`),
+  deleteCategory: (
+    id
+  ) =>
+    del(
+      `/portfolio/categories.php?id=${id}`
+    ),
 
-  shootsByCategory: (categorySlug) =>
+  shootsByCategory: (
+    categorySlug
+  ) =>
     get(
       `/portfolio/shoots.php?category=${encodeURIComponent(
         categorySlug
       )}`
     ),
 
-  shoot: (categorySlug, shootSlug) =>
+  shoot: (
+    categorySlug,
+    shootSlug
+  ) =>
     get(
       `/portfolio/shoots.php?category=${encodeURIComponent(
         categorySlug
-      )}&shoot=${encodeURIComponent(shootSlug)}`
+      )}&shoot=${encodeURIComponent(
+        shootSlug
+      )}`
     ),
 
   allShoots: () =>
-    get('/portfolio/shoots.php?all=1'),
+    get(
+      '/portfolio/shoots.php?all=1'
+    ),
 
-  shootById: (id) =>
-    get(`/portfolio/shoots.php?id=${id}`),
+  shootById: (
+    id
+  ) =>
+    get(
+      `/portfolio/shoots.php?id=${id}`
+    ),
 
-  createShoot: (data) =>
-    post('/portfolio/shoots.php', data),
+  createShoot: (
+    data
+  ) =>
+    post(
+      '/portfolio/shoots.php',
+      data
+    ),
 
-  updateShoot: (data) =>
-    put('/portfolio/shoots.php', data),
+  updateShoot: (
+    data
+  ) =>
+    put(
+      '/portfolio/shoots.php',
+      data
+    ),
 
-  deleteShoot: (id) =>
-    del(`/portfolio/shoots.php?id=${id}`),
+  deleteShoot: (
+    id
+  ) =>
+    del(
+      `/portfolio/shoots.php?id=${id}`
+    ),
 
-  photo: (id) =>
-    get(`/portfolio/images.php?id=${id}`),
+  photo: (
+    id
+  ) =>
+    get(
+      `/portfolio/images.php?id=${id}`
+    ),
 
-  imagesForShoot: (shootId) =>
-    get(`/portfolio/images.php?shoot_id=${shootId}`),
+  imagesForShoot: (
+    shootId
+  ) =>
+    get(
+      `/portfolio/images.php?shoot_id=${shootId}`
+    ),
 
-  updateImage: (data) =>
-    put('/portfolio/images.php', data),
+  updateImage: (
+    data
+  ) =>
+    put(
+      '/portfolio/images.php',
+      data
+    ),
 
-  reorderImages: (reorder) =>
-    put('/portfolio/images.php', {
-      reorder
-    }),
+  reorderImages: (
+    reorder
+  ) =>
+    put(
+      '/portfolio/images.php',
+      {
+        reorder
+      }
+    ),
 
-  deleteImage: (id) =>
-    del(`/portfolio/images.php?id=${id}`),
+  deleteImage: (
+    id
+  ) =>
+    del(
+      `/portfolio/images.php?id=${id}`
+    ),
 
-  uploadImage: (formData) =>
-    uploadForm('/portfolio/upload.php', formData)
+  uploadImage: (
+    formData
+  ) =>
+    uploadForm(
+      '/portfolio/upload.php',
+      formData
+    )
 }
 
-// ---------------- Services ----------------
+// ============================================================
+// SERVICES
+// ============================================================
 
 export const servicesApi = {
-  list: (all = false) =>
+  list: (
+    all = false
+  ) =>
     get(
       `/services/list.php${
         all ? '?all=1' : ''
       }`
     ),
 
-  create: (data) =>
-    post('/services/create.php', data),
+  create: (
+    data
+  ) =>
+    post(
+      '/services/create.php',
+      data
+    ),
 
-  update: (data) =>
-    put('/services/update.php', data),
+  update: (
+    data
+  ) =>
+    put(
+      '/services/update.php',
+      data
+    ),
 
-  remove: (id) =>
-    del(`/services/delete.php?id=${id}`)
+  remove: (
+    id
+  ) =>
+    del(
+      `/services/delete.php?id=${id}`
+    )
 }
 
-// ---------------- Estimator ----------------
+// ============================================================
+// ESTIMATOR
+// ============================================================
 
 export const estimatorApi = {
-  config: (all = false) =>
+  // ----------------------------------------------------------
+  // Main estimator configuration
+  // ----------------------------------------------------------
+
+  config: (
+    all = false
+  ) =>
     get(
       `/estimator/config.php${
         all ? '?all=1' : ''
       }`
     ),
 
-  createHour: (data) =>
-    post('/estimator/hours.php', data),
+  // ----------------------------------------------------------
+  // SERVICE TYPE PRICING
+  // ----------------------------------------------------------
 
-  updateHour: (data) =>
-    put('/estimator/hours.php', data),
+  serviceTypes: (
+    all = false
+  ) =>
+    get(
+      `/estimator/service-types.php${
+        all ? '?all=1' : ''
+      }`
+    ),
 
-  deleteHour: (id) =>
-    del(`/estimator/hours.php?id=${id}`),
+  createServiceType: (
+    data
+  ) =>
+    post(
+      '/estimator/service-types.php',
+      data
+    ),
 
-  createAddon: (data) =>
-    post('/estimator/addons.php', data),
+  updateServiceType: (
+    data
+  ) =>
+    put(
+      '/estimator/service-types.php',
+      data
+    ),
 
-  updateAddon: (data) =>
-    put('/estimator/addons.php', data),
+  deleteServiceType: (
+    id
+  ) =>
+    del(
+      `/estimator/service-types.php?id=${id}`
+    ),
 
-  deleteAddon: (id) =>
-    del(`/estimator/addons.php?id=${id}`),
+  // ----------------------------------------------------------
+  // HOURS
+  // ----------------------------------------------------------
 
-  // Supports timeframe filtering.
-  leads: (timeframe = 'all') =>
+  createHour: (
+    data
+  ) =>
+    post(
+      '/estimator/hours.php',
+      data
+    ),
+
+  updateHour: (
+    data
+  ) =>
+    put(
+      '/estimator/hours.php',
+      data
+    ),
+
+  deleteHour: (
+    id
+  ) =>
+    del(
+      `/estimator/hours.php?id=${id}`
+    ),
+
+  // ----------------------------------------------------------
+  // ADDONS
+  // ----------------------------------------------------------
+
+  createAddon: (
+    data
+  ) =>
+    post(
+      '/estimator/addons.php',
+      data
+    ),
+
+  updateAddon: (
+    data
+  ) =>
+    put(
+      '/estimator/addons.php',
+      data
+    ),
+
+  deleteAddon: (
+    id
+  ) =>
+    del(
+      `/estimator/addons.php?id=${id}`
+    ),
+
+  // ----------------------------------------------------------
+  // LEADS
+  // ----------------------------------------------------------
+
+  leads: (
+    timeframe = 'all'
+  ) =>
     get(
       `/estimator/leads.php?timeframe=${encodeURIComponent(
         timeframe
       )}`
     ),
 
-  // Update estimator lead status.
-  updateLeadStatus: (id, status) =>
-    put('/estimator/leads.php', {
-      id,
-      status
-    }),
+  updateLeadStatus: (
+    id,
+    status
+  ) =>
+    put(
+      '/estimator/leads.php',
+      {
+        id,
+        status
+      }
+    ),
 
-  saveLead: (data) =>
-    post('/estimator/leads.php', data)
+  saveLead: (
+    data
+  ) =>
+    post(
+      '/estimator/leads.php',
+      data
+    )
 }
 
-// ---------------- Bookings ----------------
+// ============================================================
+// BOOKINGS
+// ============================================================
 
 export const bookingsApi = {
-  create: (data) =>
-    post('/bookings/create.php', data),
+  create: (
+    data
+  ) =>
+    post(
+      '/bookings/create.php',
+      data
+    ),
 
-  list: (params = {}) => {
-    const qs = new URLSearchParams(params).toString()
+  list: (
+    params = {}
+  ) => {
+    const qs =
+      new URLSearchParams(
+        params
+      ).toString()
 
     return get(
       `/bookings/list.php${
@@ -283,27 +567,39 @@ export const bookingsApi = {
     )
   },
 
-  details: (id) =>
-    get(`/bookings/details.php?id=${id}`),
+  details: (
+    id
+  ) =>
+    get(
+      `/bookings/details.php?id=${id}`
+    ),
 
-  updateStatus: (id, status) =>
-    put('/bookings/status.php', {
-      id,
-      status
-    })
+  updateStatus: (
+    id,
+    status
+  ) =>
+    put(
+      '/bookings/status.php',
+      {
+        id,
+        status
+      }
+    )
 }
 
-// ---------------- Global Search ----------------
-//
-// Uses the existing backend APIs instead of requiring
-// a separate search/global.php endpoint.
-//
-// Bookings already support server-side name/email search.
-// Estimator leads are filtered in the frontend.
+// ============================================================
+// GLOBAL SEARCH
+// ============================================================
 
 export const searchApi = {
-  global: async (query) => {
-    const q = String(query || '').trim().toLowerCase()
+  global: async (
+    query
+  ) => {
+    const q = String(
+      query || ''
+    )
+      .trim()
+      .toLowerCase()
 
     if (!q) {
       return {
@@ -312,59 +608,152 @@ export const searchApi = {
       }
     }
 
-    const [bookings, leads] = await Promise.all([
-      bookingsApi.list({
-        search: q
-      }),
+    const [
+      bookingsResponse,
+      leadsResponse
+    ] = await Promise.all([
+      bookingsApi.list(),
       estimatorApi.leads('all')
     ])
 
-    const filteredLeads = (leads || []).filter((lead) => {
-      const searchableText = [
-        lead.name,
-        lead.email,
-        lead.service_type,
-        lead.status
+    const allBookings = toArray(
+      bookingsResponse,
+      [
+        'bookings',
+        'items',
+        'rows'
       ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
+    )
 
-      return searchableText.includes(q)
-    })
+    const allLeads = toArray(
+      leadsResponse,
+      [
+        'leads',
+        'items',
+        'rows'
+      ]
+    )
+
+    // ========================================================
+    // BOOKING SEARCH
+    // ========================================================
+
+    const filteredBookings =
+      allBookings
+        .filter((booking) => {
+          const searchableText = [
+            booking.name,
+            booking.client_name,
+            booking.full_name,
+            booking.email,
+            booking.phone,
+            booking.shoot_type,
+            booking.service_type,
+            booking.reference_code,
+            booking.booking_code,
+            booking.status
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase()
+
+          return searchableText.includes(q)
+        })
+        .slice(0, 5)
+
+    // ========================================================
+    // LEAD SEARCH
+    // ========================================================
+
+    const filteredLeads =
+      allLeads
+        .filter((lead) => {
+          const searchableText = [
+            lead.name,
+            lead.client_name,
+            lead.full_name,
+            lead.email,
+            lead.phone,
+            lead.service_type,
+            lead.shoot_type,
+            lead.reference_code,
+            lead.status
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase()
+
+          return searchableText.includes(q)
+        })
+        .slice(0, 5)
 
     return {
-      bookings: bookings || [],
-      leads: filteredLeads
+      bookings:
+        filteredBookings,
+
+      leads:
+        filteredLeads
     }
   }
 }
 
-// ---------------- Contacts ----------------
+// ============================================================
+// CONTACTS
+// ============================================================
 
 export const contactsApi = {
-  list: (all = false) =>
+  list: (
+    all = false
+  ) =>
     get(
       `/contacts/list.php${
         all ? '?all=1' : ''
       }`
     ),
 
-  create: (data) =>
-    post('/contacts/create.php', data),
+  create: (
+    data
+  ) =>
+    post(
+      '/contacts/create.php',
+      data
+    ),
 
-  update: (data) =>
-    put('/contacts/update.php', data),
+  update: (
+    data
+  ) =>
+    put(
+      '/contacts/update.php',
+      data
+    ),
 
-  remove: (id) =>
-    del(`/contacts/delete.php?id=${id}`)
+  remove: (
+    id
+  ) =>
+    del(
+      `/contacts/delete.php?id=${id}`
+    )
 }
 
-// ---------------- Dashboard ----------------
+// ============================================================
+// DASHBOARD
+// ============================================================
 
 export const dashboardApi = {
-  stats: () =>
-    get('/dashboard/stats.php')
+  stats: (
+    timeframe = 'all'
+  ) =>
+    get(
+      `/dashboard/stats.php?timeframe=${encodeURIComponent(
+        timeframe
+      )}`
+    )
 }
 
-export { ApiError }
+// ============================================================
+// EXPORT ERROR CLASS
+// ============================================================
+
+export {
+  ApiError
+}
