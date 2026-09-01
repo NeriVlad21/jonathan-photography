@@ -1,8 +1,8 @@
 <?php
 /**
  * Admin CRUD for estimator add-ons.
- * POST   { label, description, price }
- * PUT    { id, label, description, price, active, sort_order }
+ * POST   { label, description, price, is_quantity_based }
+ * PUT    { id, label, description, price, active, sort_order, is_quantity_based }
  * DELETE ?id=1
  */
 
@@ -26,12 +26,13 @@ if ($method === 'POST') {
     if ($v->fails()) json_error('Please fill in every field.', 422, $v->errors());
 
     $maxOrder = (int) $pdo->query('SELECT COALESCE(MAX(sort_order),0) FROM estimator_addons')->fetchColumn();
-    $stmt = $pdo->prepare('INSERT INTO estimator_addons (label, description, price, active, sort_order) VALUES (:l, :d, :p, 1, :s)');
+    $stmt = $pdo->prepare('INSERT INTO estimator_addons (label, description, price, active, sort_order, is_quantity_based) VALUES (:l, :d, :p, 1, :s, :q)');
     $stmt->execute([
         'l' => clean_string($input['label']),
         'd' => clean_string($input['description'] ?? ''),
         'p' => (float) $input['price'],
         's' => $maxOrder + 1,
+        'q' => !empty($input['is_quantity_based']) ? 1 : 0,
     ]);
     $id = (int) $pdo->lastInsertId();
     $row = $pdo->prepare('SELECT * FROM estimator_addons WHERE id = :id');
@@ -47,7 +48,7 @@ if ($method === 'PUT') {
     if ($v->fails()) json_error('Please fix the errors below.', 422, $v->errors());
 
     $stmt = $pdo->prepare(
-        'UPDATE estimator_addons SET label = :l, description = :d, price = :p, active = :a, sort_order = :s WHERE id = :id'
+        'UPDATE estimator_addons SET label = :l, description = :d, price = :p, active = :a, sort_order = :s, is_quantity_based = :q WHERE id = :id'
     );
     $stmt->execute([
         'l' => clean_string($input['label']),
@@ -55,6 +56,7 @@ if ($method === 'PUT') {
         'p' => (float) $input['price'],
         'a' => !empty($input['active']) ? 1 : 0,
         's' => (int) ($input['sort_order'] ?? 0),
+        'q' => !empty($input['is_quantity_based']) ? 1 : 0,
         'id' => (int) $input['id'],
     ]);
     $row = $pdo->prepare('SELECT * FROM estimator_addons WHERE id = :id');

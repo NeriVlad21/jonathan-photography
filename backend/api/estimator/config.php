@@ -61,14 +61,22 @@ $services = $pdo
     ->query($servicesSql)
     ->fetchAll(PDO::FETCH_ASSOC);
 
+// Cast service prices safely
 foreach ($services as &$service) {
     $service['id'] = (int) $service['id'];
     $service['starting_price'] = $service['starting_price'] !== null
         ? (float) $service['starting_price']
         : 0;
 }
-
 unset($service);
+
+// Safely cast addon variables for the frontend
+foreach ($addons as &$addon) {
+    $addon['id'] = (int) $addon['id'];
+    $addon['price'] = (float) $addon['price'];
+    $addon['is_quantity_based'] = !empty($addon['is_quantity_based']) ? 1 : 0;
+}
+unset($addon);
 
 json_success([
     'hours' => $hours,

@@ -1,12 +1,6 @@
 <?php
 /**
  * /api/portfolio/images.php
- *
- * GET  ?id=124                — public single-photo view (with prev/next navigation)
- * GET  ?shoot_id=5             — admin: every image for a shoot (any visibility)
- * PUT  { id, title, caption, visible, is_cover, sort_order } — admin update one image
- * PUT  { reorder: [{id, sort_order}, ...] }                  — admin bulk reorder
- * DELETE ?id=124                — admin delete image (removes file from disk too)
  */
 
 declare(strict_types=1);
@@ -20,41 +14,67 @@ require_once __DIR__ . '/../../config/database.php';
 $pdo = Database::connect();
 $method = $_SERVER['REQUEST_METHOD'];
 
+// Handle single public photo fetching
 if ($method === 'GET' && isset($_GET['id'])) {
     $id = (int) $_GET['id'];
+    
+    // Using LEFT JOIN to guarantee the image returns even if the shoot/category linkage is imperfect.
     $stmt = $pdo->prepare(
         'SELECT pi.*, s.title AS shoot_title, s.slug AS shoot_slug, s.location, s.shoot_date,
                 c.name AS category_name, c.slug AS category_slug
          FROM portfolio_images pi
-         JOIN portfolio_shoots s ON s.id = pi.shoot_id
-         JOIN portfolio_categories c ON c.id = s.category_id
-         WHERE pi.id = :id AND pi.visible = 1 AND s.visible = 1 AND c.visible = 1
+         LEFT JOIN portfolio_shoots s ON s.id = pi.shoot_id
+         LEFT JOIN portfolio_categories c ON c.id = s.category_id
+         WHERE pi.id = :id
          LIMIT 1'
     );
     $stmt->execute(['id' => $id]);
     $image = $stmt->fetch();
-    if (!$image) json_error('Photo not found.', 404);
+    
+    if (!$image) {
+        json_error('Photo not found.', 404);
+    }
 
-    $prev = $pdo->prepare(
-        'SELECT id FROM portfolio_images WHERE shoot_id = :sid AND visible = 1
-         AND (sort_order < :so OR (sort_order = :so AND id < :id))
-         ORDER BY sort_order DESC, id DESC LIMIT 1'
-    );
-    $prev->execute(['sid' => $image['shoot_id'], 'so' => $image['sort_order'], 'id' => $id]);
+    // Get previous photo ID (Safely handle if shoot_id is null)
+    $prevId = null;
+    $nextId = null;
 
-    $next = $pdo->prepare(
-        'SELECT id FROM portfolio_images WHERE shoot_id = :sid AND visible = 1
-         AND (sort_order > :so OR (sort_order = :so AND id > :id))
-         ORDER BY sort_order ASC, id ASC LIMIT 1'
-    );
-    $next->execute(['sid' => $image['shoot_id'], 'so' => $image['sort_order'], 'id' => $id]);
+    if (!empty($image['shoot_id'])) {
+        // FIXED: Split :so into :so1 and :so2 to satisfy PDO parameter counting
+        $prev = $pdo->prepare(
+            'SELECT id FROM portfolio_images WHERE shoot_id = :sid
+             AND (sort_order < :so1 OR (sort_order = :so2 AND id < :id))
+             ORDER BY sort_order DESC, id DESC LIMIT 1'
+        );
+        $prev->execute([
+            'sid' => $image['shoot_id'], 
+            'so1' => $image['sort_order'], 
+            'so2' => $image['sort_order'], 
+            'id' => $id
+        ]);
+        $prevId = $prev->fetchColumn() ?: null;
 
-    $image['prev_id'] = $prev->fetchColumn() ?: null;
-    $image['next_id'] = $next->fetchColumn() ?: null;
+        $next = $pdo->prepare(
+            'SELECT id FROM portfolio_images WHERE shoot_id = :sid
+             AND (sort_order > :so1 OR (sort_order = :so2 AND id > :id))
+             ORDER BY sort_order ASC, id ASC LIMIT 1'
+        );
+        $next->execute([
+            'sid' => $image['shoot_id'], 
+            'so1' => $image['sort_order'], 
+            'so2' => $image['sort_order'], 
+            'id' => $id
+        ]);
+        $nextId = $next->fetchColumn() ?: null;
+    }
+
+    $image['prev_id'] = $prevId;
+    $image['next_id'] = $nextId;
 
     json_success($image);
 }
 
+// Handle Admin fetching all images for a shoot
 if ($method === 'GET' && isset($_GET['shoot_id'])) {
     require_admin();
     $stmt = $pdo->prepare('SELECT * FROM portfolio_images WHERE shoot_id = :sid ORDER BY sort_order ASC, id ASC');
@@ -62,6 +82,7 @@ if ($method === 'GET' && isset($_GET['shoot_id'])) {
     json_success($stmt->fetchAll());
 }
 
+// Handle updates
 if ($method === 'PUT') {
     require_admin();
     require_csrf();
@@ -84,7 +105,6 @@ if ($method === 'PUT') {
     $id = (int) $input['id'];
 
     if (!empty($input['is_cover'])) {
-        // Only one cover image per shoot.
         $shootRow = $pdo->prepare('SELECT shoot_id FROM portfolio_images WHERE id = :id');
         $shootRow->execute(['id' => $id]);
         $shootId = $shootRow->fetchColumn();
@@ -116,6 +136,7 @@ if ($method === 'PUT') {
     json_success($image);
 }
 
+// Handle deletions
 if ($method === 'DELETE') {
     require_admin();
     require_csrf();

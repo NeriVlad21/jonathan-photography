@@ -69,20 +69,32 @@ export default function PortfolioShoot() {
       </header>
 
       <div className="container" style={{ paddingBottom: 100 }}>
-        <div className="shoot-grid">
+        <div className="shoot-grid" style={{ display: 'grid', gap: '16px' }}>
           {rows.map((row, idx) => (
             row.length === 2 ? (
-              <Fragment key={row[0].id}>
-                <Link to={`/portfolio/photo/${row[0].id}`} className="shoot-grid__half">
-                  <EditorialImage src={row[0].image_path} alt={row[0].title || data.title} style={{ height: '100%' }} />
+              <div key={row[0].id} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
+                <Link to={`/portfolio/photo/${row[0].id}`} className="shoot-grid__half" style={{ display: 'block' }}>
+                  <EditorialImage 
+                    src={row[0].image_path} 
+                    alt={row[0].title || data.title} 
+                    style={{ width: '100%', aspectRatio: '3/4', objectFit: 'cover' }} 
+                  />
                 </Link>
-                <Link to={`/portfolio/photo/${row[1].id}`} className="shoot-grid__half">
-                  <EditorialImage src={row[1].image_path} alt={row[1].title || data.title} style={{ height: '100%' }} />
+                <Link to={`/portfolio/photo/${row[1].id}`} className="shoot-grid__half" style={{ display: 'block' }}>
+                  <EditorialImage 
+                    src={row[1].image_path} 
+                    alt={row[1].title || data.title} 
+                    style={{ width: '100%', aspectRatio: '3/4', objectFit: 'cover' }} 
+                  />
                 </Link>
-              </Fragment>
+              </div>
             ) : (
-              <Link key={row[0].id} to={`/portfolio/photo/${row[0].id}`} className="shoot-grid__full">
-                <EditorialImage src={row[0].image_path} alt={row[0].title || data.title} style={{ height: '100%' }} />
+              <Link key={row[0].id} to={`/portfolio/photo/${row[0].id}`} className="shoot-grid__full" style={{ display: 'block' }}>
+                <EditorialImage 
+                  src={row[0].image_path} 
+                  alt={row[0].title || data.title} 
+                  style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover' }} 
+                />
               </Link>
             )
           ))}

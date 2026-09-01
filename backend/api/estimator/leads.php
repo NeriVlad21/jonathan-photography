@@ -109,11 +109,27 @@ if ($method === 'POST') {
         $mail = make_mailer();
         if ($mail) {
             $addonLines = '';
-            foreach (($input['addons'] ?? []) as $addon) {
-                $label = htmlspecialchars($addon['label'] ?? '');
-                $price = isset($addon['price']) ? peso((float) $addon['price']) : '';
-                $addonLines .= "<tr><td style='padding:4px 0;color:#777;'>{$label}</td><td style='padding:4px 0;text-align:right;'>{$price}</td></tr>";
+            
+            // Log Service Type if present
+            if (!empty($input['service_type'])) {
+                $serviceName = htmlspecialchars($input['service_type']);
+                $servicePrice = isset($input['service_price']) ? peso((float) $input['service_price']) : '';
+                $addonLines .= "<tr><td style='padding:4px 0;color:#777;'><strong>Service:</strong> {$serviceName}</td><td style='padding:4px 0;text-align:right;'>{$servicePrice}</td></tr>";
             }
+            
+            // Loop through add-ons and calculate quantities
+            foreach (($input['addons'] ?? []) as $addon) {
+                $qty = isset($addon['quantity']) ? (int) $addon['quantity'] : 1;
+                $qtyPrefix = $qty > 1 ? "{$qty}x " : "";
+                $label = htmlspecialchars($qtyPrefix . ($addon['label'] ?? ''));
+                
+                // Use the pre-multiplied total sent by the frontend, fallback to price * qty
+                $addonTotal = isset($addon['total']) ? (float) $addon['total'] : ((float) ($addon['price'] ?? 0) * $qty);
+                $priceFormatted = peso($addonTotal);
+                
+                $addonLines .= "<tr><td style='padding:4px 0;color:#777;'>{$label}</td><td style='padding:4px 0;text-align:right;'>{$priceFormatted}</td></tr>";
+            }
+            
             $mail->addAddress($input['email'], $input['name']);
             $mail->isHTML(true);
             $mail->Subject = 'Your Jonathan Photography estimate';
