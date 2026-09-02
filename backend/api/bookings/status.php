@@ -1,9 +1,4 @@
 <?php
-/**
- * PUT /api/bookings/status.php
- * Body: { id, status: NEW|CONTACTED|CONFIRMED|DECLINED }
- * Admin only.
- */
 
 declare(strict_types=1);
 
@@ -21,18 +16,84 @@ require_admin();
 require_csrf();
 
 $input = json_input();
-$allowed = ['NEW', 'CONTACTED', 'CONFIRMED', 'DECLINED'];
+
+$allowedStatuses = [
+    'NEW',
+    'CONTACTED',
+    'CONFIRMED',
+    'DECLINED'
+];
 
 $v = new Validator($input);
-$v->required('id')->required('status')->inList('status', $allowed);
-if ($v->fails()) json_error('Please choose a valid status.', 422, $v->errors());
+$v->required('id')->required('status')->inList('status', $allowedStatuses);
+
+if ($v->fails()) {
+    json_error('Please choose a valid status.', 422, $v->errors());
+}
+
+$bookingId = (int) $input['id'];
+$newStatus = strtoupper(trim((string) $input['status']));
 
 $pdo = Database::connect();
-$stmt = $pdo->prepare('UPDATE bookings SET status = :status WHERE id = :id');
-$stmt->execute(['status' => $input['status'], 'id' => (int) $input['id']]);
 
-$row = $pdo->prepare('SELECT id, status FROM bookings WHERE id = :id');
-$row->execute(['id' => (int) $input['id']]);
-$booking = $row->fetch();
-if (!$booking) json_error('Booking not found.', 404);
-json_success($booking);
+try {
+
+    // Check that booking exists
+    $check = $pdo->prepare(
+        'SELECT id FROM bookings WHERE id = :id LIMIT 1'
+    );
+
+    $check->execute([
+        'id' => $bookingId
+    ]);
+
+    if (!$check->fetch(PDO::FETCH_ASSOC)) {
+        json_error('Booking not found.', 404);
+    }
+
+    // Update status directly
+    $stmt = $pdo->prepare(
+        'UPDATE bookings
+         SET status = :status
+         WHERE id = :id'
+    );
+
+    $stmt->execute([
+        'status' => $newStatus,
+        'id' => $bookingId
+    ]);
+
+    // Return updated record
+    $result = $pdo->prepare(
+        'SELECT id, status
+         FROM bookings
+         WHERE id = :id
+         LIMIT 1'
+    );
+
+    $result->execute([
+        'id' => $bookingId
+    ]);
+
+    $booking = $result->fetch(PDO::FETCH_ASSOC);
+
+    $pdo = null;
+
+    json_success([
+        'id' => (int) $booking['id'],
+        'status' => $booking['status'],
+        'message' => 'Booking status updated successfully.'
+    ]);
+
+} catch (Throwable $e) {
+
+    $pdo = null;
+
+    json_error(
+        'Unable to update booking status.',
+        500,
+        [
+            'error' => $e->getMessage()
+        ]
+    );
+}

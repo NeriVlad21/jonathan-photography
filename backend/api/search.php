@@ -1,7 +1,7 @@
 <?php
 /**
  * GET /api/search.php?q=...
- * Admin only: Searches bookings and estimator leads simultaneously.
+ * Admin only: Searches bookings, estimator leads, and contacts simultaneously.
  */
 
 declare(strict_types=1);
@@ -25,7 +25,7 @@ $query = $_GET['q'] ?? '';
 
 // If search is empty, return empty arrays
 if (empty(trim($query))) {
-    json_success(['bookings' => [], 'leads' => []]);
+    json_success(['bookings' => [], 'leads' => [], 'contacts' => []]);
 }
 
 $searchTerm = '%' . trim($query) . '%';
@@ -52,8 +52,20 @@ $stmtLeads = $pdo->prepare('
 $stmtLeads->execute(['q' => $searchTerm]);
 $leads = $stmtLeads->fetchAll();
 
+// Search Contacts
+$stmtContacts = $pdo->prepare('
+    SELECT id, name, email, created_at 
+    FROM contacts 
+    WHERE name LIKE :q OR email LIKE :q 
+    ORDER BY created_at DESC 
+    LIMIT 10
+');
+$stmtContacts->execute(['q' => $searchTerm]);
+$contacts = $stmtContacts->fetchAll();
+
 // Return combined results
 json_success([
     'bookings' => $bookings,
-    'leads' => $leads
+    'leads' => $leads,
+    'contacts' => $contacts
 ]);

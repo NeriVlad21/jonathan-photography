@@ -22,6 +22,13 @@ export default function BookingDetails() {
   useEffect(() => { document.title = 'Admin — Booking Details' }, [])
 
   const changeStatus = async (status) => {
+    // 1. Ask for confirmation before doing anything
+    const isSure = window.confirm(`Are you sure you want to change this booking into ${status}?`)
+    
+    // 2. If they click "Cancel", stop here
+    if (!isSure) return
+
+    // 3. If they click "OK", run the update
     setUpdating(true)
     try {
       await bookingsApi.updateStatus(id, status)
