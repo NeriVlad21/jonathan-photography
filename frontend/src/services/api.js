@@ -264,6 +264,23 @@ export const portfolioApi = {
       )}`
     ),
 
+  /*
+   * NEW:
+   * Gets every visible image belonging to the
+   * requested portfolio category.
+   *
+   * Example:
+   * /portfolio/shoots.php?category=portraits&images=1
+   */
+  imagesByCategory: (
+    categorySlug
+  ) =>
+    get(
+      `/portfolio/shoots.php?category=${encodeURIComponent(
+        categorySlug
+      )}&images=1`
+    ),
+
   shoot: (
     categorySlug,
     shootSlug
@@ -592,108 +609,20 @@ export const bookingsApi = {
 // ============================================================
 
 export const searchApi = {
-  global: async (
-    query
-  ) => {
-    const q = String(
-      query || ''
-    )
-      .trim()
-      .toLowerCase()
+  global: async (query) => {
+    const q = String(query || '').trim()
 
     if (!q) {
       return {
         bookings: [],
-        leads: []
+        leads: [],
+        contacts: []
       }
     }
 
-    const [
-      bookingsResponse,
-      leadsResponse
-    ] = await Promise.all([
-      bookingsApi.list(),
-      estimatorApi.leads('all')
-    ])
-
-    const allBookings = toArray(
-      bookingsResponse,
-      [
-        'bookings',
-        'items',
-        'rows'
-      ]
+    return get(
+      `/search.php?q=${encodeURIComponent(q)}`
     )
-
-    const allLeads = toArray(
-      leadsResponse,
-      [
-        'leads',
-        'items',
-        'rows'
-      ]
-    )
-
-    // ========================================================
-    // BOOKING SEARCH
-    // ========================================================
-
-    const filteredBookings =
-      allBookings
-        .filter((booking) => {
-          const searchableText = [
-            booking.name,
-            booking.client_name,
-            booking.full_name,
-            booking.email,
-            booking.phone,
-            booking.shoot_type,
-            booking.service_type,
-            booking.reference_code,
-            booking.booking_code,
-            booking.status
-          ]
-            .filter(Boolean)
-            .join(' ')
-            .toLowerCase()
-
-          return searchableText.includes(q)
-        })
-        .slice(0, 5)
-
-    // ========================================================
-    // LEAD SEARCH
-    // ========================================================
-
-    const filteredLeads =
-      allLeads
-        .filter((lead) => {
-          const searchableText = [
-            lead.name,
-            lead.client_name,
-            lead.full_name,
-            lead.email,
-            lead.phone,
-            lead.service_type,
-            lead.shoot_type,
-            lead.reference_code,
-            lead.status
-          ]
-            .filter(Boolean)
-            .join(' ')
-            .toLowerCase()
-
-          return searchableText.includes(q)
-        })
-        .slice(0, 5)
-
-    return {
-      bookings:
-        filteredBookings,
-
-      leads:
-        filteredLeads
-    }
   }
 }
 

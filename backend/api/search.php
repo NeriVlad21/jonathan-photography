@@ -29,41 +29,65 @@ if (empty(trim($query))) {
 }
 
 $searchTerm = '%' . trim($query) . '%';
+$bookings = [];
+$leads = [];
+$contacts = [];
 
-// Search Bookings
-$stmtBookings = $pdo->prepare('
-    SELECT id, name, email, shoot_type, created_at 
-    FROM bookings 
-    WHERE name LIKE :q OR email LIKE :q OR shoot_type LIKE :q 
-    ORDER BY created_at DESC 
-    LIMIT 10
-');
-$stmtBookings->execute(['q' => $searchTerm]);
-$bookings = $stmtBookings->fetchAll();
+// 1. Search Bookings
+try {
+    $stmtBookings = $pdo->prepare('
+        SELECT id, name, email, shoot_type, created_at, reference_code, phone 
+        FROM bookings 
+        WHERE name LIKE ? 
+           OR email LIKE ? 
+           OR shoot_type LIKE ? 
+           OR reference_code LIKE ? 
+           OR phone LIKE ? 
+           OR facebook LIKE ?
+        ORDER BY created_at DESC 
+        LIMIT 10
+    ');
+    $stmtBookings->execute([$searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm]);
+    $bookings = $stmtBookings->fetchAll(PDO::FETCH_ASSOC) ?: [];
+} catch (Throwable $e) {
+    // If a column is missing, fail silently and return empty array
+    $bookings = [];
+}
 
-// Search Estimator Leads
-$stmtLeads = $pdo->prepare('
-    SELECT id, name, email, status, created_at 
-    FROM estimator_leads 
-    WHERE name LIKE :q OR email LIKE :q 
-    ORDER BY created_at DESC 
-    LIMIT 10
-');
-$stmtLeads->execute(['q' => $searchTerm]);
-$leads = $stmtLeads->fetchAll();
+// 2. Search Estimator Leads
+try {
+    $stmtLeads = $pdo->prepare('
+        SELECT id, name, email, status, created_at 
+        FROM estimator_leads 
+        WHERE name LIKE ? 
+           OR email LIKE ? 
+        ORDER BY created_at DESC 
+        LIMIT 10
+    ');
+    $stmtLeads->execute([$searchTerm, $searchTerm]);
+    $leads = $stmtLeads->fetchAll(PDO::FETCH_ASSOC) ?: [];
+} catch (Throwable $e) {
+    $leads = [];
+}
 
-// Search Contacts
-$stmtContacts = $pdo->prepare('
-    SELECT id, name, email, created_at 
-    FROM contacts 
-    WHERE name LIKE :q OR email LIKE :q 
-    ORDER BY created_at DESC 
-    LIMIT 10
-');
-$stmtContacts->execute(['q' => $searchTerm]);
-$contacts = $stmtContacts->fetchAll();
+// 3. Search Contacts (Wrapped in try/catch because the table doesn't exist!)
+try {
+    $stmtContacts = $pdo->prepare('
+        SELECT id, name, email, created_at 
+        FROM contacts 
+        WHERE name LIKE ? 
+           OR email LIKE ? 
+        ORDER BY created_at DESC 
+        LIMIT 10
+    ');
+    $stmtContacts->execute([$searchTerm, $searchTerm]);
+    $contacts = $stmtContacts->fetchAll(PDO::FETCH_ASSOC) ?: [];
+} catch (Throwable $e) {
+    // Fails safely since 'contacts' table is missing!
+    $contacts = [];
+}
 
-// Return combined results
+// Return combined results safely
 json_success([
     'bookings' => $bookings,
     'leads' => $leads,

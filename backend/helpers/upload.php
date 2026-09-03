@@ -26,6 +26,10 @@ function handle_image_upload(array $file, string $subfolder = ''): array
 {
     $config = (require __DIR__ . '/../config/config.php')['uploads'];
 
+    // OVERRIDE: Force a 256MB limit for high-res professional portraits.
+    // This bypasses the smaller default limit inside your config.php file.
+    $config['max_bytes'] = 256 * 1024 * 1024;
+
     if (!isset($file['error']) || is_array($file['error'])) {
         throw new UploadException('Malformed upload.');
     }
@@ -37,7 +41,8 @@ function handle_image_upload(array $file, string $subfolder = ''): array
             throw new UploadException('No file was uploaded.');
         case UPLOAD_ERR_INI_SIZE:
         case UPLOAD_ERR_FORM_SIZE:
-            throw new UploadException('The image is too large.');
+            // Custom error so you know exactly why it failed if XAMPP blocks it
+            throw new UploadException('The server blocked the upload. You MUST increase upload_max_filesize to 256M in XAMPP\'s php.ini.');
         default:
             throw new UploadException('The image could not be uploaded.');
     }

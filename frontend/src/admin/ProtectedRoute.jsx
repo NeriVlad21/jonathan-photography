@@ -3,10 +3,47 @@ import { useAdminAuth } from '../context/AdminAuthContext.jsx'
 import LoadingState from '../components/LoadingState.jsx'
 
 export default function ProtectedRoute() {
-  const { admin, loading } = useAdminAuth()
+  const {
+    admin,
+    loading
+  } = useAdminAuth()
 
-  if (loading) return <LoadingState label="Checking your session…" />
-  if (!admin) return <Navigate to="/admin/login" replace />
+  /*
+  ============================================================
+  CHECK SESSION
+  ============================================================
+  */
+
+  if (loading) {
+    return (
+      <div aria-live="polite">
+        <LoadingState
+          label="Checking your session…"
+        />
+      </div>
+    )
+  }
+
+  /*
+  ============================================================
+  AUTHENTICATION
+  ============================================================
+  */
+
+  if (!admin) {
+    return (
+      <Navigate
+        to="/admin/login"
+        replace
+      />
+    )
+  }
+
+  /*
+  ============================================================
+  PROTECTED CONTENT
+  ============================================================
+  */
 
   return <Outlet />
 }
