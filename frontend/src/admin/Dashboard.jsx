@@ -5,8 +5,8 @@ import { peso, formatDateTime } from '../utils/format.js'
 import LoadingState from '../components/LoadingState.jsx'
 import html2pdf from 'html2pdf.js'
 import {
-  BarChart,
-  Bar,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -109,6 +109,14 @@ export default function Dashboard() {
     recent_activity,
     chart_data
   } = stats
+
+  const graphData = chart_data?.length === 1
+    ? [
+        { name: 'Earlier', leads: 0, bookings: 0 },
+        chart_data[0],
+        { name: 'Now', leads: 0, bookings: 0 }
+      ]
+    : chart_data
 
   return (
     <>
@@ -927,8 +935,8 @@ export default function Dashboard() {
                 CHART
             ================================================== */}
 
-            {chart_data &&
-              chart_data.length > 0 && (
+            {graphData &&
+              graphData.length > 0 && (
                 <section className="dashboard-panel">
 
                   <div className="dashboard-panel__header">
@@ -950,8 +958,8 @@ export default function Dashboard() {
                   <div className="dashboard-chart">
 
                     <ResponsiveContainer>
-                      <BarChart
-                        data={chart_data}
+                      <AreaChart
+                        data={graphData}
                         margin={{
                           top: 10,
                           right: 20,
@@ -1002,31 +1010,29 @@ export default function Dashboard() {
 
                         <Legend />
 
-                        <Bar
+                        <Area
                           dataKey="leads"
                           name="Estimator Leads"
-                          fill="#9ca3af"
-                          radius={[
-                            3,
-                            3,
-                            0,
-                            0
-                          ]}
+                          type="monotone"
+                          stroke="#6f6d65"
+                          fill="#b9b7ae"
+                          fillOpacity={0.35}
+                          strokeWidth={2}
+                          dot={{ r: 3, fill: '#6f6d65' }}
                         />
 
-                        <Bar
+                        <Area
                           dataKey="bookings"
                           name="Confirmed Bookings"
-                          fill="#111827"
-                          radius={[
-                            3,
-                            3,
-                            0,
-                            0
-                          ]}
+                          type="monotone"
+                          stroke="#11110f"
+                          fill="#f2cb05"
+                          fillOpacity={0.38}
+                          strokeWidth={2.5}
+                          dot={{ r: 3.5, fill: '#f2cb05', stroke: '#11110f', strokeWidth: 1.5 }}
                         />
 
-                      </BarChart>
+                      </AreaChart>
                     </ResponsiveContainer>
 
                   </div>

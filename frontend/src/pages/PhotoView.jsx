@@ -11,24 +11,17 @@ export default function PhotoView() {
   const [photo, setPhoto] = useState(null)
   const [notFound, setNotFound] = useState(false)
   
-  // NEW: State to hold the actual error message
-  const [errorMsg, setErrorMsg] = useState('')
-
   useEffect(() => {
     setPhoto(null)
     setNotFound(false)
-    setErrorMsg('')
     
     portfolioApi.photo(id)
       .then((p) => { 
         setPhoto(p); 
         document.title = `Jonathan Photography — ${p.title || p.shoot_title}` 
       })
-      .catch((err) => {
-        // NEW: Catch the real error and save it to state
-        console.error("Backend Error:", err)
+      .catch(() => {
         setNotFound(true)
-        setErrorMsg(err.message || String(err))
       })
   }, [id])
 
@@ -54,14 +47,12 @@ export default function PhotoView() {
     return (
       <section style={{ minHeight: '100svh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0A0A0A', color: '#fff' }}>
         <div style={{ textAlign: 'center' }}>
-          <h1 className="display" style={{ fontSize: '2rem' }}>Photo not found.</h1>
-          
-          {/* NEW: Print the actual backend error directly to the screen */}
-          <div style={{ background: 'rgba(255,0,0,0.1)', padding: '15px', border: '1px solid red', borderRadius: '8px', marginTop: '20px', color: '#ff6b6b', fontFamily: 'monospace' }}>
-            <strong>Debug Error:</strong> {errorMsg}
-          </div>
-
-          <Link to="/portfolio" className="text-link" style={{ marginTop: 20, display: 'inline-flex', color: '#F5D000' }}>← Back to Portfolio</Link>
+          <div className="eyebrow eyebrow--on-dark">Archive / unavailable</div>
+          <h1 className="display" style={{ fontSize: 'clamp(2.4rem, 6vw, 5rem)', marginTop: 16 }}>Photo not found.</h1>
+          <p style={{ color: 'rgba(255,255,255,.62)', margin: '16px auto 0', maxWidth: '38ch' }}>
+            This photograph may have moved or is no longer part of the public collection.
+          </p>
+          <Link to="/portfolio" className="text-link" style={{ marginTop: 28, display: 'inline-flex', color: '#F2CB05' }}>← Back to work</Link>
         </div>
       </section>
     )

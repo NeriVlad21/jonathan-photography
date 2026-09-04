@@ -6,7 +6,7 @@
  * POST /api/estimator/leads.php   — public: "Email me this estimate"
  *      Body: { name, email, hours, addons: [...], service_type, total }
  * PUT  /api/estimator/leads.php   — admin: Update lead status
- *      Body: { id, status }
+ *      Body: { id, status, final_update }
  */
 
 declare(strict_types=1);
@@ -56,21 +56,73 @@ if ($method === 'GET') {
 // Handle Status Updates from the Admin Dashboard
 if ($method === 'PUT') {
     require_admin();
+    require_csrf();
     $input = json_input();
 
     $v = new Validator($input);
-    $v->required('id', 'Lead ID')->required('status', 'Status');
+    $v->required('id', 'Lead ID')
+        ->required('status', 'Status')
+        ->inList('status', ['Booked', 'Lost'])
+        ->boolTrue(
+            'final_update',
+            'Please confirm that this is the final lead status update.'
+        );
     if ($v->fails()) {
-        json_error('Please provide a valid ID and status.', 422, $v->errors());
+        json_error('Please choose a final lead outcome and confirm it.', 422, $v->errors());
     }
 
-    $stmt = $pdo->prepare('UPDATE estimator_leads SET status = :status WHERE id = :id');
-    $stmt->execute([
-        'status' => clean_string($input['status']),
-        'id'     => (int) $input['id']
-    ]);
+    $leadId = (int) $input['id'];
+    $newStatus = clean_string($input['status']);
 
-    json_success(['updated' => true]);
+    try {
+        $pdo->beginTransaction();
+
+        $check = $pdo->prepare(
+            'SELECT id, status FROM estimator_leads WHERE id = :id LIMIT 1 FOR UPDATE'
+        );
+        $check->execute(['id' => $leadId]);
+        $existing = $check->fetch(PDO::FETCH_ASSOC);
+
+        if (!$existing) {
+            $pdo->rollBack();
+            json_error('Estimator lead not found.', 404);
+        }
+
+        if (in_array($existing['status'], ['Booked', 'Lost'], true)) {
+            $pdo->rollBack();
+            json_error('This lead already has a final status and cannot be changed.', 409);
+        }
+
+        $stmt = $pdo->prepare(
+            'UPDATE estimator_leads
+             SET status = :status, booked = :booked
+             WHERE id = :id AND status = \'New\''
+        );
+        $stmt->execute([
+            'status' => $newStatus,
+            'booked' => $newStatus === 'Booked' ? 1 : 0,
+            'id' => $leadId
+        ]);
+
+        if ($stmt->rowCount() !== 1) {
+            $pdo->rollBack();
+            json_error('This lead could not be finalized because its status changed.', 409);
+        }
+
+        $pdo->commit();
+
+        json_success([
+            'id' => $leadId,
+            'status' => $newStatus,
+            'final' => true,
+            'message' => 'Lead status finalized successfully.'
+        ]);
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        json_error('Unable to finalize lead status.', 500);
+    }
 }
 
 // Handle New Estimator Leads from the Public Website

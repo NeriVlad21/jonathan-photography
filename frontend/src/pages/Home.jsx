@@ -4,6 +4,7 @@ import Hero from '../components/Hero.jsx'
 import SectionHeader from '../components/SectionHeader.jsx'
 import EditorialImage from '../components/EditorialImage.jsx'
 import { portfolioApi, servicesApi } from '../services/api.js'
+import { temporaryPhotosForCategory } from '../data/temporaryPortfolio.js'
 
 export default function Home() {
   const [categories, setCategories] = useState([])
@@ -21,19 +22,18 @@ export default function Home() {
       {/* Editorial introduction */}
       <section className="section">
         <div className="container intro">
-          <p className="display intro__statement">
-            "NOT JUST<br /><em>A PHOTO.</em>"
+          <p className="intro__statement">
+            The day moves quickly.<br /><em>The photographs should not.</em>
           </p>
           <div className="intro__body">
             <p>
-              A photograph is the only part of a day that gets to happen twice —
-              once when it's lived, and again every time someone looks at it.
-              We treat that second time as seriously as the first.
+              A photograph is the part of a day that gets to happen twice—once
+              when it is lived, and again whenever someone returns to it.
             </p>
             <p>
-              Jonathan Photography covers weddings, portraits, and the occasions
-              in between with the same editorial attention: real light, real
-              moments, and an edit that holds up years later.
+              We photograph weddings, portraits, and everything in between with
+              a calm approach, honest color, and attention to the people who make
+              the moment matter.
             </p>
             <Link to="/portfolio" className="text-link">See the Work →</Link>
           </div>
@@ -41,12 +41,12 @@ export default function Home() {
       </section>
 
       {/* Portfolio preview */}
-      <section className="section section--tight">
+      <section id="selected-work" className="section section--tight">
         <div className="container">
           <SectionHeader
             eyebrow="Selected Work"
-            title="The Portfolio"
-            desc="Four categories, built one story at a time."
+            title="Selected work"
+            desc="A few moments from recent celebrations, portraits, and events."
             action={<Link to="/portfolio" className="text-link">View All →</Link>}
           />
         </div>
@@ -54,7 +54,12 @@ export default function Home() {
           <div className="preview-strip">
             {categories.map((c) => (
               <Link key={c.id} to={`/portfolio/${c.slug}`} className="preview-strip__item">
-                <EditorialImage src={c.cover_image} alt={c.name} caption={c.name} style={{ height: '100%' }} />
+                <EditorialImage
+                  src={temporaryPhotosForCategory(c.slug, c.name)[0].image_path}
+                  alt={c.name}
+                  caption={c.name}
+                  style={{ height: '100%' }}
+                />
               </Link>
             ))}
           </div>
@@ -65,8 +70,8 @@ export default function Home() {
       <section className="section">
         <div className="container">
           <SectionHeader
-            eyebrow="What We Offer"
-            title="Services"
+            eyebrow="What we offer"
+            title="Simple coverage, thoughtfully made."
             action={<Link to="/services" className="text-link">See All Services →</Link>}
           />
           <div className="service-list">
@@ -86,13 +91,13 @@ export default function Home() {
       </section>
 
       {/* Estimator CTA */}
-      <section className="section--dark">
-        <div className="container" style={{ textAlign: 'center', padding: '20px 0' }}>
-          <span className="eyebrow eyebrow--on-dark">Build Your Package</span>
-          <h2 className="display" style={{ fontSize: 'var(--fluid-h2)', color: '#F7F7F5', margin: '16px 0 28px' }}>
-            Get a real number,<br /><em style={{ color: '#F5D000', fontStyle: 'italic' }}>before the conversation.</em>
+      <section className="home-estimator-cta">
+        <div className="container">
+          <span className="eyebrow">Build your package</span>
+          <h2>
+            Get a clear starting price<br />before the conversation.
           </h2>
-          <Link to="/estimator" className="btn btn--primary">Build My Estimate</Link>
+          <Link to="/estimator" className="btn btn--dark">Build my estimate</Link>
         </div>
       </section>
     </>

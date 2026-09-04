@@ -31,6 +31,11 @@ export function assetUrl(path) {
     return path
   }
 
+  // Frontend-only temporary portfolio assets in public/demo.
+  if (path.startsWith('/demo/')) {
+    return path
+  }
+
   return `${BACKEND_URL}${
     path.startsWith('/') ? path : `/${path}`
   }`
@@ -215,7 +220,13 @@ export const authApi = {
     }),
 
   logout: () =>
-    post('/auth/logout.php')
+    post('/auth/logout.php'),
+
+  profile: () =>
+    get('/auth/profile.php'),
+
+  updateProfile: (data) =>
+    put('/auth/profile.php', data)
 }
 
 // ============================================================
@@ -537,13 +548,15 @@ export const estimatorApi = {
 
   updateLeadStatus: (
     id,
-    status
+    status,
+    finalUpdate = false
   ) =>
     put(
       '/estimator/leads.php',
       {
         id,
-        status
+        status,
+        final_update: finalUpdate
       }
     ),
 
@@ -591,15 +604,39 @@ export const bookingsApi = {
       `/bookings/details.php?id=${id}`
     ),
 
+  availability: (month) =>
+    get(
+      `/bookings/availability.php?month=${encodeURIComponent(month)}`
+    ),
+
+  calendar: (start, end) =>
+    get(
+      `/bookings/calendar.php?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`
+    ),
+
+  createCalendarEvent: (data) =>
+    post(
+      '/bookings/calendar.php',
+      data
+    ),
+
+  updateCalendarEvent: (id, status) =>
+    put(
+      '/bookings/calendar.php',
+      { id, status }
+    ),
+
   updateStatus: (
     id,
-    status
+    status,
+    finalUpdate = false
   ) =>
     put(
       '/bookings/status.php',
       {
         id,
-        status
+        status,
+        final_update: finalUpdate
       }
     )
 }

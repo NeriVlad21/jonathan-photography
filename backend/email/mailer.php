@@ -29,8 +29,8 @@ function make_mailer(): ?PHPMailer
     $config = require __DIR__ . '/../config/config.php';
     $smtp = $config['smtp'];
 
-    if (empty($smtp['host']) || empty($smtp['username'])) {
-        error_log('[MAILER] SMTP is not configured — skipping email send.');
+    if (empty($smtp['host']) || empty($smtp['username']) || empty($smtp['password'])) {
+        error_log('[MAILER] SMTP credentials are incomplete — skipping email send.');
         return null;
     }
 
@@ -132,13 +132,13 @@ function admin_email_body(array $b): string
       <h2 style="border-bottom:3px solid #F5D000; padding-bottom:8px;">New booking request</h2>
       <p><strong>Booking ID:</strong> {$safe($b['id'])} &nbsp; <strong>Reference:</strong> {$safe($b['reference_code'])}</p>
       <h3>Client</h3>
-      <p>{$safe($b['name'])}<br/>{$safe($b['email'])}<br/>{$safe($b['phone'])}<br/>{$safe($b['facebook'])}</p>
+      <p>{$safe($b['name'] ?? null)}<br/>{$safe($b['email'] ?? null)}<br/>{$safe($b['phone'] ?? null)}<br/>{$safe($b['facebook'] ?? null)}</p>
       <h3>Shoot</h3>
-      <p>Type: {$safe($b['shoot_type'])}<br/>Date: {$safe($b['preferred_date'])}<br/>Location: {$safe($b['location'])}<br/>Guests: {$safe($b['guest_count'])}</p>
+      <p>Type: {$safe($b['shoot_type'] ?? null)}<br/>Date: {$safe($b['preferred_date'] ?? null)}<br/>Location: {$safe($b['location'] ?? null)}<br/>Guests: {$safe($b['guest_count'] ?? null)}</p>
       <h3>Estimate</h3>
       <p>{$estimate}</p>
       <h3>Message</h3>
-      <p>{$safe($b['message'])}</p>
+      <p>{$safe($b['message'] ?? null)}</p>
     </div>
     HTML;
 }

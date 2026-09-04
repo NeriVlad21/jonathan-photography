@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { bookingsApi } from '../services/api.js'
 import { peso, formatDate } from '../utils/format.js'
 import { useToast } from '../context/ToastContext.jsx'
+import AvailabilityCalendar from './AvailabilityCalendar.jsx'
 
 const SHOOT_TYPES = [
   'Wedding', 'Engagement', 'Birthday', 'Christening', 'Debut',
@@ -54,6 +55,7 @@ export default function BookingForm() {
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Please enter a valid email address.'
     if (!form.phone.trim()) errs.phone = 'Please provide your phone number.'
     if (!form.shoot_type) errs.shoot_type = 'Please select a shoot type.'
+    if (!form.preferred_date) errs.preferred_date = 'Please choose an available preferred date.'
     if (!form.message.trim()) errs.message = 'Please tell us a little about what you need.'
     if (!form.privacy_agreed) errs.privacy_agreed = 'Please agree to the data privacy notice before continuing.'
     return errs
@@ -117,19 +119,30 @@ export default function BookingForm() {
         </div>
 
         <h4 className="fieldset-title display">The Shoot</h4>
-        <div className="grid-2">
-          <div className="field">
-            <label htmlFor="shoot_type">Shoot Type</label>
-            <select id="shoot_type" className={errors.shoot_type ? 'has-error' : ''} value={form.shoot_type} onChange={update('shoot_type')}>
-              <option value="">Select one</option>
-              {SHOOT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
-            {errors.shoot_type && <span className="field-error">{errors.shoot_type}</span>}
+        <div className="booking-schedule-row">
+          <div className="booking-request-fields">
+            <div className="field">
+              <label htmlFor="shoot_type">Shoot Type</label>
+              <select id="shoot_type" className={errors.shoot_type ? 'has-error' : ''} value={form.shoot_type} onChange={update('shoot_type')}>
+                <option value="">Select one</option>
+                {SHOOT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+              {errors.shoot_type && <span className="field-error">{errors.shoot_type}</span>}
+            </div>
+            <div className="booking-date-instruction">
+              <span>Preferred date</span>
+              <strong>{form.preferred_date ? formatDate(form.preferred_date) : 'Not selected'}</strong>
+              <p>Select a green day from the calendar. Grey dates are already booked.</p>
+            </div>
           </div>
-          <div className="field">
-            <label htmlFor="preferred_date">Preferred Date</label>
-            <input id="preferred_date" type="date" value={form.preferred_date} onChange={update('preferred_date')} />
-          </div>
+          <AvailabilityCalendar
+            value={form.preferred_date}
+            onChange={(preferredDate) => {
+              setForm((current) => ({ ...current, preferred_date: preferredDate }))
+              setErrors((current) => ({ ...current, preferred_date: '' }))
+            }}
+            error={errors.preferred_date}
+          />
         </div>
         <div className="grid-2">
           <div className="field">

@@ -26,6 +26,8 @@ import ServicesManager from './admin/ServicesManager.jsx'
 import EstimatorSettings from './admin/EstimatorSettings.jsx'
 import ContactManager from './admin/ContactManager.jsx'
 import Archive from './admin/Archive.jsx'
+import AdminProfile from './admin/AdminProfile.jsx'
+import AdminBookingCalendar from './admin/AdminBookingCalendar.jsx'
 
 function NotFound() {
   return (
@@ -90,6 +92,7 @@ export default function App() {
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="bookings" element={<Bookings />} />
               <Route path="bookings/:id" element={<BookingDetails />} />
+              <Route path="calendar" element={<AdminBookingCalendar />} />
               <Route path="leads" element={<EstimatorLeads />} />
               <Route path="portfolio" element={<PortfolioManager />} />
               <Route path="services" element={<ServicesManager />} />
@@ -98,6 +101,7 @@ export default function App() {
                 element={<EstimatorSettings />}
               />
               <Route path="contacts" element={<ContactManager />} />
+              <Route path="profile" element={<AdminProfile />} />
 
               {/* Archive */}
               <Route path="archive" element={<Archive />} />

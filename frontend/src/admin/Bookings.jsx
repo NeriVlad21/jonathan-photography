@@ -14,9 +14,8 @@ import {
 
 const STATUSES = [
   'NEW',
-  'CONTACTED',
   'CONFIRMED',
-  'DECLINED'
+  'CANCELLED'
 ]
 
 const TIMEFRAMES = [

@@ -28,7 +28,7 @@ return [
         'port'        => (int) env('SMTP_PORT', 587),
         'username'    => env('SMTP_USERNAME', ''),
         'password'    => env('SMTP_PASSWORD', ''),
-        'from_email'  => env('SMTP_FROM_EMAIL', 'studio@jonathanphotography.com'),
+        'from_email'  => env('SMTP_FROM_EMAIL', 'mereziko@gmail.com'),
         'from_name'   => env('SMTP_FROM_NAME', 'Jonathan Photography'),
         'admin_email' => env('SMTP_ADMIN_EMAIL', env('SMTP_FROM_EMAIL', '')),
     ],

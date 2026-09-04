@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import ContactFilmStrip from '../components/ContactFilmStrip.jsx'
+import PageHero from '../components/PageHero.jsx'
 
 export default function Contact() {
   useEffect(() => {
@@ -8,16 +9,13 @@ export default function Contact() {
 
   return (
     <>
-      <section className="section" style={{ paddingTop: 'clamp(120px, 16vw, 180px)', paddingBottom: 40 }}>
-        <div className="container">
-          <span className="eyebrow">Get In Touch</span>
-          <h1 className="display" style={{ fontSize: 'var(--fluid-h1)', margin: '14px 0 20px' }}>How to Find Us</h1>
-          <p style={{ color: 'var(--c-gray)', maxWidth: '56ch', fontSize: '1.05rem' }}>
-            Pick whichever platform suits the moment. We check all of them.
-          </p>
-        </div>
-      </section>
-      <section className="section--dark section--tight">
+      <PageHero
+        eyebrow="Contact / 05"
+        title="Let’s start a conversation."
+        intro="Tell us what is happening, where it is, and when. Choose the channel that is easiest for you—we check them all."
+        note="Usually replies within 1–2 days"
+      />
+      <section className="contact-directory">
         <div className="container">
           <ContactFilmStrip />
         </div>

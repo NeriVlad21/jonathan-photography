@@ -4,6 +4,7 @@ import EditorialImage from '../components/EditorialImage.jsx'
 import LoadingState from '../components/LoadingState.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import { portfolioApi } from '../services/api.js'
+import { temporaryPhotosForCategory } from '../data/temporaryPortfolio.js'
 
 export default function PortfolioCategory() {
   const { category } = useParams()
@@ -24,16 +25,17 @@ export default function PortfolioCategory() {
       .then((data) => {
         if (cancelled) return
 
-        setImages(
-          Array.isArray(data)
-            ? data
-            : []
-        )
+        setImages([
+          ...temporaryPhotosForCategory(category, category),
+          ...(Array.isArray(data) ? data : [])
+        ])
       })
       .catch(() => {
         if (cancelled) return
 
-        setImages([])
+        setImages(
+          temporaryPhotosForCategory(category, category)
+        )
       })
 
     portfolioApi
@@ -219,7 +221,7 @@ export default function PortfolioCategory() {
             originalIndex
           ] = element
         }}
-        className="portfolio-photo"
+        className={`portfolio-photo ${image.isTemporary ? `portfolio-photo--${image.orientation}` : ''}`}
       >
         <EditorialImage
           src={image.image_path}
@@ -450,6 +452,24 @@ export default function PortfolioCategory() {
 
           will-change:
             transform;
+        }
+
+        .portfolio-photo--portrait
+        .editorial-image {
+          aspect-ratio: 3 / 4;
+        }
+
+        .portfolio-photo--landscape
+        .editorial-image {
+          aspect-ratio: 4 / 3;
+        }
+
+        .portfolio-photo--portrait
+        .editorial-image img,
+        .portfolio-photo--landscape
+        .editorial-image img {
+          height: 100%;
+          object-fit: cover;
         }
 
         /*

@@ -93,10 +93,11 @@ APP_ENV=development
 APP_SECRET=change-this-to-a-long-random-string
 ```
 
-Leave `SMTP_USERNAME` / `SMTP_PASSWORD` blank for now — the app works
-fully without them (bookings still save; email sending is just skipped
-and logged instead). Come back and fill those in once everything else
-works — see Step 9.
+The temporary Gmail sender is already set to `mereziko@gmail.com`.
+Leave `SMTP_PASSWORD` blank until you create an app password for that
+account — bookings still save, while email delivery is safely skipped
+and logged. Come back and fill it in once everything else works — see
+Step 9.
 
 **Note on `APP_URL`:** earlier drafts of this README suggested running
 the backend with `php -S localhost:8000`. That works, but since the
@@ -175,11 +176,11 @@ In `backend/.env`, fill in:
 ```
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USERNAME=your-real-address@gmail.com
+SMTP_USERNAME=mereziko@gmail.com
 SMTP_PASSWORD=your-16-character-app-password
-SMTP_FROM_EMAIL=studio@jonathanphotography.com
+SMTP_FROM_EMAIL=mereziko@gmail.com
 SMTP_FROM_NAME="Jonathan Photography"
-SMTP_ADMIN_EMAIL=studio@jonathanphotography.com
+SMTP_ADMIN_EMAIL=mereziko@gmail.com
 ```
 
 Gmail requires an **app password** (not your normal login password) —
@@ -187,6 +188,12 @@ generate one from your Google Account's Security settings once
 2-Step Verification is turned on. No backend restart is needed since
 Apache reads `.env` fresh on every request; just try submitting a
 booking again.
+
+The temporary sender identity is `mereziko@gmail.com`. Keep
+`SMTP_FROM_EMAIL` aligned with `SMTP_USERNAME`; Gmail may reject or
+rewrite messages when they do not match. Until `SMTP_PASSWORD` contains
+that account's app password, the application safely skips delivery while
+still saving booking requests and estimator leads.
 
 ### Everyday startup (once the above is done once)
 
@@ -351,7 +358,7 @@ From the Admin Dashboard you can:
 - Manage portfolio categories, shoots, and upload unlimited photos per shoot
 - Add/edit/delete services and toggle their visibility
 - Edit estimator coverage-hour options and add-ons (prices, active state)
-- Review and update booking request statuses (New → Contacted → Confirmed/Declined)
+- Review and finalize booking requests (New → Confirmed or Cancelled)
 - See estimator leads and whether they've since booked
 - Manage which contact platforms appear on the public Contact page
 

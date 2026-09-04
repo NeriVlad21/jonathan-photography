@@ -81,7 +81,7 @@ DELETE FROM site_settings;
 -- Default admin: username "admin" / password "admin123"
 -- CHANGE THIS PASSWORD IMMEDIATELY AFTER FIRST LOGIN.
 INSERT INTO admins (id, username, email, password_hash) VALUES
-(1, 'admin', 'studio@jonathanphotography.com', '$2b$10$pQilqgGxmNxOSdsUTmAiTOUHHYidu6JvacMg.FUWwkLm8C/IG8wIi');
+(1, 'admin', 'mereziko@gmail.com', '$2b$10$pQilqgGxmNxOSdsUTmAiTOUHHYidu6JvacMg.FUWwkLm8C/IG8wIi');
 
 -- ------------------------------------------------------------
 -- Portfolio categories
@@ -170,7 +170,7 @@ INSERT INTO contact_platforms (label, tagline, handle, link, icon, visible, sort
 ('Instagram', 'See what we''re currently obsessed with.', '@jonathanphotography', 'https://instagram.com/jonathanphotography', 'instagram', 1, 1),
 ('Facebook', 'For the aunties, relatives, and everyone else.', 'Jonathan Photography', 'https://facebook.com/jonathanphotography', 'facebook', 1, 2),
 ('Phone / Viber', 'When typing feels like too much work.', '0963-332-7847', 'tel:+639633327847', 'phone', 1, 3),
-('Email', 'For the serious stuff. Or the not-so-serious stuff.', 'studio@jonathanphotography.com', 'mailto:studio@jonathanphotography.com', 'mail', 1, 4);
+('Email', 'For the serious stuff. Or the not-so-serious stuff.', 'mereziko@gmail.com', 'mailto:mereziko@gmail.com', 'mail', 1, 4);
 
 -- ------------------------------------------------------------
 -- Site settings
@@ -181,4 +181,4 @@ INSERT INTO site_settings (setting_key, setting_value) VALUES
 ('business_address', '0013 Mc Arthur Hi-way, Brgy. Asan Norte, Sison, Pangasinan'),
 ('business_phone', '0963-332-7847'),
 ('business_phone_alt', '0927-776-3101'),
-('business_email', 'studio@jonathanphotography.com');
+('business_email', 'mereziko@gmail.com');

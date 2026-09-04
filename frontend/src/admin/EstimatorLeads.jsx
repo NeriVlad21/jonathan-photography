@@ -14,7 +14,9 @@ import html2pdf from 'html2pdf.js'
 import {
   Download,
   Filter,
-  ChevronDown
+  ChevronDown,
+  ShieldCheck,
+  X
 } from 'lucide-react'
 
 const TIMEFRAMES = [
@@ -60,6 +62,9 @@ export default function EstimatorLeads() {
 
   const [isExporting, setIsExporting] =
     useState(false)
+
+  const [statusDialog, setStatusDialog] =
+    useState(null)
 
   const { showToast } =
     useToast()
@@ -110,20 +115,22 @@ export default function EstimatorLeads() {
   ============================================================
   */
 
-  const handleStatusChange = async (
-    id,
-    newStatus
-  ) => {
+  const handleStatusChange = async () => {
+    if (!statusDialog?.status || !statusDialog?.acknowledged) return
+
+    const { lead, status: newStatus } = statusDialog
+    const id = lead.id
     setUpdatingId(id)
 
     try {
       await estimatorApi.updateLeadStatus(
         id,
-        newStatus
+        newStatus,
+        true
       )
 
       showToast(
-        'Lead status updated successfully.',
+        `Lead finalized as ${newStatus}.`,
         'success'
       )
 
@@ -142,6 +149,8 @@ export default function EstimatorLeads() {
               : lead
         )
       })
+
+      setStatusDialog(null)
     } catch (error) {
       showToast(
         error?.message ||
@@ -163,9 +172,6 @@ export default function EstimatorLeads() {
     switch (status) {
       case 'Booked':
         return 'estimator-status estimator-status--booked'
-
-      case 'Contacted':
-        return 'estimator-status estimator-status--contacted'
 
       case 'Lost':
         return 'estimator-status estimator-status--lost'
@@ -1168,12 +1174,7 @@ export default function EstimatorLeads() {
                             )
 
                           const currentStatus =
-                            lead.status ||
-                            (
-                              lead.booked_live
-                                ? 'Booked'
-                                : 'New'
-                            )
+                            lead.status || 'New'
 
                           return (
                             <tr
@@ -1249,46 +1250,25 @@ export default function EstimatorLeads() {
 
                                 <div className="estimator-status-control">
 
-                                  <select
-                                    className={getStatusClass(
-                                      currentStatus
-                                    )}
-                                    value={
-                                      currentStatus
-                                    }
-                                    disabled={
-                                      updatingId ===
-                                      lead.id
-                                    }
-                                    onChange={(
-                                      event
-                                    ) =>
-                                      handleStatusChange(
-                                        lead.id,
-                                        event.target
-                                          .value
-                                      )
-                                    }
-                                    aria-label={`Status for ${lead.name || 'lead'}`}
-                                  >
-
-                                    <option value="New">
-                                      New
-                                    </option>
-
-                                    <option value="Contacted">
-                                      Contacted
-                                    </option>
-
-                                    <option value="Booked">
-                                      Booked
-                                    </option>
-
-                                    <option value="Lost">
-                                      Lost
-                                    </option>
-
-                                  </select>
+                                  {currentStatus === 'New' ? (
+                                    <button
+                                      type="button"
+                                      className="estimator-status-action"
+                                      disabled={updatingId === lead.id}
+                                      onClick={() => setStatusDialog({
+                                        lead,
+                                        status: '',
+                                        acknowledged: false
+                                      })}
+                                    >
+                                      Set outcome
+                                    </button>
+                                  ) : (
+                                    <span className={getStatusClass(currentStatus)}>
+                                      <ShieldCheck size={13} />
+                                      {currentStatus}
+                                    </span>
+                                  )}
 
                                   {updatingId ===
                                     lead.id && (
@@ -1323,6 +1303,80 @@ export default function EstimatorLeads() {
 
               </div>
             )}
+
+          {statusDialog && (
+            <div className="lead-status-modal" role="presentation" onMouseDown={() => setStatusDialog(null)}>
+              <section
+                className="lead-status-dialog"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="lead-status-title"
+                onMouseDown={(event) => event.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  className="lead-status-dialog__close"
+                  onClick={() => setStatusDialog(null)}
+                  aria-label="Close status dialog"
+                >
+                  <X size={18} />
+                </button>
+
+                <span className="lead-status-dialog__eyebrow">Final lead outcome</span>
+                <h2 id="lead-status-title">Update {statusDialog.lead.name || 'this lead'}</h2>
+                <p>
+                  Keep the lead as New while contacting them. Choose an outcome only after they respond.
+                </p>
+
+                <div className="lead-status-choices" role="radiogroup" aria-label="Final lead outcome">
+                  {['Booked', 'Lost'].map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      role="radio"
+                      aria-checked={statusDialog.status === item}
+                      className={`lead-status-choice ${statusDialog.status === item ? 'lead-status-choice--active' : ''}`}
+                      onClick={() => setStatusDialog((current) => ({
+                        ...current,
+                        status: item,
+                        acknowledged: false
+                      }))}
+                    >
+                      <strong>{item}</strong>
+                      <span>{item === 'Booked' ? 'The client is moving forward.' : 'The lead will not proceed.'}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <label className={`lead-final-toggle ${statusDialog.status ? '' : 'lead-final-toggle--disabled'}`}>
+                  <input
+                    type="checkbox"
+                    checked={statusDialog.acknowledged}
+                    disabled={!statusDialog.status || updatingId === statusDialog.lead.id}
+                    onChange={(event) => setStatusDialog((current) => ({
+                      ...current,
+                      acknowledged: event.target.checked
+                    }))}
+                  />
+                  <span className="lead-final-toggle__track" aria-hidden="true" />
+                  <span>
+                    <strong>I understand this update is final.</strong>
+                    <small>Booked or lost leads cannot be changed afterward.</small>
+                  </span>
+                </label>
+
+                <button
+                  type="button"
+                  className="btn btn--primary lead-status-submit"
+                  disabled={!statusDialog.status || !statusDialog.acknowledged || updatingId === statusDialog.lead.id}
+                  onClick={handleStatusChange}
+                >
+                  <ShieldCheck size={16} />
+                  {updatingId === statusDialog.lead.id ? 'Finalizing…' : `Finalize as ${statusDialog.status || 'selected outcome'}`}
+                </button>
+              </section>
+            </div>
+          )}
 
         </div>
 

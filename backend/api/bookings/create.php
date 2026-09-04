@@ -34,6 +34,7 @@ $v->required('name', 'your full name')->maxLength('name', 160)
   ->required('email', 'your email address')->email('email')
   ->required('phone', 'your phone number')->maxLength('phone', 40)
   ->required('shoot_type', 'a shoot type')
+  ->required('preferred_date', 'a preferred date')
   ->required('message', 'a short message');
 
 $v->boolTrue('privacy_agreed', 'Please agree to the data privacy notice before continuing.');
@@ -42,7 +43,26 @@ if ($v->fails()) {
     json_error('Please fix the errors below.', 422, $v->errors());
 }
 
+$preferredDate = (string) $input['preferred_date'];
+$parsedDate = DateTime::createFromFormat('Y-m-d', $preferredDate);
+if (!$parsedDate || $parsedDate->format('Y-m-d') !== $preferredDate || $preferredDate < date('Y-m-d')) {
+    json_error('Please choose an available date from today onward.', 422, [
+        'preferred_date' => 'Choose an available future date.'
+    ]);
+}
+
 $pdo = Database::connect();
+
+$availability = $pdo->prepare(
+    'SELECT COUNT(*) FROM calendar_events
+     WHERE event_date = :preferred_date AND status = \'BOOKED\''
+);
+$availability->execute(['preferred_date' => $preferredDate]);
+if ((int) $availability->fetchColumn() > 0) {
+    json_error('That date has just been booked. Please choose another available date.', 409, [
+        'preferred_date' => 'This date is no longer available.'
+    ]);
+}
 
 // Reference code like JP-7F3K2A — short, unique, safe to show to the client.
 do {
@@ -79,7 +99,7 @@ try {
         'phone'     => clean_string($input['phone']),
         'fb'        => clean_string($input['facebook'] ?? ''),
         'shoot'     => clean_string($input['shoot_type']),
-        'date'      => $input['preferred_date'] ?: null,
+        'date'      => $preferredDate,
         'loc'       => clean_string($input['location'] ?? ''),
         'guests'    => clean_string($input['guest_count'] ?? ''),
         'msg'       => clean_string($input['message']),
@@ -128,9 +148,13 @@ $booking = [
     'reference_code'  => $reference,
     'name'            => clean_string($input['name']),
     'email'           => clean_string($input['email']),
+    'phone'           => clean_string($input['phone']),
+    'facebook'        => clean_string($input['facebook'] ?? ''),
     'shoot_type'      => clean_string($input['shoot_type']),
-    'preferred_date'  => $input['preferred_date'] ?: null,
+    'preferred_date'  => $preferredDate,
     'location'        => clean_string($input['location'] ?? ''),
+    'guest_count'     => clean_string($input['guest_count'] ?? ''),
+    'message'         => clean_string($input['message']),
     'estimate_total'  => $estimateTotal,
 ];
 

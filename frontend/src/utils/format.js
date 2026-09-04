@@ -20,6 +20,7 @@ export function formatDateTime(dateStr) {
 export function imageUrl(path) {
   if (!path) return ''
   if (path.startsWith('http')) return path
+  if (path.startsWith('/demo/')) return path
 
   // VITE_API_URL is usually left unset in dev (Vite's proxy forwards /api
   // for us), but that meant this function had nothing to fall back to and

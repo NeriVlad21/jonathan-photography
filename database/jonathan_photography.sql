@@ -41,7 +41,7 @@ CREATE TABLE `admins` (
 
 LOCK TABLES `admins` WRITE;
 /*!40000 ALTER TABLE `admins` DISABLE KEYS */;
-INSERT INTO `admins` VALUES (1,'admin','studio@jonathanphotography.com','$2b$10$pQilqgGxmNxOSdsUTmAiTOUHHYidu6JvacMg.FUWwkLm8C/IG8wIi','2026-08-26 17:01:19','2026-08-26 17:01:19');
+INSERT INTO `admins` VALUES (1,'admin','mereziko@gmail.com','$2b$10$pQilqgGxmNxOSdsUTmAiTOUHHYidu6JvacMg.FUWwkLm8C/IG8wIi','2026-08-26 17:01:19','2026-08-26 17:01:19');
 /*!40000 ALTER TABLE `admins` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -95,13 +95,14 @@ CREATE TABLE `bookings` (
   `estimate_breakdown` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`estimate_breakdown`)),
   `privacy_agreed` tinyint(1) NOT NULL DEFAULT 0,
   `privacy_agreed_at` datetime DEFAULT NULL,
-  `status` enum('NEW','CONTACTED','CONFIRMED','DECLINED') NOT NULL DEFAULT 'NEW',
+  `status` enum('NEW','CONFIRMED','CANCELLED') NOT NULL DEFAULT 'NEW',
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `reference_code` (`reference_code`),
   KEY `idx_bookings_email` (`email`),
-  KEY `idx_bookings_status` (`status`)
+  KEY `idx_bookings_status` (`status`),
+  KEY `idx_bookings_preferred_date` (`preferred_date`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -111,9 +112,41 @@ CREATE TABLE `bookings` (
 
 LOCK TABLES `bookings` WRITE;
 /*!40000 ALTER TABLE `bookings` DISABLE KEYS */;
-INSERT INTO `bookings` VALUES (1,'JP-C94947','Vlad Neri','mereziko@gmail.com','090777777777','facebook/vladneri','Portrait','2026-08-31','rabot','67','67 uwu',NULL,NULL,1,'2026-08-26 18:46:48','DECLINED','2026-08-26 18:46:48','2026-08-28 21:41:45'),(2,'JP-A35A36','hAYXHSXH','email@gmail.com','0999999999','facebook.usernameyohooo','Christening','2026-08-30','wer','90','21212sadasd',NULL,NULL,1,'2026-08-28 21:41:22','CONFIRMED','2026-08-28 21:41:22','2026-09-02 16:11:06');
+INSERT INTO `bookings` VALUES (1,'JP-C94947','Vlad Neri','mereziko@gmail.com','090777777777','facebook/vladneri','Portrait','2026-08-31','rabot','67','67 uwu',NULL,NULL,1,'2026-08-26 18:46:48','CANCELLED','2026-08-26 18:46:48','2026-08-28 21:41:45'),(2,'JP-A35A36','hAYXHSXH','email@gmail.com','0999999999','facebook.usernameyohooo','Christening','2026-08-30','wer','90','21212sadasd',NULL,NULL,1,'2026-08-28 21:41:22','CONFIRMED','2026-08-28 21:41:22','2026-09-02 16:11:06');
 /*!40000 ALTER TABLE `bookings` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Table structure for table `calendar_events`
+--
+
+DROP TABLE IF EXISTS `calendar_events`;
+CREATE TABLE `calendar_events` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `booking_id` int(10) unsigned DEFAULT NULL,
+  `reference_code` varchar(24) NOT NULL,
+  `name` varchar(160) NOT NULL,
+  `email` varchar(160) DEFAULT NULL,
+  `phone` varchar(40) DEFAULT NULL,
+  `shoot_type` varchar(120) NOT NULL,
+  `event_date` date NOT NULL,
+  `location` varchar(200) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `status` enum('BOOKED','CANCELLED') NOT NULL DEFAULT 'BOOKED',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `booking_id` (`booking_id`),
+  UNIQUE KEY `reference_code` (`reference_code`),
+  KEY `idx_calendar_events_date_status` (`event_date`,`status`),
+  CONSTRAINT `fk_calendar_event_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT INTO `calendar_events` (`booking_id`,`reference_code`,`name`,`email`,`phone`,`shoot_type`,`event_date`,`location`,`notes`,`status`,`created_at`,`updated_at`)
+SELECT `id`, CONCAT('CAL-', `reference_code`), `name`, `email`, `phone`, `shoot_type`, `preferred_date`, `location`, `message`,
+       CASE WHEN `status` = 'CANCELLED' THEN 'CANCELLED' ELSE 'BOOKED' END, `created_at`, `updated_at`
+FROM `bookings`
+WHERE `status` IN ('CONFIRMED','CANCELLED') AND `preferred_date` IS NOT NULL;
 
 --
 -- Table structure for table `contact_platforms`
@@ -143,7 +176,7 @@ CREATE TABLE `contact_platforms` (
 
 LOCK TABLES `contact_platforms` WRITE;
 /*!40000 ALTER TABLE `contact_platforms` DISABLE KEYS */;
-INSERT INTO `contact_platforms` VALUES (1,'Instagram','See what we\'re currently obsessed with.','@jonathanphotography','https://instagram.com/jonathanphotography','instagram',1,1,'2026-08-26 17:01:20','2026-08-26 17:01:20'),(2,'Facebook','For the aunties, relatives, and everyone else.','Jonathan Photography','https://facebook.com/jonathanphotography','facebook',1,2,'2026-08-26 17:01:20','2026-08-26 17:01:20'),(3,'Phone / Viber','When typing feels like too much work.','0963-332-7847','tel:+639633327847','phone',1,3,'2026-08-26 17:01:20','2026-08-26 17:01:20'),(4,'Email','For the serious stuff. Or the not-so-serious stuff.','studio@jonathanphotography.com','mailto:studio@jonathanphotography.com','mail',1,4,'2026-08-26 17:01:20','2026-08-26 17:01:20');
+INSERT INTO `contact_platforms` VALUES (1,'Instagram','See what we\'re currently obsessed with.','@jonathanphotography','https://instagram.com/jonathanphotography','instagram',1,1,'2026-08-26 17:01:20','2026-08-26 17:01:20'),(2,'Facebook','For the aunties, relatives, and everyone else.','Jonathan Photography','https://facebook.com/jonathanphotography','facebook',1,2,'2026-08-26 17:01:20','2026-08-26 17:01:20'),(3,'Phone / Viber','When typing feels like too much work.','0963-332-7847','tel:+639633327847','phone',1,3,'2026-08-26 17:01:20','2026-08-26 17:01:20'),(4,'Email','For the serious stuff. Or the not-so-serious stuff.','mereziko@gmail.com','mailto:mereziko@gmail.com','mail',1,4,'2026-08-26 17:01:20','2026-08-26 17:01:20');
 /*!40000 ALTER TABLE `contact_platforms` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -225,7 +258,7 @@ CREATE TABLE `estimator_leads` (
   `total` decimal(10,2) NOT NULL,
   `booked` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
-  `status` varchar(50) DEFAULT 'New',
+  `status` enum('New','Booked','Lost') NOT NULL DEFAULT 'New',
   PRIMARY KEY (`id`),
   KEY `idx_leads_email` (`email`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -433,7 +466,7 @@ CREATE TABLE `site_settings` (
 
 LOCK TABLES `site_settings` WRITE;
 /*!40000 ALTER TABLE `site_settings` DISABLE KEYS */;
-INSERT INTO `site_settings` VALUES ('business_address','0013 Mc Arthur Hi-way, Brgy. Asan Norte, Sison, Pangasinan','2026-08-26 17:01:20'),('business_email','studio@jonathanphotography.com','2026-08-26 17:01:20'),('business_name','Jonathan Photography','2026-08-26 17:01:20'),('business_phone','0963-332-7847','2026-08-26 17:01:20'),('business_phone_alt','0927-776-3101','2026-08-26 17:01:20'),('business_tagline','Digital Photo & Video Coverage','2026-08-26 17:01:20');
+INSERT INTO `site_settings` VALUES ('business_address','0013 Mc Arthur Hi-way, Brgy. Asan Norte, Sison, Pangasinan','2026-08-26 17:01:20'),('business_email','mereziko@gmail.com','2026-08-26 17:01:20'),('business_name','Jonathan Photography','2026-08-26 17:01:20'),('business_phone','0963-332-7847','2026-08-26 17:01:20'),('business_phone_alt','0927-776-3101','2026-08-26 17:01:20'),('business_tagline','Digital Photo & Video Coverage','2026-08-26 17:01:20');
 /*!40000 ALTER TABLE `site_settings` ENABLE KEYS */;
 UNLOCK TABLES;
 

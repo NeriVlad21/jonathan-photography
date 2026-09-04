@@ -11,14 +11,18 @@ export default function Footer() {
 
   return (
     <footer className="footer">
+      <div className="footer__cta">
+        <p>Have something worth remembering?</p>
+        <Link to="/booking">Let’s photograph it. <span>↗</span></Link>
+      </div>
       <div className="footer__top">
-        <div className="footer__brand">JONATHAN <span>Photography</span></div>
+        <div className="footer__brand">jonathan <span>photography</span></div>
         <div className="footer__cols">
           <div className="footer__col">
             <h5>Explore</h5>
-            <Link to="/portfolio">Portfolio</Link>
+            <Link to="/portfolio">Work</Link>
             <Link to="/services">Services</Link>
-            <Link to="/estimator">Estimator</Link>
+            <Link to="/estimator">Estimate</Link>
             <Link to="/booking">Book a Session</Link>
           </div>
           <div className="footer__col">
@@ -36,7 +40,7 @@ export default function Footer() {
       </div>
       <div className="footer__bottom">
         <span>© {new Date().getFullYear()} Jonathan Photography. All rights reserved.</span>
-        <span>Digital Photo &amp; Video Coverage</span>
+        <span>Pangasinan, Philippines</span>
       </div>
     </footer>
   )

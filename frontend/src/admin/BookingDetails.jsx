@@ -32,12 +32,7 @@ import {
 import { useToast } from '../context/ToastContext.jsx'
 import LoadingState from '../components/LoadingState.jsx'
 
-const STATUSES = [
-  'NEW',
-  'CONTACTED',
-  'CONFIRMED',
-  'DECLINED'
-]
+const FINAL_STATUSES = ['CONFIRMED', 'CANCELLED']
 
 export default function BookingDetails() {
   const { id } = useParams()
@@ -48,6 +43,12 @@ export default function BookingDetails() {
     useState(null)
 
   const [updating, setUpdating] =
+    useState(false)
+
+  const [selectedStatus, setSelectedStatus] =
+    useState('')
+
+  const [finalAcknowledged, setFinalAcknowledged] =
     useState(false)
 
   /*
@@ -82,20 +83,8 @@ export default function BookingDetails() {
   ============================================================
   */
 
-  const changeStatus = async (nextStatus) => {
-    if (
-      nextStatus ===
-      booking?.status
-    ) {
-      return
-    }
-
-    const isSure =
-      window.confirm(
-        `Are you sure you want to change this booking to ${nextStatus}?`
-      )
-
-    if (!isSure) {
+  const changeStatus = async () => {
+    if (!selectedStatus || !finalAcknowledged) {
       return
     }
 
@@ -104,13 +93,16 @@ export default function BookingDetails() {
     try {
       await bookingsApi.updateStatus(
         id,
-        nextStatus
+        selectedStatus,
+        true
       )
 
       showToast(
-        `Marked as ${nextStatus}.`
+        `Booking finalized as ${selectedStatus}.`
       )
 
+      setSelectedStatus('')
+      setFinalAcknowledged(false)
       load()
     } catch (error) {
       showToast(
@@ -485,6 +477,162 @@ export default function BookingDetails() {
 
           opacity:
             0.55;
+        }
+
+        .booking-status-workflow {
+          display: grid;
+          gap: 18px;
+        }
+
+        .booking-status-workflow__intro {
+          max-width: 680px;
+        }
+
+        .booking-status-workflow__intro > span {
+          display: block;
+          margin-bottom: 4px;
+          color: var(--c-gray);
+          font-size: 0.68rem;
+          font-weight: 700;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+        }
+
+        .booking-status-workflow__intro > strong {
+          display: block;
+          font-size: 1.15rem;
+        }
+
+        .booking-status-workflow__intro p,
+        .booking-status-final p {
+          margin: 5px 0 0;
+          color: var(--c-gray);
+          line-height: 1.55;
+        }
+
+        .booking-status-button {
+          min-width: 230px;
+          padding: 14px 16px;
+          text-align: left;
+        }
+
+        .booking-status-button span,
+        .booking-status-button small {
+          display: block;
+        }
+
+        .booking-status-button span {
+          font-weight: 700;
+        }
+
+        .booking-status-button small {
+          margin-top: 3px;
+          color: var(--c-gray);
+          font-size: 0.74rem;
+        }
+
+        .booking-status-button--active {
+          background: var(--c-yellow);
+          border-color: var(--c-black);
+          color: var(--c-black);
+        }
+
+        .booking-status-button--active small {
+          color: rgba(17, 17, 15, 0.68);
+        }
+
+        .booking-final-toggle {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          width: fit-content;
+          cursor: pointer;
+        }
+
+        .booking-final-toggle--disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .booking-final-toggle input {
+          position: absolute;
+          opacity: 0;
+          pointer-events: none;
+        }
+
+        .booking-final-toggle__track {
+          position: relative;
+          width: 42px;
+          height: 24px;
+          flex: 0 0 42px;
+          border: 1px solid #aaa;
+          border-radius: 999px;
+          background: #dddcd7;
+          transition: background 0.2s ease;
+        }
+
+        .booking-final-toggle__track::after {
+          content: '';
+          position: absolute;
+          top: 3px;
+          left: 3px;
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background: #fff;
+          transition: transform 0.2s ease;
+        }
+
+        .booking-final-toggle input:checked + .booking-final-toggle__track {
+          background: var(--c-black);
+        }
+
+        .booking-final-toggle input:checked + .booking-final-toggle__track::after {
+          transform: translateX(18px);
+        }
+
+        .booking-final-toggle input:focus-visible + .booking-final-toggle__track {
+          outline: 3px solid rgba(242, 203, 5, 0.42);
+          outline-offset: 2px;
+        }
+
+        .booking-final-toggle strong,
+        .booking-final-toggle small {
+          display: block;
+        }
+
+        .booking-final-toggle small {
+          margin-top: 2px;
+          color: var(--c-gray);
+        }
+
+        .booking-status-submit {
+          width: fit-content;
+        }
+
+        .booking-status-submit:disabled {
+          opacity: 0.42;
+          cursor: not-allowed;
+        }
+
+        .booking-status-final {
+          display: flex;
+          gap: 14px;
+          align-items: flex-start;
+          padding: 18px;
+          border-left: 4px solid var(--c-yellow);
+          background: #f5f4ef;
+        }
+
+        .booking-status-final__icon {
+          display: grid;
+          place-items: center;
+          width: 40px;
+          height: 40px;
+          flex: 0 0 40px;
+          border-radius: 50%;
+          background: var(--c-black);
+          color: var(--c-yellow);
         }
 
         /*
@@ -906,49 +1054,73 @@ export default function BookingDetails() {
 
             <div className="booking-details-panel__body">
 
-              <div className="booking-status-actions">
+              {FINAL_STATUSES.includes(booking.status) ? (
+                <div className="booking-status-final">
+                  <span className="booking-status-final__icon">
+                    <ShieldCheck size={22} />
+                  </span>
+                  <div>
+                    <strong>This booking is finalized.</strong>
+                    <p>
+                      Its final outcome is {booking.status.toLowerCase()} and can no longer be changed.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="booking-status-workflow">
+                  <div className="booking-status-workflow__intro">
+                    <span>Current stage</span>
+                    <strong>New inquiry</strong>
+                    <p>
+                      Contact the client without changing this status. After they reply, choose the final outcome below.
+                    </p>
+                  </div>
 
-                {STATUSES.map(
-                  (item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      className={`
-                        booking-status-button
-                        ${
-                          item ===
-                          booking.status
-                            ? 'booking-status-button--active'
-                            : ''
-                        }
-                      `}
-                      disabled={
-                        updating ||
-                        item ===
-                          booking.status
-                      }
-                      onClick={() =>
-                        changeStatus(item)
-                      }
-                    >
-                      {item ===
-                        booking.status && (
-                        <Check
-                          size={14}
-                          style={{
-                            marginRight: 5,
-                            verticalAlign:
-                              'middle'
-                          }}
-                        />
-                      )}
+                  <div className="booking-status-actions" role="radiogroup" aria-label="Final booking outcome">
+                    {FINAL_STATUSES.map((item) => (
+                      <button
+                        key={item}
+                        type="button"
+                        role="radio"
+                        aria-checked={selectedStatus === item}
+                        className={`booking-status-button ${selectedStatus === item ? 'booking-status-button--active' : ''}`}
+                        disabled={updating}
+                        onClick={() => {
+                          setSelectedStatus(item)
+                          setFinalAcknowledged(false)
+                        }}
+                      >
+                        <span>{item === 'CONFIRMED' ? 'Confirm booking' : 'Cancel booking'}</span>
+                        <small>{item === 'CONFIRMED' ? 'The client accepted the booking.' : 'The booking will not proceed.'}</small>
+                      </button>
+                    ))}
+                  </div>
 
-                      {item}
-                    </button>
-                  )
-                )}
+                  <label className={`booking-final-toggle ${selectedStatus ? '' : 'booking-final-toggle--disabled'}`}>
+                    <input
+                      type="checkbox"
+                      checked={finalAcknowledged}
+                      disabled={!selectedStatus || updating}
+                      onChange={(event) => setFinalAcknowledged(event.target.checked)}
+                    />
+                    <span className="booking-final-toggle__track" aria-hidden="true" />
+                    <span>
+                      <strong>I understand this is the final status update.</strong>
+                      <small>Confirmed or cancelled bookings cannot be changed afterward.</small>
+                    </span>
+                  </label>
 
-              </div>
+                  <button
+                    type="button"
+                    className="btn btn--primary booking-status-submit"
+                    disabled={!selectedStatus || !finalAcknowledged || updating}
+                    onClick={changeStatus}
+                  >
+                    <ShieldCheck size={16} />
+                    {updating ? 'Finalizing…' : `Finalize as ${selectedStatus || 'selected status'}`}
+                  </button>
+                </div>
+              )}
 
             </div>
 

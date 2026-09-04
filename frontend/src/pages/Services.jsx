@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import LoadingState from '../components/LoadingState.jsx'
 import EmptyState from '../components/EmptyState.jsx'
+import PageHero from '../components/PageHero.jsx'
 import { servicesApi } from '../services/api.js'
 import { peso } from '../utils/format.js'
 
@@ -23,14 +24,16 @@ export default function Services() {
   }, {})
 
   return (
-    <section className="section" style={{ paddingTop: 'clamp(120px, 16vw, 180px)' }}>
-      <div className="container">
-        <span className="eyebrow">What We Offer</span>
-        <h1 className="display" style={{ fontSize: 'var(--fluid-h1)', margin: '14px 0 20px' }}>Services</h1>
-        <p style={{ color: 'var(--c-gray)', maxWidth: '56ch', fontSize: '1.05rem', marginBottom: 56 }}>
-          From full-day wedding coverage to the printed details that finish an
-          event. Not sure what you need? Build a custom estimate instead.
-        </p>
+    <>
+      <PageHero
+        eyebrow="Services / 02"
+        title="Coverage made for real life."
+        intro="From full-day weddings to portraits and event details. Start with a service, then shape it around the day you are planning."
+        note="Photo + video"
+      />
+
+      <section className="page-content">
+        <div className="container">
 
         {services === null && <LoadingState label="Loading services…" />}
         {services && services.length === 0 && <EmptyState title="Services are being updated." />}
@@ -57,10 +60,11 @@ export default function Services() {
           </div>
         ))}
 
-        <div style={{ textAlign: 'center', marginTop: 40 }}>
+        <div className="page-action">
           <Link to="/estimator" className="btn btn--primary">Build a Custom Estimate</Link>
         </div>
       </div>
-    </section>
+      </section>
+    </>
   )
 }

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import {
+  Link,
   NavLink,
   Outlet,
   useNavigate,
@@ -9,6 +10,7 @@ import {
 import {
   LayoutDashboard,
   CalendarCheck,
+  CalendarDays,
   TrendingUp,
   Images,
   Sparkles,
@@ -43,6 +45,11 @@ const NAV = [
         to: '/admin/bookings',
         label: 'Bookings',
         icon: CalendarCheck
+      },
+      {
+        to: '/admin/calendar',
+        label: 'Calendar',
+        icon: CalendarDays
       },
       {
         to: '/admin/leads',
@@ -126,7 +133,9 @@ export default function AdminLayout() {
   */
 
   const currentPage =
-    NAV
+    location.pathname === '/admin/profile'
+      ? 'Profile'
+      : NAV
       .flatMap((group) => group.links)
       .find((link) => {
         if (location.pathname === link.to) {
@@ -1337,11 +1346,8 @@ export default function AdminLayout() {
       <aside className="admin-sidebar">
 
         <div className="admin-sidebar__brand">
-          JONATHAN
-
-          <span>
-            Photography
-          </span>
+          <strong>jonathan</strong>
+          <span>photography / studio</span>
         </div>
 
         <nav className="admin-sidebar__nav">
@@ -1391,7 +1397,11 @@ export default function AdminLayout() {
 
         <div className="admin-sidebar__footer">
 
-          <div className="admin-sidebar__profile">
+          <Link
+            to="/admin/profile"
+            className="admin-sidebar__profile"
+            aria-label="Open admin profile"
+          >
 
             <div className="admin-sidebar__avatar">
               {admin?.username ? (
@@ -1416,7 +1426,7 @@ export default function AdminLayout() {
 
             </div>
 
-          </div>
+          </Link>
 
           <button
             type="button"

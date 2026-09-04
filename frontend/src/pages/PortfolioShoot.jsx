@@ -138,7 +138,7 @@ export default function PortfolioShoot() {
         .marquee-content {
           display: inline-block;
           animation: marquee 25s linear infinite;
-          font-family: serif;
+          font-family: var(--font-body);
           font-size: 1.5rem;
           color: #000;
           text-transform: uppercase;

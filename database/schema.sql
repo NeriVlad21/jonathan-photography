@@ -166,11 +166,12 @@ CREATE TABLE bookings (
   estimate_breakdown JSON NULL,
   privacy_agreed TINYINT(1) NOT NULL DEFAULT 0,
   privacy_agreed_at DATETIME NULL,
-  status ENUM('NEW','CONTACTED','CONFIRMED','DECLINED') NOT NULL DEFAULT 'NEW',
+  status ENUM('NEW','CONFIRMED','CANCELLED') NOT NULL DEFAULT 'NEW',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_bookings_email (email),
-  INDEX idx_bookings_status (status)
+  INDEX idx_bookings_status (status),
+  INDEX idx_bookings_preferred_date (preferred_date)
 ) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------
@@ -186,6 +187,27 @@ CREATE TABLE booking_addons (
 ) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------
+-- calendar_events  (admin-owned confirmed studio schedule)
+-- ------------------------------------------------------------
+CREATE TABLE calendar_events (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  booking_id INT UNSIGNED NULL UNIQUE,
+  reference_code VARCHAR(24) NOT NULL UNIQUE,
+  name VARCHAR(160) NOT NULL,
+  email VARCHAR(160) NULL,
+  phone VARCHAR(40) NULL,
+  shoot_type VARCHAR(120) NOT NULL,
+  event_date DATE NOT NULL,
+  location VARCHAR(200) NULL,
+  notes TEXT NULL,
+  status ENUM('BOOKED','CANCELLED') NOT NULL DEFAULT 'BOOKED',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_calendar_events_date_status (event_date, status),
+  CONSTRAINT fk_calendar_event_booking FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- ------------------------------------------------------------
 -- estimator_leads
 -- ------------------------------------------------------------
 DROP TABLE IF EXISTS estimator_leads;
@@ -198,6 +220,7 @@ CREATE TABLE estimator_leads (
   service_type VARCHAR(120) NULL,
   total DECIMAL(10,2) NOT NULL,
   booked TINYINT(1) NOT NULL DEFAULT 0,
+  status ENUM('New','Booked','Lost') NOT NULL DEFAULT 'New',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_leads_email (email)
 ) ENGINE=InnoDB;

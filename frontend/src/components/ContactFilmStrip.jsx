@@ -30,19 +30,18 @@ export default function ContactFilmStrip() {
             rel="noreferrer"
             className="filmstrip__frame"
           >
-            <div className="filmstrip__sprockets" aria-hidden="true">
-              <span /><span /><span /><span />
-            </div>
-            <div>
-              <span className="filmstrip__index">FRAME {String(i + 1).padStart(2, '0')}</span>
-              <div className="filmstrip__label">
-                <Icon size={22} style={{ marginRight: 12, verticalAlign: '-4px', color: '#F5D000' }} />
-                {p.label}
+            <span className="filmstrip__index">{String(i + 1).padStart(2, '0')}</span>
+            <div className="filmstrip__content">
+              <div className="filmstrip__copy">
+                <div className="filmstrip__label">
+                  <Icon size={18} aria-hidden="true" />
+                  {p.label}
+                </div>
+                {p.tagline && <p className="filmstrip__tagline">{p.tagline}</p>}
               </div>
-              {p.tagline && <p className="filmstrip__tagline">"{p.tagline}"</p>}
               {p.handle && <p className="filmstrip__handle">{p.handle}</p>}
-              <span className="text-link" style={{ color: '#F7F7F5' }}>Open {p.label} →</span>
             </div>
+            <span className="filmstrip__arrow" aria-hidden="true">↗</span>
           </a>
         )
       })}

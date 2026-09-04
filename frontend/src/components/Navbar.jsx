@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 
 const LINKS = [
@@ -10,8 +10,10 @@ const LINKS = [
 ]
 
 export default function Navbar() {
+  const location = useLocation()
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
+  const isWorkIndex = location.pathname === '/portfolio'
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -27,9 +29,9 @@ export default function Navbar() {
 
   return (
     <>
-      <header className={`navbar ${scrolled ? 'navbar--scrolled' : ''}`}>
+      <header className={`navbar ${isWorkIndex ? 'navbar--work' : ''} ${scrolled ? 'navbar--scrolled' : ''}`}>
         <Link to="/" className="navbar__logo">
-          JONATHAN <span>Photography</span>
+          <strong>jonathan</strong><span>photography</span>
         </Link>
 
         <nav className="navbar__links" aria-label="Primary">
@@ -41,7 +43,7 @@ export default function Navbar() {
         </nav>
 
         <div className="navbar__right">
-          <Link to="/booking" className="btn btn--primary btn--sm">Book Now</Link>
+          <Link to="/booking" className="btn btn--primary btn--sm">Book a session</Link>
           <button className="navbar__toggle" onClick={() => setOpen(true)} aria-label="Open menu">
             <Menu size={24} />
           </button>
@@ -54,7 +56,9 @@ export default function Navbar() {
             <X size={28} />
           </button>
           {LINKS.map((l) => (
-            <Link key={l.to} to={l.to} onClick={() => setOpen(false)}>{l.label}</Link>
+            <Link key={l.to} to={l.to} onClick={() => setOpen(false)}>
+              {l.label}
+            </Link>
           ))}
           <Link to="/booking" onClick={() => setOpen(false)} className="btn btn--primary" style={{ marginTop: 20 }}>
             Book Now

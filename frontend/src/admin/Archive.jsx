@@ -12,6 +12,7 @@ import {
 import LoadingState from '../components/LoadingState.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import html2pdf from 'html2pdf.js'
+import { CalendarArchivePanel } from './AdminBookingCalendar.jsx'
 
 const TIMEFRAMES = [
   {
@@ -79,6 +80,11 @@ export default function Archive() {
     setData(null)
 
     try {
+      if (activeTab === 'calendar') {
+        setData([])
+        return
+      }
+
       if (activeTab === 'bookings') {
         const result =
           await bookingsApi.list({
@@ -214,6 +220,8 @@ export default function Archive() {
 
           gap: 18px;
 
+          flex-wrap: wrap;
+
           margin-bottom: 20px;
 
           padding:
@@ -234,13 +242,18 @@ export default function Archive() {
         */
 
         .archive-tabs {
-          display: flex;
+          display: grid;
+
+          grid-template-columns:
+            repeat(3, minmax(0, 1fr));
 
           align-items: center;
 
           gap: 5px;
 
           min-width: 0;
+
+          width: 100%;
 
           padding: 4px;
 
@@ -256,6 +269,7 @@ export default function Archive() {
         }
 
         .archive-tab {
+          width: 100%;
           min-height: 38px;
 
           padding:
@@ -593,10 +607,7 @@ export default function Archive() {
             display: grid;
 
             grid-template-columns:
-              repeat(
-                2,
-                minmax(0, 1fr)
-              );
+              1fr;
           }
 
           .archive-tab {
@@ -718,10 +729,19 @@ export default function Archive() {
                 Archived Estimator Leads
               </button>
 
+              <button
+                type="button"
+                className={`archive-tab ${activeTab === 'calendar' ? 'archive-tab--active' : ''}`}
+                onClick={() => setActiveTab('calendar')}
+              >
+                Calendar Archive
+              </button>
+
             </div>
 
             {/* FILTERS */}
 
+            {activeTab !== 'calendar' && (
             <div className="archive-filters">
 
               <span className="archive-filter-label">
@@ -769,14 +789,19 @@ export default function Archive() {
               </button>
 
             </div>
+            )}
 
           </div>
+
+          {activeTab === 'calendar' && (
+            <CalendarArchivePanel />
+          )}
 
           {/* ====================================================
               LOADING
           ==================================================== */}
 
-          {data === null && (
+          {activeTab !== 'calendar' && data === null && (
             <LoadingState
               label="Loading archive data…"
             />
@@ -786,7 +811,7 @@ export default function Archive() {
               EMPTY
           ==================================================== */}
 
-          {data &&
+          {activeTab !== 'calendar' && data &&
             data.length === 0 && (
               <EmptyState
                 title="No archived records found."
@@ -798,7 +823,7 @@ export default function Archive() {
               DATA
           ==================================================== */}
 
-          {data &&
+          {activeTab !== 'calendar' && data &&
             data.length > 0 && (
               <div
                 className="admin-panel archive-panel"
