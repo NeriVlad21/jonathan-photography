@@ -6,6 +6,7 @@ import { estimatorApi } from '../services/api.js'
 import { useToast } from '../context/ToastContext.jsx'
 import LoadingState from './LoadingState.jsx'
 import PrivacyModal from './PrivacyModal.jsx'
+import { saveBookingEstimate } from '../utils/bookingEstimate.js'
 
 export default function Estimator({ estimator }) {
   const navigate = useNavigate()
@@ -109,7 +110,10 @@ export default function Estimator({ estimator }) {
   // ACTIONS
   // ============================================================
 
-  const handleBookEstimate = () => navigate('/booking', { state: { estimate: dynamicBreakdown } })
+  const handleBookEstimate = () => {
+    saveBookingEstimate(dynamicBreakdown)
+    navigate('/booking', { state: { estimate: dynamicBreakdown } })
+  }
   const handleFormSubmit = (e) => { e.preventDefault(); setPrivacyModalOpen(true) }
 
   const handleFinalSubmit = async () => {

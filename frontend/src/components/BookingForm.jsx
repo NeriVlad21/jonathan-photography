@@ -1,14 +1,10 @@
 import React, { useState, useRef } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { bookingsApi } from '../services/api.js'
 import { peso, formatDate } from '../utils/format.js'
 import { useToast } from '../context/ToastContext.jsx'
 import AvailabilityCalendar from './AvailabilityCalendar.jsx'
-
-const SHOOT_TYPES = [
-  'Wedding', 'Engagement', 'Birthday', 'Christening', 'Debut',
-  'Burial', 'Event', 'Portrait', 'Photo Booth', 'Photo & Video', 'Other'
-]
+import { clearBookingEstimate } from '../utils/bookingEstimate.js'
 
 const initialState = {
   name: '', email: '', phone: '', facebook: '',
@@ -17,15 +13,13 @@ const initialState = {
   website: '' // honeypot
 }
 
-export default function BookingForm() {
-  const location = useLocation()
+export default function BookingForm({ estimate, onChangeEstimate }) {
   const navigate = useNavigate()
   const { showToast } = useToast()
-  const estimate = location.state?.estimate || null
 
   const [form, setForm] = useState({
     ...initialState,
-    shoot_type: estimate?.service_type || ''
+    shoot_type: estimate.service.name
   })
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
@@ -75,6 +69,7 @@ export default function BookingForm() {
         estimate_breakdown: estimate || null
       }
       const data = await bookingsApi.create(payload)
+      clearBookingEstimate()
       navigate('/booking/success', { state: { name: form.name, reference: data.reference } })
     } catch (err) {
       showToast(err.message, 'error')
@@ -122,11 +117,9 @@ export default function BookingForm() {
         <div className="booking-schedule-row">
           <div className="booking-request-fields">
             <div className="field">
-              <label htmlFor="shoot_type">Shoot Type</label>
-              <select id="shoot_type" className={errors.shoot_type ? 'has-error' : ''} value={form.shoot_type} onChange={update('shoot_type')}>
-                <option value="">Select one</option>
-                {SHOOT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
+              <label htmlFor="shoot_type">Shoot Type (from your estimate)</label>
+              <input id="shoot_type" value={form.shoot_type} readOnly />
+              <button type="button" className="field-help-link" onClick={onChangeEstimate}>Change estimate</button>
               {errors.shoot_type && <span className="field-error">{errors.shoot_type}</span>}
             </div>
             <div className="booking-date-instruction">
@@ -223,9 +216,13 @@ export default function BookingForm() {
       </form>
 
       <aside className="booking-summary-card">
-        <h4>{estimate ? 'Your Estimate' : 'This is a request, not a reservation'}</h4>
-        {estimate ? (
-          <div>
+        <h4>Your Estimate</h4>
+        <div>
+            {estimate.service && (
+              <div className="estimate-summary__line" style={{ color: '#1A1A1A', borderColor: 'var(--c-hairline)' }}>
+                <span>{estimate.service.name}</span><span>{peso(estimate.service.price)}</span>
+              </div>
+            )}
             {estimate.hours && (
               <div className="estimate-summary__line" style={{ color: '#1A1A1A', borderColor: 'var(--c-hairline)' }}>
                 <span>{estimate.hours.label}</span><span>{peso(estimate.hours.price)}</span>
@@ -239,13 +236,10 @@ export default function BookingForm() {
             <div className="estimate-summary__total" style={{ color: '#0A0A0A' }}>
               <span>Total</span><strong style={{ color: '#0A0A0A' }}>{peso(estimate.total)}</strong>
             </div>
+            <p className="booking-summary-card__note">
+              This is a preliminary estimate. The studio will review it before confirming the final quotation.
+            </p>
           </div>
-        ) : (
-          <p style={{ color: 'var(--c-gray)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-            Submitting this form sends us an inquiry — it doesn't lock in a date.
-            We'll personally review your request and follow up to confirm availability.
-          </p>
-        )}
       </aside>
     </div>
   )

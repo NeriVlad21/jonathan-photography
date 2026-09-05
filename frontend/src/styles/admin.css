@@ -494,8 +494,23 @@ body .admin-login-page {
 .booking-calendar-add:hover { background: #f1f0ec; }
 .booking-calendar-summary { display: flex; flex-wrap: wrap; gap: 18px; padding: 14px 0 2px; color: var(--admin-muted); font-size: 0.72rem; }
 .booking-calendar-summary span { display: inline-flex; align-items: center; gap: 6px; }
+.booking-calendar-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 18px;
+  padding: 18px;
+  border-left: 4px solid #a7463d;
+  background: #f7e5e3;
+  color: #7b211b;
+}
+.booking-calendar-error strong,
+.booking-calendar-error span { display: block; }
+.booking-calendar-error span { margin-top: 4px; font-size: 0.82rem; }
 .booking-calendar-summary i { width: 9px; height: 9px; border-radius: 50%; }
 .booking-calendar-summary i.upcoming { background: var(--c-yellow); border: 1px solid var(--admin-ink); }
+.booking-calendar-summary i.requested { background: #7aa7d8; }
 .booking-calendar-summary i.finished { background: #527a59; }
 .booking-calendar-summary i.cancelled { background: #a7463d; }
 .booking-calendar-summary strong { color: var(--admin-ink); }
@@ -534,6 +549,7 @@ body .admin-login-page {
 .calendar-event-card h3 { margin: 4px 0 0; font-size: 1.25rem; }
 .calendar-progress { padding: 5px 8px; border: 1px solid currentColor; border-radius: 999px; font-size: 0.6rem; font-weight: 800; text-transform: uppercase; }
 .calendar-progress--upcoming { color: #705d00; background: #fff8cc; }
+.calendar-progress--requested { color: #285781; background: #e6f1fb; }
 .calendar-progress--finished { color: #276033; background: #e4f4e6; }
 .calendar-progress--cancelled { color: #8a2720; background: #f7e5e3; }
 .calendar-event-card dl { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; margin: 15px 0; }
@@ -542,7 +558,11 @@ body .admin-login-page {
 .calendar-event-card dd { margin: 4px 0 0; overflow-wrap: anywhere; font-size: 0.8rem; }
 .calendar-event-card > p { padding: 10px; background: #fff; color: var(--admin-muted); font-size: 0.76rem; line-height: 1.5; }
 .calendar-event-card__actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
-.calendar-event-cancel { padding: 0; border: 0; border-bottom: 1px solid currentColor; background: transparent; color: #8a2720; font: inherit; font-size: 0.72rem; font-weight: 700; cursor: pointer; }
+.calendar-event-card__status-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.calendar-event-confirm,
+.calendar-event-cancel { padding: 0; border: 0; border-bottom: 1px solid currentColor; background: transparent; font: inherit; font-size: 0.72rem; font-weight: 700; cursor: pointer; }
+.calendar-event-confirm { color: #276033; }
+.calendar-event-cancel { color: #8a2720; }
 
 .calendar-schedule-dialog {
   position: relative;
@@ -602,6 +622,7 @@ body .admin-login-page {
   .calendar-event-card dl { grid-template-columns: 1fr; }
   .calendar-schedule-grid { grid-template-columns: 1fr; }
   .calendar-schedule-dialog { box-shadow: 7px 7px 0 var(--c-yellow); }
+  .booking-calendar-error { align-items: stretch; flex-direction: column; }
 }
 
 /* Compact dashboard and non-scrolling navigation */
@@ -931,4 +952,180 @@ body .admin-login-page {
   .admin-profile-current-password > span,
   .admin-profile-actions { align-items: flex-start; flex-direction: column; }
   .admin-profile-actions .btn { width: 100%; }
+}
+
+/* ============================================================
+   RESPONSIVE ADMIN WORKSPACE
+   ============================================================ */
+.admin-shell .admin-topbar {
+  border-bottom: 0;
+  box-shadow: 0 8px 28px rgba(17, 17, 15, 0.06);
+}
+.admin-shell .admin-panel,
+.admin-shell .dashboard-panel,
+.admin-shell .bookings-panel,
+.admin-shell .booking-details-panel,
+.admin-shell .services-editor,
+.admin-shell .services-list-panel,
+.admin-shell .estimator-settings-panel,
+.admin-shell .estimator-leads-panel,
+.admin-shell .archive-panel,
+.admin-shell .portfolio-admin__sidebar,
+.admin-shell .portfolio-admin__main,
+.admin-shell .contact-editor,
+.admin-shell .contact-list-panel {
+  border-color: transparent;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(17, 17, 15, 0.055);
+}
+.admin-shell .dashboard-stat {
+  border-color: transparent;
+  border-radius: 12px;
+  box-shadow: 0 5px 20px rgba(17, 17, 15, 0.05);
+}
+.admin-shell .dashboard-stat:first-child { border-color: transparent; }
+.admin-shell .dashboard-header,
+.admin-shell .services-manager-intro,
+.admin-shell .estimator-settings-intro,
+.admin-shell .estimator-leads-intro,
+.admin-shell .portfolio-admin__header,
+.admin-booking-calendar-hero,
+.admin-profile-hero { border-bottom: 0; }
+.admin-shell .bookings-toolbar,
+.admin-shell .estimator-leads-toolbar,
+.admin-shell .archive-toolbar,
+.booking-calendar-workspace {
+  border-color: transparent;
+  border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(17, 17, 15, 0.05);
+}
+.admin-shell .btn,
+.admin-shell button,
+.admin-shell input,
+.admin-shell select,
+.admin-shell textarea { touch-action: manipulation; }
+.admin-shell .btn { border-radius: 8px; }
+
+@media (max-width: 760px) {
+  .admin-shell { min-width: 0; }
+  .admin-main { width: 100%; min-width: 0; }
+  .admin-shell .admin-content,
+  .admin-shell .dashboard-page,
+  .admin-shell .portfolio-admin,
+  .admin-shell .bookings-page,
+  .admin-shell .booking-details-page,
+  .admin-shell .services-manager-page,
+  .admin-shell .estimator-settings-page,
+  .admin-shell .estimator-leads-page,
+  .admin-shell .contact-manager-page,
+  .admin-shell .archive-page {
+    width: 100% !important;
+    max-width: none !important;
+    padding: 22px 14px 38px !important;
+  }
+
+  .admin-shell .admin-sidebar {
+    position: fixed !important;
+    inset: 0 auto 0 0 !important;
+    z-index: 110 !important;
+    width: min(86vw, 320px) !important;
+    height: 100svh !important;
+    overflow: hidden !important;
+  }
+  .admin-shell .admin-sidebar__nav {
+    display: block !important;
+    overflow-y: auto !important;
+    padding: 12px !important;
+  }
+  .admin-shell .admin-sidebar__group { display: block !important; margin-bottom: 14px !important; }
+  .admin-shell .admin-sidebar__section { display: block !important; }
+  .admin-shell .admin-sidebar__link {
+    justify-content: flex-start !important;
+    min-height: 44px !important;
+    font-size: 0.9rem !important;
+  }
+  .admin-shell .admin-sidebar__footer { display: block !important; }
+  .admin-shell .admin-sidebar__profile-label { display: block; }
+
+  .admin-shell .admin-topbar { min-height: 64px; }
+  .admin-shell .admin-search__input { min-height: 44px; font-size: 1rem; }
+  .admin-shell input:not([type="checkbox"]):not([type="radio"]),
+  .admin-shell textarea,
+  .admin-shell select { min-height: 44px; font-size: 1rem; }
+
+  .admin-shell .dashboard-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .admin-shell .dashboard-stat { min-height: 106px; padding: 16px; }
+  .admin-shell .dashboard-stat__value { font-size: clamp(1.55rem, 8vw, 2.15rem); }
+  .admin-shell .dashboard-chart { height: 190px; overflow-x: auto; }
+
+  .admin-booking-calendar-hero,
+  .admin-profile-hero,
+  .booking-details-hero { align-items: flex-start; flex-direction: column; gap: 16px; }
+  .admin-booking-calendar-hero h2,
+  .admin-profile-hero h2,
+  .booking-details-hero__title,
+  .portfolio-admin__title { font-size: clamp(2rem, 10vw, 3rem) !important; line-height: 0.98 !important; }
+
+  .admin-shell .bookings-toolbar,
+  .admin-shell .estimator-leads-toolbar,
+  .admin-shell .archive-toolbar,
+  .admin-shell .portfolio-admin__controls,
+  .admin-shell .services-form-actions,
+  .admin-shell .admin-profile-actions { align-items: stretch; flex-direction: column; }
+  .admin-shell .bookings-toolbar > *,
+  .admin-shell .estimator-leads-toolbar > *,
+  .admin-shell .archive-toolbar > *,
+  .admin-shell .portfolio-admin__controls > *,
+  .admin-shell .services-form-actions > * { width: 100%; }
+
+  .admin-shell .data-table-wrap,
+  .admin-shell .bookings-table-wrap,
+  .admin-shell .archive-table-wrap,
+  .admin-shell .estimator-leads-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+  .admin-shell .data-table,
+  .admin-shell .bookings-table,
+  .admin-shell .archive-table,
+  .admin-shell .estimator-leads-table { min-width: 720px; }
+
+  .admin-shell .manager-columns,
+  .admin-shell .services-form-grid,
+  .admin-shell .portfolio-admin__workspace,
+  .admin-shell .admin-profile-fields,
+  .calendar-schedule-grid { grid-template-columns: 1fr !important; }
+  .admin-shell .image-grid,
+  .admin-shell .portfolio-admin__images { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .admin-shell .image-tile__actions,
+  .admin-shell .portfolio-admin__image-actions { opacity: 1; }
+
+  .calendar-event-dialog,
+  .calendar-schedule-dialog,
+  .lead-status-dialog {
+    width: calc(100% - 24px);
+    max-height: calc(100svh - 24px);
+    padding: 22px 18px;
+    border-radius: 12px;
+    box-shadow: none;
+  }
+  .calendar-event-dialog > h2,
+  .calendar-schedule-dialog h2,
+  .lead-status-dialog h2 { font-size: clamp(1.75rem, 8vw, 2.35rem); }
+}
+
+@media (max-width: 420px) {
+  .admin-shell .dashboard-stat-grid { grid-template-columns: 1fr; }
+  .admin-shell .dashboard-stat { min-height: 90px; }
+  .admin-shell .image-grid,
+  .admin-shell .portfolio-admin__images { grid-template-columns: 1fr !important; }
+  .admin-shell .admin-panel__head,
+  .admin-shell .dashboard-panel__header,
+  .admin-shell .services-editor__head,
+  .admin-shell .services-list-header,
+  .admin-shell .estimator-settings-panel__head,
+  .admin-shell .portfolio-admin__main-header { align-items: flex-start; flex-direction: column; gap: 10px; }
 }

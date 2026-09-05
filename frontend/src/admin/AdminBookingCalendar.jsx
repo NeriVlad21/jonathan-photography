@@ -15,6 +15,7 @@ const parseDateKey = (key) => {
 
 const eventProgress = (event) => {
   if (event.status === 'CANCELLED') return 'Cancelled'
+  if (event.status === 'REQUESTED') return 'Requested'
   return event.preferred_date < toDateKey(new Date()) ? 'Finished' : 'Upcoming'
 }
 
@@ -69,6 +70,16 @@ function CalendarEventDialog({ date, events, onClose, onEventUpdated }) {
                 {event.message && <p>{event.message}</p>}
                 <div className="calendar-event-card__actions">
                   {event.booking_id && <Link to={`/admin/bookings/${event.booking_id}`} className="text-link">Open booking request →</Link>}
+                  {event.status === 'REQUESTED' && event.calendar_event_id && (
+                    <div className="calendar-event-card__status-actions">
+                      <button type="button" className="calendar-event-confirm" onClick={() => onEventUpdated(event.calendar_event_id, 'BOOKED')}>
+                        Confirm booking
+                      </button>
+                      <button type="button" className="calendar-event-cancel" onClick={() => onEventUpdated(event.calendar_event_id, 'CANCELLED')}>
+                        Cancel request
+                      </button>
+                    </div>
+                  )}
                   {event.status === 'BOOKED' && event.calendar_event_id && (
                     <button type="button" className="calendar-event-cancel" onClick={() => onEventUpdated(event.calendar_event_id, 'CANCELLED')}>
                       Mark event cancelled
@@ -208,6 +219,7 @@ function CalendarWorkspace({ archive = false }) {
     ? new Date(now.getFullYear(), now.getMonth() - 1, 1)
     : new Date(now.getFullYear(), now.getMonth(), 1))
   const [events, setEvents] = useState(null)
+  const [loadError, setLoadError] = useState('')
   const [selectedDay, setSelectedDay] = useState(null)
   const [exportRange, setExportRange] = useState('monthly')
   const [exporting, setExporting] = useState(false)
@@ -219,10 +231,29 @@ function CalendarWorkspace({ archive = false }) {
   useEffect(() => {
     let active = true
     setEvents(null)
+    setLoadError('')
     const bounds = monthBounds(month)
-    bookingsApi.calendar(bounds.start, bounds.end)
-      .then((data) => { if (active) setEvents(Array.isArray(data) ? data : []) })
-      .catch(() => { if (active) setEvents([]) })
+
+    const loadCalendar = async () => {
+      let lastError = null
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          const data = await bookingsApi.calendar(bounds.start, bounds.end)
+          if (active) setEvents(Array.isArray(data) ? data : [])
+          return
+        } catch (error) {
+          lastError = error
+          if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 350 * (attempt + 1)))
+        }
+      }
+
+      if (active) {
+        setEvents([])
+        setLoadError(lastError?.message || 'The booking calendar could not be loaded.')
+      }
+    }
+
+    loadCalendar()
     return () => { active = false }
   }, [month, refreshKey])
 
@@ -269,13 +300,13 @@ function CalendarWorkspace({ archive = false }) {
   const totals = (events || []).reduce((counts, event) => {
     counts[eventProgress(event).toLowerCase()] += 1
     return counts
-  }, { upcoming: 0, finished: 0, cancelled: 0 })
+  }, { requested: 0, upcoming: 0, finished: 0, cancelled: 0 })
 
   return (
     <div className={`booking-calendar-workspace ${archive ? 'booking-calendar-workspace--archive' : ''}`}>
       <div className="booking-calendar-toolbar">
         <div>
-          <span>{archive ? 'Monthly records' : 'Confirmed schedule'}</span>
+          <span>{archive ? 'Monthly records' : 'Requests + confirmed schedule'}</span>
           <strong>{archive ? 'Calendar archive' : 'Studio booking calendar'}</strong>
         </div>
         <div className="booking-calendar-toolbar__actions">
@@ -298,12 +329,21 @@ function CalendarWorkspace({ archive = false }) {
       </div>
 
       <div className="booking-calendar-summary">
+        <span><i className="requested" /> Requested <strong>{totals.requested}</strong></span>
         <span><i className="upcoming" /> Upcoming <strong>{totals.upcoming}</strong></span>
         <span><i className="finished" /> Finished <strong>{totals.finished}</strong></span>
         <span><i className="cancelled" /> Cancelled <strong>{totals.cancelled}</strong></span>
       </div>
 
-      {events === null ? <LoadingState label="Loading booking calendar…" /> : (
+      {loadError ? (
+        <div className="booking-calendar-error" role="alert">
+          <div>
+            <strong>Calendar data could not be loaded.</strong>
+            <span>{loadError}</span>
+          </div>
+          <button type="button" className="btn" onClick={() => setRefreshKey((key) => key + 1)}>Retry</button>
+        </div>
+      ) : events === null ? <LoadingState label="Loading booking calendar…" /> : (
         <MonthCalendar
           month={month}
           onMonthChange={setMonth}
@@ -353,7 +393,7 @@ export default function AdminBookingCalendar() {
           <div>
             <span>Bookings / Schedule</span>
             <h2>Calendar</h2>
-            <p>Confirmed work, completed events, and cancellations in one monthly view.</p>
+            <p>New requests, confirmed work, manual bookings, and cancellations in one synchronized view.</p>
           </div>
           <CalendarDays size={34} />
         </header>

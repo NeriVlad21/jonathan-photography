@@ -198,12 +198,23 @@ export default function Portfolio() {
 
       {categories && categories.length > 0 && (
         <nav className="work-index" aria-label="Portfolio categories">
-          <p>Explore by collection</p>
-          <div>
+          <div className="work-index__heading">
+            <p>Explore by collection</p>
+            <h2>Choose a story.</h2>
+            <span>Browse the work by the kind of moment you want to remember.</span>
+          </div>
+          <div className="work-index__grid">
             {categories.map((category, index) => (
-              <Link key={category.id} to={`/portfolio/${category.slug}`}>
-                <span>{String(index + 1).padStart(2, '0')}</span>
-                {category.name}
+              <Link key={category.id} to={`/portfolio/${category.slug}`} className="work-index__card">
+                <img
+                  src={assetUrl(temporaryPhotosForCategory(category.slug, category.name)[0].image_path)}
+                  alt=""
+                  loading="lazy"
+                />
+                <span className="work-index__shade" aria-hidden="true" />
+                <span className="work-index__number">{String(index + 1).padStart(2, '0')}</span>
+                <span className="work-index__name">{category.name}</span>
+                <span className="work-index__arrow" aria-hidden="true">↗</span>
               </Link>
             ))}
           </div>

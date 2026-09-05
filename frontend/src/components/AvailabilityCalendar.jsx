@@ -14,6 +14,8 @@ export default function AvailabilityCalendar({ value, onChange, error }) {
     return new Date(now.getFullYear(), now.getMonth(), 1)
   })
   const [unavailableDates, setUnavailableDates] = useState([])
+  const [requestedDates, setRequestedDates] = useState([])
+  const [bookedDates, setBookedDates] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
 
@@ -29,11 +31,17 @@ export default function AvailabilityCalendar({ value, onChange, error }) {
     setLoadError(false)
     bookingsApi.availability(monthKey(month))
       .then((data) => {
-        if (active) setUnavailableDates(data?.unavailable_dates || [])
+        if (active) {
+          setUnavailableDates(data?.unavailable_dates || [])
+          setRequestedDates(data?.requested_dates || [])
+          setBookedDates(data?.booked_dates || [])
+        }
       })
       .catch(() => {
         if (active) {
           setUnavailableDates([])
+          setRequestedDates([])
+          setBookedDates([])
           setLoadError(true)
         }
       })
@@ -62,6 +70,8 @@ export default function AvailabilityCalendar({ value, onChange, error }) {
         selectedDate={value}
         onDayClick={(date) => onChange(date)}
         unavailableDates={unavailableDates}
+        requestedDates={requestedDates}
+        bookedDates={bookedDates}
         minimumDate={toDateKey(new Date())}
         availabilityMode
         compact
@@ -70,12 +80,13 @@ export default function AvailabilityCalendar({ value, onChange, error }) {
 
       <div className="availability-picker__legend">
         <span><i className="is-available" /> Available</span>
-        <span><i className="is-booked" /> Booked</span>
+        <span><i className="is-requested" /> Request pending</span>
+        <span><i className="is-booked" /> Confirmed</span>
         <span><i className="is-selected" /> Selected</span>
       </div>
 
       <p className="availability-picker__note">
-        Select an available day for your request. The date is reserved only after the studio confirms it.
+        Pending and confirmed dates cannot accept another request. A cancelled request makes its date available again.
       </p>
       {error && <span className="field-error">{error}</span>}
     </div>

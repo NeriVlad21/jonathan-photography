@@ -18,6 +18,7 @@ import {
   AtSign,
   LogOut,
   Search,
+  Menu,
   X,
   Archive,
   User,
@@ -110,6 +111,7 @@ export default function AdminLayout() {
   const [searchResults, setSearchResults] = useState(null)
   const [isSearching, setIsSearching] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [isNavOpen, setIsNavOpen] = useState(false)
 
   const searchRef = useRef(null)
 
@@ -241,7 +243,13 @@ export default function AdminLayout() {
 
   useEffect(() => {
     setIsSearchOpen(false)
+    setIsNavOpen(false)
   }, [location.pathname])
+
+  useEffect(() => {
+    document.body.style.overflow = isNavOpen ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [isNavOpen])
 
   /*
   ============================================================
@@ -1155,6 +1163,12 @@ export default function AdminLayout() {
             0;
         }
 
+        .admin-nav-toggle,
+        .admin-sidebar__close,
+        .admin-nav-backdrop {
+          display: none;
+        }
+
         /*
         ============================================================
         RESPONSIVE
@@ -1188,131 +1202,86 @@ export default function AdminLayout() {
 
         @media (max-width: 760px) {
 
-          .admin-shell {
-            display:
-              block;
+          .admin-shell { display: block; }
+
+          .admin-shell .admin-sidebar {
+            position: fixed;
+            inset: 0 auto 0 0;
+            width: min(86vw, 320px);
+            height: 100svh;
+            max-height: none;
+            overflow: hidden;
+            transform: translateX(-102%);
+            transition: transform 240ms ease;
+            box-shadow: 18px 0 50px rgba(0, 0, 0, 0.24);
           }
 
-          .admin-sidebar {
-            position:
-              relative;
+          .admin-shell .admin-sidebar.is-open { transform: translateX(0); }
 
-            width:
-              100%;
+          .admin-sidebar__brand { position: relative; min-height: 66px; padding: 17px 58px 17px 20px; }
 
-            height:
-              auto;
-
-            max-height:
-              none;
-
-            flex:
-              none;
-
-            overflow:
-              visible;
+          .admin-sidebar__close {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            display: grid;
+            width: 38px;
+            height: 38px;
+            place-items: center;
+            border: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
           }
 
-          .admin-sidebar__brand {
-            min-height:
-              66px;
+          .admin-shell .admin-sidebar__nav { display: block; overflow-y: auto; padding: 12px; }
 
-            padding:
-              17px 20px;
-          }
+          .admin-shell .admin-sidebar__group { display: block; margin: 0 0 14px; }
 
-          .admin-sidebar__nav {
-            display:
-              grid;
+          .admin-shell .admin-sidebar__section { display: block; padding: 5px 9px; margin-bottom: 4px; }
 
-            grid-template-columns:
-              repeat(
-                2,
-                minmax(0, 1fr)
-              );
+          .admin-shell .admin-sidebar__link { justify-content: flex-start; min-height: 44px; padding: 0 12px; border-radius: 6px; }
 
-            gap:
-              8px;
-
-            padding:
-              12px;
-          }
-
-          .admin-sidebar__group {
-            margin:
-              0;
-          }
-
-          .admin-sidebar__section {
-            padding:
-              5px 9px;
-
-            margin-bottom:
-              4px;
-          }
-
-          .admin-sidebar__link {
-            min-height:
-              40px;
-
-            padding:
-              0 9px;
-
-            border-radius:
-              6px;
-          }
-
-          .admin-sidebar__footer {
-            padding:
-              12px;
-          }
+          .admin-shell .admin-sidebar__footer { display: block; padding: 12px; }
 
           .admin-sidebar__profile {
             margin-bottom:
               8px;
           }
 
-          .admin-topbar {
-            position:
-              sticky;
+          .admin-topbar { position: sticky; top: 0; min-height: 64px; align-items: center; flex-flow: row wrap; padding: 10px 16px; gap: 10px; }
 
-            top:
-              0;
-
-            min-height:
-              auto;
-
-            align-items:
-              flex-start;
-
-            flex-direction:
-              column;
-
-            padding:
-              12px 16px;
-
-            gap:
-              10px;
+          .admin-nav-toggle {
+            display: grid;
+            width: 42px;
+            height: 42px;
+            flex: 0 0 42px;
+            place-items: center;
+            border: 1px solid var(--c-hairline, #ddd);
+            border-radius: 50%;
+            background: #fff;
+            color: #111;
           }
 
-          .admin-topbar__title {
-            width:
-              100%;
+          .admin-nav-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 90;
+            display: block;
+            border: 0;
+            background: rgba(0,0,0,0.48);
+            backdrop-filter: blur(2px);
           }
 
-          .admin-search {
-            width:
-              100%;
-          }
+          .admin-topbar__title { width: auto; flex: 1; font-size: clamp(1.15rem, 5vw, 1.45rem); }
+
+          .admin-search { order: 3; width: 100%; }
 
         }
 
         @media (max-width: 500px) {
 
-          .admin-sidebar__nav {
-            grid-template-columns:
-              1fr;
-          }
+          .admin-topbar { padding-inline: 12px; }
 
         }
 
@@ -1343,11 +1312,14 @@ export default function AdminLayout() {
           SIDEBAR
       ======================================================== */}
 
-      <aside className="admin-sidebar">
+      <aside id="admin-navigation" className={`admin-sidebar ${isNavOpen ? 'is-open' : ''}`}>
 
         <div className="admin-sidebar__brand">
           <strong>jonathan</strong>
           <span>photography / studio</span>
+          <button type="button" className="admin-sidebar__close" onClick={() => setIsNavOpen(false)} aria-label="Close admin navigation">
+            <X size={20} />
+          </button>
         </div>
 
         <nav className="admin-sidebar__nav">
@@ -1376,6 +1348,7 @@ export default function AdminLayout() {
                           : ''
                       }`
                     }
+                    onClick={() => setIsNavOpen(false)}
                   >
 
                     <span className="admin-sidebar__link-icon">
@@ -1441,6 +1414,10 @@ export default function AdminLayout() {
 
       </aside>
 
+      {isNavOpen && (
+        <button type="button" className="admin-nav-backdrop" onClick={() => setIsNavOpen(false)} aria-label="Close admin navigation" />
+      )}
+
       {/* ========================================================
           MAIN
       ======================================================== */}
@@ -1448,6 +1425,17 @@ export default function AdminLayout() {
       <div className="admin-main">
 
         <header className="admin-topbar">
+
+          <button
+            type="button"
+            className="admin-nav-toggle"
+            onClick={() => setIsNavOpen(true)}
+            aria-controls="admin-navigation"
+            aria-expanded={isNavOpen}
+            aria-label="Open admin navigation"
+          >
+            <Menu size={21} />
+          </button>
 
           {/* ONE PAGE NAME ONLY */}
 

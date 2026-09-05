@@ -58,9 +58,19 @@ try {
 
     $currentStatus = strtoupper((string) $existing['status']);
 
-    if (in_array($currentStatus, ['CONFIRMED', 'CANCELLED'], true)) {
+    if ($currentStatus === 'CANCELLED') {
         $pdo->rollBack();
-        json_error('This booking already has a final status and cannot be changed.', 409);
+        json_error('This booking request is already cancelled.', 409);
+    }
+
+    if ($currentStatus === $newStatus) {
+        $pdo->rollBack();
+        json_error('This booking already has that status.', 409);
+    }
+
+    if ($currentStatus === 'CONFIRMED' && $newStatus !== 'CANCELLED') {
+        $pdo->rollBack();
+        json_error('A confirmed booking can only be changed to cancelled.', 409);
     }
 
     if ($newStatus === 'CONFIRMED') {
@@ -72,11 +82,13 @@ try {
         $conflict = $pdo->prepare(
             'SELECT id FROM calendar_events
              WHERE event_date = :preferred_date
-               AND status = \'BOOKED\'
+               AND status IN (\'REQUESTED\', \'BOOKED\')
+               AND (booking_id IS NULL OR booking_id <> :booking_id)
              LIMIT 1'
         );
         $conflict->execute([
-            'preferred_date' => $existing['preferred_date']
+            'preferred_date' => $existing['preferred_date'],
+            'booking_id' => $bookingId,
         ]);
 
         if ($conflict->fetch()) {
@@ -85,17 +97,16 @@ try {
         }
     }
 
-    // NEW remains unchanged while the studio contacts the client. The only
-    // persisted transition is the client's final response.
     $stmt = $pdo->prepare(
         'UPDATE bookings
          SET status = :status
-         WHERE id = :id AND status = \'NEW\''
+         WHERE id = :id AND status = :current_status'
     );
 
     $stmt->execute([
         'status' => $newStatus,
-        'id' => $bookingId
+        'id' => $bookingId,
+        'current_status' => $currentStatus,
     ]);
 
     if ($stmt->rowCount() !== 1) {
@@ -103,31 +114,35 @@ try {
         json_error('This booking could not be finalized because its status changed.', 409);
     }
 
-    if ($newStatus === 'CONFIRMED') {
-        $source = $pdo->prepare(
-            'SELECT reference_code, name, email, phone, shoot_type, preferred_date, location, message
-             FROM bookings WHERE id = :id LIMIT 1'
-        );
-        $source->execute(['id' => $bookingId]);
-        $bookingSource = $source->fetch(PDO::FETCH_ASSOC);
+    $source = $pdo->prepare(
+        'SELECT reference_code, name, email, phone, shoot_type, preferred_date, location, message
+         FROM bookings WHERE id = :id LIMIT 1'
+    );
+    $source->execute(['id' => $bookingId]);
+    $bookingSource = $source->fetch(PDO::FETCH_ASSOC);
+    $calendarStatus = $newStatus === 'CONFIRMED' ? 'BOOKED' : 'CANCELLED';
 
-        $calendar = $pdo->prepare(
-            'INSERT INTO calendar_events
-             (booking_id, reference_code, name, email, phone, shoot_type, event_date, location, notes, status)
-             VALUES (:booking_id, :reference_code, :name, :email, :phone, :shoot_type, :event_date, :location, :notes, \'BOOKED\')'
-        );
-        $calendar->execute([
-            'booking_id' => $bookingId,
-            'reference_code' => 'CAL-' . $bookingSource['reference_code'],
-            'name' => $bookingSource['name'],
-            'email' => $bookingSource['email'],
-            'phone' => $bookingSource['phone'],
-            'shoot_type' => $bookingSource['shoot_type'],
-            'event_date' => $bookingSource['preferred_date'],
-            'location' => $bookingSource['location'],
-            'notes' => $bookingSource['message']
-        ]);
-    }
+    $calendar = $pdo->prepare(
+        'INSERT INTO calendar_events
+         (booking_id, reference_code, name, email, phone, shoot_type, event_date, location, notes, status)
+         VALUES (:booking_id, :reference_code, :name, :email, :phone, :shoot_type, :event_date, :location, :notes, :status)
+         ON DUPLICATE KEY UPDATE
+           name = VALUES(name), email = VALUES(email), phone = VALUES(phone),
+           shoot_type = VALUES(shoot_type), event_date = VALUES(event_date),
+           location = VALUES(location), notes = VALUES(notes), status = VALUES(status)'
+    );
+    $calendar->execute([
+        'booking_id' => $bookingId,
+        'reference_code' => 'REQ-' . $bookingSource['reference_code'],
+        'name' => $bookingSource['name'],
+        'email' => $bookingSource['email'],
+        'phone' => $bookingSource['phone'],
+        'shoot_type' => $bookingSource['shoot_type'],
+        'event_date' => $bookingSource['preferred_date'],
+        'location' => $bookingSource['location'],
+        'notes' => $bookingSource['message'],
+        'status' => $calendarStatus,
+    ]);
 
     // Return updated record
     $result = $pdo->prepare(
@@ -150,8 +165,8 @@ try {
     json_success([
         'id' => (int) $booking['id'],
         'status' => $booking['status'],
-        'final' => true,
-        'message' => 'Booking status finalized successfully.'
+        'final' => $newStatus === 'CANCELLED',
+        'message' => 'Booking and calendar status updated successfully.'
     ]);
 
 } catch (Throwable $e) {

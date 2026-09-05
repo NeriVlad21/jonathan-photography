@@ -53,9 +53,101 @@ if (!$parsedDate || $parsedDate->format('Y-m-d') !== $preferredDate || $preferre
 
 $pdo = Database::connect();
 
+// A booking request must originate from the estimator. Rebuild the estimate
+// from active database prices so a caller cannot omit or alter the amount.
+$submittedBreakdown = $input['estimate_breakdown'] ?? null;
+$serviceId = (int) ($submittedBreakdown['service']['id'] ?? 0);
+$hourId = (int) ($submittedBreakdown['hours']['id'] ?? 0);
+$submittedAddons = $submittedBreakdown['addons'] ?? [];
+
+if (!is_array($submittedBreakdown) || $serviceId < 1 || $hourId < 1 || !is_array($submittedAddons)) {
+    json_error('Please build an estimate before submitting a booking request.', 422, [
+        'estimate' => 'Return to the estimator and select a service and coverage time.'
+    ]);
+}
+
+$serviceStmt = $pdo->prepare(
+    'SELECT id, name, starting_price FROM services WHERE id = :id AND visible = 1 LIMIT 1'
+);
+$serviceStmt->execute(['id' => $serviceId]);
+$service = $serviceStmt->fetch();
+
+$hourStmt = $pdo->prepare(
+    'SELECT id, label, hours, price FROM estimator_hours WHERE id = :id AND active = 1 LIMIT 1'
+);
+$hourStmt->execute(['id' => $hourId]);
+$hour = $hourStmt->fetch();
+
+if (!$service || !$hour) {
+    json_error('One of the selected estimate options is no longer available.', 422, [
+        'estimate' => 'Please return to the estimator and build an updated estimate.'
+    ]);
+}
+
+$estimateTotal = (float) ($service['starting_price'] ?? 0) + (float) $hour['price'];
+$canonicalAddons = [];
+$seenAddonIds = [];
+$addonStmt = $pdo->prepare(
+    'SELECT id, label, description, price, is_quantity_based
+     FROM estimator_addons WHERE id = :id AND active = 1 LIMIT 1'
+);
+
+foreach ($submittedAddons as $submittedAddon) {
+    $addonId = (int) ($submittedAddon['id'] ?? 0);
+    if ($addonId < 1 || isset($seenAddonIds[$addonId])) {
+        continue;
+    }
+
+    $addonStmt->execute(['id' => $addonId]);
+    $addon = $addonStmt->fetch();
+    if (!$addon) {
+        json_error('One of the selected add-ons is no longer available.', 422, [
+            'estimate' => 'Please return to the estimator and build an updated estimate.'
+        ]);
+    }
+
+    $quantity = !empty($addon['is_quantity_based'])
+        ? max(1, min(24, (int) ($submittedAddon['quantity'] ?? 1)))
+        : 1;
+    $lineTotal = (float) $addon['price'] * $quantity;
+    $estimateTotal += $lineTotal;
+    $seenAddonIds[$addonId] = true;
+    $canonicalAddons[] = [
+        'id' => (int) $addon['id'],
+        'label' => (string) $addon['label'],
+        'description' => (string) ($addon['description'] ?? ''),
+        'price' => (float) $addon['price'],
+        'quantity' => $quantity,
+        'total' => $lineTotal,
+    ];
+}
+
+if ($estimateTotal <= 0) {
+    json_error('The selected package does not have a valid estimate.', 422, [
+        'estimate' => 'Please return to the estimator and choose a priced package.'
+    ]);
+}
+
+$breakdown = [
+    'service' => [
+        'id' => (int) $service['id'],
+        'name' => (string) $service['name'],
+        'price' => (float) ($service['starting_price'] ?? 0),
+    ],
+    'hours' => [
+        'id' => (int) $hour['id'],
+        'label' => (string) $hour['label'],
+        'hours' => (float) $hour['hours'],
+        'price' => (float) $hour['price'],
+    ],
+    'addons' => $canonicalAddons,
+    'total' => $estimateTotal,
+];
+$shootType = clean_string($service['name']);
+
 $availability = $pdo->prepare(
     'SELECT COUNT(*) FROM calendar_events
-     WHERE event_date = :preferred_date AND status = \'BOOKED\''
+     WHERE event_date = :preferred_date AND status IN (\'REQUESTED\', \'BOOKED\')'
 );
 $availability->execute(['preferred_date' => $preferredDate]);
 if ((int) $availability->fetchColumn() > 0) {
@@ -70,12 +162,6 @@ do {
     $check = $pdo->prepare('SELECT COUNT(*) FROM bookings WHERE reference_code = :r');
     $check->execute(['r' => $reference]);
 } while ((int) $check->fetchColumn() > 0);
-
-$estimateTotal = isset($input['estimate_total']) && $input['estimate_total'] !== ''
-    ? (float) $input['estimate_total']
-    : null;
-
-$breakdown = $input['estimate_breakdown'] ?? null;
 
 try {
     // 1. Start the transaction safely inside the try block
@@ -98,7 +184,7 @@ try {
         'email'     => clean_string($input['email']),
         'phone'     => clean_string($input['phone']),
         'fb'        => clean_string($input['facebook'] ?? ''),
-        'shoot'     => clean_string($input['shoot_type']),
+        'shoot'     => $shootType,
         'date'      => $preferredDate,
         'loc'       => clean_string($input['location'] ?? ''),
         'guests'    => clean_string($input['guest_count'] ?? ''),
@@ -109,13 +195,30 @@ try {
 
     $bookingId = (int) $pdo->lastInsertId();
 
+    $requestEvent = $pdo->prepare(
+        'INSERT INTO calendar_events
+         (booking_id, reference_code, name, email, phone, shoot_type, event_date, location, notes, status)
+         VALUES (:booking_id, :reference_code, :name, :email, :phone, :shoot_type, :event_date, :location, :notes, \'REQUESTED\')'
+    );
+    $requestEvent->execute([
+        'booking_id' => $bookingId,
+        'reference_code' => 'REQ-' . $reference,
+        'name' => clean_string($input['name']),
+        'email' => clean_string($input['email']),
+        'phone' => clean_string($input['phone']),
+        'shoot_type' => $shootType,
+        'event_date' => $preferredDate,
+        'location' => clean_string($input['location'] ?? ''),
+        'notes' => clean_string($input['message']),
+    ]);
+
     if ($breakdown && !empty($breakdown['addons']) && is_array($breakdown['addons'])) {
         $addonStmt = $pdo->prepare('INSERT INTO booking_addons (booking_id, label, price) VALUES (:bid, :label, :price)');
         foreach ($breakdown['addons'] as $addon) {
             $addonStmt->execute([
                 'bid'   => $bookingId,
                 'label' => clean_string($addon['label'] ?? ''),
-                'price' => (float) ($addon['price'] ?? 0),
+                'price' => (float) ($addon['total'] ?? 0),
             ]);
         }
     }
@@ -150,12 +253,13 @@ $booking = [
     'email'           => clean_string($input['email']),
     'phone'           => clean_string($input['phone']),
     'facebook'        => clean_string($input['facebook'] ?? ''),
-    'shoot_type'      => clean_string($input['shoot_type']),
+    'shoot_type'      => $shootType,
     'preferred_date'  => $preferredDate,
     'location'        => clean_string($input['location'] ?? ''),
     'guest_count'     => clean_string($input['guest_count'] ?? ''),
     'message'         => clean_string($input['message']),
     'estimate_total'  => $estimateTotal,
+    'estimate_breakdown' => $breakdown,
 ];
 
 // This now happens safely in the background WITHOUT hogging a MySQL connection

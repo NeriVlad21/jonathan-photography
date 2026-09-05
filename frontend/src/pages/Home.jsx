@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import Hero from '../components/Hero.jsx'
 import SectionHeader from '../components/SectionHeader.jsx'
 import EditorialImage from '../components/EditorialImage.jsx'
+import Faq from '../components/Faq.jsx'
 import { portfolioApi, servicesApi } from '../services/api.js'
 import { temporaryPhotosForCategory } from '../data/temporaryPortfolio.js'
 
 export default function Home() {
+  const location = useLocation()
   const [categories, setCategories] = useState([])
   const [services, setServices] = useState([])
 
@@ -14,6 +16,12 @@ export default function Home() {
     portfolioApi.categories().then((c) => setCategories(c.slice(0, 4))).catch(() => {})
     servicesApi.list().then((s) => setServices(s.slice(0, 4))).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    const sectionId = location.hash.slice(1)
+    if (!['about', 'faq'].includes(sectionId)) return
+    requestAnimationFrame(() => document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' }))
+  }, [location.hash])
 
   return (
     <>
@@ -37,6 +45,30 @@ export default function Home() {
             </p>
             <Link to="/portfolio" className="text-link">See the Work →</Link>
           </div>
+        </div>
+      </section>
+
+      <section id="about" className="section home-about">
+        <div className="container home-about__inner">
+          <div className="home-about__label">who we are</div>
+          <div className="home-about__copy">
+            Jonathan Photography is a local photo and video studio based in
+            Sison, Pangasinan. We document people as they are—calmly,
+            honestly, and with careful attention to the moments that make each
+            celebration personal.
+          </div>
+
+          <div className="home-about__label">what we do</div>
+          <div className="home-about__skills" aria-label="Photography services">
+            {['Weddings', 'Engagements', 'Portraits', 'Birthdays', 'Christenings', 'Debuts', 'Events', 'Photo & Video'].map((item) => (
+              <span key={item}>{item}</span>
+            ))}
+          </div>
+
+          <p className="home-about__closing">
+            From the first estimate to the finished photographs, every request
+            is reviewed personally. <Link to="/contact">Talk with the studio.</Link>
+          </p>
         </div>
       </section>
 
@@ -97,9 +129,11 @@ export default function Home() {
           <h2>
             Get a clear starting price<br />before the conversation.
           </h2>
-          <Link to="/estimator" className="btn btn--dark">Build my estimate</Link>
+          <Link to="/booking" className="btn btn--dark">Estimate &amp; request a session</Link>
         </div>
       </section>
+
+      <Faq />
     </>
   )
 }

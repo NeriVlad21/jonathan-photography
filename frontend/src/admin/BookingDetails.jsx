@@ -98,7 +98,7 @@ export default function BookingDetails() {
       )
 
       showToast(
-        `Booking finalized as ${selectedStatus}.`
+        `Booking and calendar updated to ${selectedStatus}.`
       )
 
       setSelectedStatus('')
@@ -1054,15 +1054,15 @@ export default function BookingDetails() {
 
             <div className="booking-details-panel__body">
 
-              {FINAL_STATUSES.includes(booking.status) ? (
+              {booking.status === 'CANCELLED' ? (
                 <div className="booking-status-final">
                   <span className="booking-status-final__icon">
                     <ShieldCheck size={22} />
                   </span>
                   <div>
-                    <strong>This booking is finalized.</strong>
+                    <strong>This booking request is closed.</strong>
                     <p>
-                      Its final outcome is {booking.status.toLowerCase()} and can no longer be changed.
+                      The request was cancelled and its preferred date is available to the public again.
                     </p>
                   </div>
                 </div>
@@ -1070,14 +1070,16 @@ export default function BookingDetails() {
                 <div className="booking-status-workflow">
                   <div className="booking-status-workflow__intro">
                     <span>Current stage</span>
-                    <strong>New inquiry</strong>
+                    <strong>{booking.status === 'CONFIRMED' ? 'Confirmed booking' : 'New booking request'}</strong>
                     <p>
-                      Contact the client without changing this status. After they reply, choose the final outcome below.
+                      {booking.status === 'CONFIRMED'
+                        ? 'This date is booked. If the arrangement is cancelled outside the website, update it here to reopen the date.'
+                        : 'The requested date is shown as pending and temporarily unavailable while you contact the client.'}
                     </p>
                   </div>
 
                   <div className="booking-status-actions" role="radiogroup" aria-label="Final booking outcome">
-                    {FINAL_STATUSES.map((item) => (
+                    {(booking.status === 'CONFIRMED' ? ['CANCELLED'] : FINAL_STATUSES).map((item) => (
                       <button
                         key={item}
                         type="button"
@@ -1105,8 +1107,8 @@ export default function BookingDetails() {
                     />
                     <span className="booking-final-toggle__track" aria-hidden="true" />
                     <span>
-                      <strong>I understand this is the final status update.</strong>
-                      <small>Confirmed or cancelled bookings cannot be changed afterward.</small>
+                      <strong>I understand this updates the booking calendar.</strong>
+                      <small>{selectedStatus === 'CANCELLED' ? 'Cancelling reopens the preferred date publicly.' : 'Confirming marks the date as booked.'}</small>
                     </span>
                   </label>
 
@@ -1117,7 +1119,7 @@ export default function BookingDetails() {
                     onClick={changeStatus}
                   >
                     <ShieldCheck size={16} />
-                    {updating ? 'Finalizing…' : `Finalize as ${selectedStatus || 'selected status'}`}
+                    {updating ? 'Updating…' : `Update to ${selectedStatus || 'selected status'}`}
                   </button>
                 </div>
               )}

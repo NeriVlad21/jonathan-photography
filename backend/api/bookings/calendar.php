@@ -31,6 +31,48 @@ if ($method === 'GET') {
         json_error('Calendar ranges must be between 1 and 370 days.', 422);
     }
 
+    // Self-heal legacy or interrupted synchronization so every dated
+    // booking request has a linked calendar record.
+    $sync = $pdo->prepare(
+        'INSERT INTO calendar_events
+            (booking_id, reference_code, name, email, phone, shoot_type, event_date, location, notes, status)
+         SELECT b.id,
+                CONCAT(CASE WHEN b.status = \'NEW\' THEN \'REQ-\' ELSE \'CAL-\' END, b.reference_code),
+                b.name, b.email, b.phone, b.shoot_type, b.preferred_date, b.location, b.message,
+                CASE
+                    WHEN b.status = \'NEW\' THEN \'REQUESTED\'
+                    WHEN b.status = \'CONFIRMED\' THEN \'BOOKED\'
+                    ELSE \'CANCELLED\'
+                END
+         FROM bookings b
+         LEFT JOIN calendar_events ce ON ce.booking_id = b.id
+         WHERE ce.id IS NULL
+           AND b.preferred_date BETWEEN :sync_start AND :sync_end
+           AND b.status IN (\'NEW\', \'CONFIRMED\', \'CANCELLED\')'
+    );
+    $sync->execute(['sync_start' => $start, 'sync_end' => $end]);
+
+    $refreshLinked = $pdo->prepare(
+        'UPDATE calendar_events ce
+         INNER JOIN bookings b ON b.id = ce.booking_id
+         SET ce.reference_code = CONCAT(CASE WHEN b.status = \'NEW\' THEN \'REQ-\' ELSE \'CAL-\' END, b.reference_code),
+             ce.name = b.name,
+             ce.email = b.email,
+             ce.phone = b.phone,
+             ce.shoot_type = b.shoot_type,
+             ce.event_date = b.preferred_date,
+             ce.location = b.location,
+             ce.notes = b.message,
+             ce.status = CASE
+                 WHEN b.status = \'NEW\' THEN \'REQUESTED\'
+                 WHEN b.status = \'CONFIRMED\' THEN \'BOOKED\'
+                 ELSE \'CANCELLED\'
+             END
+         WHERE b.preferred_date BETWEEN :refresh_start AND :refresh_end
+           AND b.status IN (\'NEW\', \'CONFIRMED\', \'CANCELLED\')'
+    );
+    $refreshLinked->execute(['refresh_start' => $start, 'refresh_end' => $end]);
+
     $stmt = $pdo->prepare(
         'SELECT CONCAT(\'schedule-\', ce.id) AS id,
                 ce.id AS calendar_event_id,
@@ -107,23 +149,53 @@ if ($method === 'POST') {
             json_error('Client name and service are required.', 422);
         }
 
-        $conflict = $pdo->prepare(
+        $conflictSql =
             'SELECT id FROM calendar_events
-             WHERE event_date = :event_date AND status = \'BOOKED\'
-             LIMIT 1 FOR UPDATE'
-        );
-        $conflict->execute(['event_date' => $eventDate]);
+             WHERE event_date = :event_date
+               AND status IN (\'REQUESTED\', \'BOOKED\')';
+        $conflictParams = ['event_date' => $eventDate];
+        if ($bookingId) {
+            $conflictSql .= ' AND (booking_id IS NULL OR booking_id <> :booking_id)';
+            $conflictParams['booking_id'] = $bookingId;
+        }
+        $conflictSql .= ' LIMIT 1 FOR UPDATE';
+        $conflict = $pdo->prepare($conflictSql);
+        $conflict->execute($conflictParams);
         if ($conflict->fetch()) {
             $pdo->rollBack();
             json_error('That date is already booked in the studio calendar.', 409);
         }
 
         if ($bookingId) {
-            $existing = $pdo->prepare('SELECT id FROM calendar_events WHERE booking_id = :booking_id LIMIT 1');
+            $existing = $pdo->prepare('SELECT id FROM calendar_events WHERE booking_id = :booking_id LIMIT 1 FOR UPDATE');
             $existing->execute(['booking_id' => $bookingId]);
-            if ($existing->fetch()) {
-                $pdo->rollBack();
-                json_error('This booking request is already on the calendar.', 409);
+            $existingEventId = (int) ($existing->fetchColumn() ?: 0);
+            if ($existingEventId > 0) {
+                $updateEvent = $pdo->prepare(
+                    'UPDATE calendar_events
+                     SET name = :name, email = :email, phone = :phone,
+                         shoot_type = :shoot_type, event_date = :event_date,
+                         location = :location, notes = :notes, status = \'BOOKED\'
+                     WHERE id = :id'
+                );
+                $updateEvent->execute([
+                    'name' => $name,
+                    'email' => $email !== '' ? $email : null,
+                    'phone' => $phone !== '' ? $phone : null,
+                    'shoot_type' => $shootType,
+                    'event_date' => $eventDate,
+                    'location' => $location !== '' ? $location : null,
+                    'notes' => $notes !== '' ? $notes : null,
+                    'id' => $existingEventId,
+                ]);
+                $pdo->prepare('UPDATE bookings SET status = \'CONFIRMED\', preferred_date = :event_date WHERE id = :id')
+                    ->execute(['event_date' => $eventDate, 'id' => $bookingId]);
+                $pdo->commit();
+                json_success([
+                    'id' => $existingEventId,
+                    'reference_code' => $booking['reference_code'],
+                    'message' => 'Booking request confirmed on the studio calendar.'
+                ], 200);
             }
         }
 
@@ -175,12 +247,59 @@ if ($method === 'PUT') {
         json_error('Please provide a valid calendar event and status.', 422);
     }
 
-    $stmt = $pdo->prepare('UPDATE calendar_events SET status = :status WHERE id = :id');
-    $stmt->execute(['status' => $status, 'id' => $eventId]);
-    if ($stmt->rowCount() < 1) {
-        json_error('Calendar event not found or already unchanged.', 404);
+    try {
+        $pdo->beginTransaction();
+        $eventStmt = $pdo->prepare(
+            'SELECT id, booking_id, event_date, status FROM calendar_events WHERE id = :id LIMIT 1 FOR UPDATE'
+        );
+        $eventStmt->execute(['id' => $eventId]);
+        $event = $eventStmt->fetch(PDO::FETCH_ASSOC);
+        if (!$event) {
+            $pdo->rollBack();
+            json_error('Calendar event not found.', 404);
+        }
+
+        if ($status === 'BOOKED') {
+            $conflict = $pdo->prepare(
+                'SELECT id FROM calendar_events
+                 WHERE event_date = :event_date
+                   AND status IN (\'REQUESTED\', \'BOOKED\')
+                   AND id <> :id
+                 LIMIT 1 FOR UPDATE'
+            );
+            $conflict->execute(['event_date' => $event['event_date'], 'id' => $eventId]);
+            if ($conflict->fetch()) {
+                $pdo->rollBack();
+                json_error('Another request or booking already occupies that date.', 409);
+            }
+        }
+
+        $stmt = $pdo->prepare('UPDATE calendar_events SET status = :status WHERE id = :id');
+        $stmt->execute(['status' => $status, 'id' => $eventId]);
+
+        if (!empty($event['booking_id'])) {
+            if ($status === 'BOOKED') {
+                $bookingState = $pdo->prepare('SELECT status FROM bookings WHERE id = :id LIMIT 1 FOR UPDATE');
+                $bookingState->execute(['id' => $event['booking_id']]);
+                if (strtoupper((string) $bookingState->fetchColumn()) === 'CANCELLED') {
+                    $pdo->rollBack();
+                    json_error('A cancelled booking request cannot be restored from the calendar.', 409);
+                }
+            }
+            $bookingStatus = $status === 'BOOKED' ? 'CONFIRMED' : 'CANCELLED';
+            $pdo->prepare('UPDATE bookings SET status = :status WHERE id = :id')
+                ->execute(['status' => $bookingStatus, 'id' => $event['booking_id']]);
+        }
+
+        $pdo->commit();
+        json_success(['id' => $eventId, 'status' => $status]);
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        log_server_error('calendar event status update', $e);
+        json_error('Unable to update this calendar event.', 500);
     }
-    json_success(['id' => $eventId, 'status' => $status]);
 }
 
 json_error('Method not allowed.', 405);

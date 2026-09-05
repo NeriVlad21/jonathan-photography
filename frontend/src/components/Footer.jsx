@@ -22,7 +22,7 @@ export default function Footer() {
             <h5>Explore</h5>
             <Link to="/portfolio">Work</Link>
             <Link to="/services">Services</Link>
-            <Link to="/estimator">Estimate</Link>
+            <Link to="/#about">About</Link>
             <Link to="/booking">Book a Session</Link>
           </div>
           <div className="footer__col">

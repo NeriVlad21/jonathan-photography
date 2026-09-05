@@ -132,7 +132,7 @@ CREATE TABLE `calendar_events` (
   `event_date` date NOT NULL,
   `location` varchar(200) DEFAULT NULL,
   `notes` text DEFAULT NULL,
-  `status` enum('BOOKED','CANCELLED') NOT NULL DEFAULT 'BOOKED',
+  `status` enum('REQUESTED','BOOKED','CANCELLED') NOT NULL DEFAULT 'BOOKED',
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),

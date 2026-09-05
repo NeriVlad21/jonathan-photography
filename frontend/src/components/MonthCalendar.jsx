@@ -28,6 +28,8 @@ export default function MonthCalendar({
   selectedDate = '',
   onDayClick,
   unavailableDates = [],
+  requestedDates = [],
+  bookedDates = [],
   events = [],
   minimumDate = '',
   maximumMonth = null,
@@ -37,6 +39,8 @@ export default function MonthCalendar({
   readOnly = false
 }) {
   const unavailable = useMemo(() => new Set(unavailableDates), [unavailableDates])
+  const requested = useMemo(() => new Set(requestedDates), [requestedDates])
+  const booked = useMemo(() => new Set(bookedDates), [bookedDates])
   const eventsByDate = useMemo(() => {
     return events.reduce((groups, event) => {
       const key = event.preferred_date
@@ -87,6 +91,13 @@ export default function MonthCalendar({
           const key = toDateKey(date)
           const outside = date.getMonth() !== month.getMonth()
           const unavailableDay = unavailable.has(key)
+          const unavailableStatus = booked.has(key)
+            ? 'booked'
+            : requested.has(key)
+              ? 'requested'
+              : unavailableDay
+                ? 'booked'
+                : ''
           const past = minimumDate && key < minimumDate
           const dayEvents = eventsByDate[key] || []
           const dayDisabled = disabled || readOnly || outside || past || (availabilityMode && unavailableDay)
@@ -95,16 +106,16 @@ export default function MonthCalendar({
             <button
               type="button"
               key={key}
-              className={`month-calendar__day ${outside ? 'is-outside' : ''} ${unavailableDay ? 'is-unavailable' : ''} ${selectedDate === key ? 'is-selected' : ''} ${dayEvents.length ? 'has-events' : ''}`}
+              className={`month-calendar__day ${outside ? 'is-outside' : ''} ${unavailableDay ? 'is-unavailable' : ''} ${unavailableStatus ? `is-${unavailableStatus}` : ''} ${selectedDate === key ? 'is-selected' : ''} ${dayEvents.length ? 'has-events' : ''}`}
               disabled={dayDisabled}
               aria-pressed={selectedDate === key}
-              aria-label={`${date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}${unavailableDay ? ', unavailable' : availabilityMode ? ', available' : ''}`}
+              aria-label={`${date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}${unavailableStatus === 'requested' ? ', booking request pending' : unavailableStatus === 'booked' ? ', confirmed booking' : availabilityMode ? ', available' : ''}`}
               onClick={() => onDayClick?.(key, dayEvents)}
             >
               <span className="month-calendar__number">{date.getDate()}</span>
 
               {availabilityMode && !outside && !past && (
-                <small>{unavailableDay ? 'Booked' : 'Available'}</small>
+                <small>{unavailableStatus === 'requested' ? 'Pending' : unavailableStatus === 'booked' ? 'Booked' : 'Available'}</small>
               )}
 
               {!availabilityMode && dayEvents.length > 0 && (

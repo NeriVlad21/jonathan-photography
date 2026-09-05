@@ -20,17 +20,34 @@ $end = date('Y-m-d', strtotime($start . ' +1 month'));
 $pdo = Database::connect();
 
 $stmt = $pdo->prepare(
-    'SELECT event_date
+    'SELECT event_date,
+            CASE
+              WHEN SUM(status = \'BOOKED\') > 0 THEN \'BOOKED\'
+              ELSE \'REQUESTED\'
+            END AS availability_status
      FROM calendar_events
-     WHERE status = \'BOOKED\'
+     WHERE status IN (\'REQUESTED\', \'BOOKED\')
        AND event_date >= :start
        AND event_date < :end
      GROUP BY event_date
      ORDER BY event_date'
 );
 $stmt->execute(['start' => $start, 'end' => $end]);
+$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$requestedDates = [];
+$bookedDates = [];
+
+foreach ($rows as $row) {
+    if ($row['availability_status'] === 'BOOKED') {
+        $bookedDates[] = $row['event_date'];
+    } else {
+        $requestedDates[] = $row['event_date'];
+    }
+}
 
 json_success([
     'month' => $month,
-    'unavailable_dates' => $stmt->fetchAll(PDO::FETCH_COLUMN)
+    'unavailable_dates' => array_values(array_merge($requestedDates, $bookedDates)),
+    'requested_dates' => $requestedDates,
+    'booked_dates' => $bookedDates,
 ]);

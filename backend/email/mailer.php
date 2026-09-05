@@ -127,6 +127,34 @@ function admin_email_body(array $b): string
 {
     $safe = fn($v) => htmlspecialchars((string) ($v ?? '—'));
     $estimate = $b['estimate_total'] ? peso((float) $b['estimate_total']) : '—';
+    $breakdown = is_array($b['estimate_breakdown'] ?? null) ? $b['estimate_breakdown'] : [];
+    $estimateRows = '';
+
+    if (!empty($breakdown['service'])) {
+        $service = $breakdown['service'];
+        $estimateRows .= '<tr><td style="padding:7px 0;border-bottom:1px solid #ddd;">'
+            . $safe($service['name'] ?? 'Service')
+            . '</td><td style="padding:7px 0;border-bottom:1px solid #ddd;text-align:right;">'
+            . peso((float) ($service['price'] ?? 0)) . '</td></tr>';
+    }
+
+    if (!empty($breakdown['hours'])) {
+        $hours = $breakdown['hours'];
+        $estimateRows .= '<tr><td style="padding:7px 0;border-bottom:1px solid #ddd;">'
+            . $safe($hours['label'] ?? 'Coverage')
+            . '</td><td style="padding:7px 0;border-bottom:1px solid #ddd;text-align:right;">'
+            . peso((float) ($hours['price'] ?? 0)) . '</td></tr>';
+    }
+
+    foreach (($breakdown['addons'] ?? []) as $addon) {
+        $quantity = max(1, (int) ($addon['quantity'] ?? 1));
+        $label = ($quantity > 1 ? $quantity . '× ' : '') . ($addon['label'] ?? 'Add-on');
+        $estimateRows .= '<tr><td style="padding:7px 0;border-bottom:1px solid #ddd;">'
+            . $safe($label)
+            . '</td><td style="padding:7px 0;border-bottom:1px solid #ddd;text-align:right;">'
+            . peso((float) ($addon['total'] ?? $addon['price'] ?? 0)) . '</td></tr>';
+    }
+
     return <<<HTML
     <div style="font-family: Arial, sans-serif; max-width:560px; margin:0 auto; color:#0A0A0A;">
       <h2 style="border-bottom:3px solid #F5D000; padding-bottom:8px;">New booking request</h2>
@@ -136,7 +164,11 @@ function admin_email_body(array $b): string
       <h3>Shoot</h3>
       <p>Type: {$safe($b['shoot_type'] ?? null)}<br/>Date: {$safe($b['preferred_date'] ?? null)}<br/>Location: {$safe($b['location'] ?? null)}<br/>Guests: {$safe($b['guest_count'] ?? null)}</p>
       <h3>Estimate</h3>
-      <p>{$estimate}</p>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        {$estimateRows}
+        <tr><td style="padding:10px 0;font-weight:bold;">Estimated total</td><td style="padding:10px 0;text-align:right;font-weight:bold;color:#8A7200;">{$estimate}</td></tr>
+      </table>
+      <p style="color:#666;font-size:12px;">Preliminary estimate only; review the final quotation with the client.</p>
       <h3>Message</h3>
       <p>{$safe($b['message'] ?? null)}</p>
     </div>

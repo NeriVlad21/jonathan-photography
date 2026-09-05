@@ -61,7 +61,7 @@ export default function Services() {
         ))}
 
         <div className="page-action">
-          <Link to="/estimator" className="btn btn--primary">Build a Custom Estimate</Link>
+          <Link to="/booking" className="btn btn--primary">Estimate &amp; Request a Session</Link>
         </div>
       </div>
       </section>

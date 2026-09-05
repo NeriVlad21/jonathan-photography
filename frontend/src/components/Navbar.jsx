@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
-import { Menu, X } from 'lucide-react'
+import { CalendarPlus, Menu, X } from 'lucide-react'
 
 const LINKS = [
   { to: '/portfolio', label: 'Work' },
   { to: '/services', label: 'Services' },
-  { to: '/estimator', label: 'Estimate' },
+  { to: '/#about', label: 'About' },
   { to: '/contact', label: 'Contact' },
 ]
 
@@ -35,7 +35,9 @@ export default function Navbar() {
         </Link>
 
         <nav className="navbar__links" aria-label="Primary">
-          {LINKS.map((l) => (
+          {LINKS.map((l) => l.to.includes('#') ? (
+            <Link key={l.to} to={l.to}>{l.label}</Link>
+          ) : (
             <NavLink key={l.to} to={l.to} className={({ isActive }) => (isActive ? 'active' : '')}>
               {l.label}
             </NavLink>
@@ -43,7 +45,7 @@ export default function Navbar() {
         </nav>
 
         <div className="navbar__right">
-          <Link to="/booking" className="btn btn--primary btn--sm">Book a session</Link>
+          <Link to="/booking" className="btn btn--primary btn--sm navbar__book-button">Book a session</Link>
           <button className="navbar__toggle" onClick={() => setOpen(true)} aria-label="Open menu">
             <Menu size={24} />
           </button>
@@ -60,11 +62,15 @@ export default function Navbar() {
               {l.label}
             </Link>
           ))}
-          <Link to="/booking" onClick={() => setOpen(false)} className="btn btn--primary" style={{ marginTop: 20 }}>
+          <Link to="/booking" onClick={() => setOpen(false)} className="btn btn--primary navbar__book-button" style={{ marginTop: 20 }}>
             Book Now
           </Link>
         </div>
       )}
+
+      <Link to="/booking" className="navbar__mobile-book" aria-label="Book a session">
+        <CalendarPlus size={24} aria-hidden="true" />
+      </Link>
     </>
   )
 }

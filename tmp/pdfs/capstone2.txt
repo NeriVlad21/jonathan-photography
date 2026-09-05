@@ -1,0 +1,25 @@
+
+===== PAGE 1 =====
+RELATED  LITERATURE  OF  STUDIES    TITLE  CITATION  LINK  
+1.  An  Analysis  on  the  Effectiveness  of  Online  Booking  Applications  for  the  Booking  Management  of  Hotel  Guests  
+Baldovino,  J.  P.,  Tan,  K.  L.,  &  Suarez,  G.  K.  (2021).  An  analysis  on  the  effectiveness  of  online  booking  application  for  the  booking  management  of  hotel  guests.  Manuel  S.  Enverga  University  Foundation.  
+https://mseuf.edu.ph/research/read/1599 
+2.  PHOTOGRAPHY  MANAGEMENT  SYSTEM  
+Gunaware,  N.  G.,  Wante,  P.  S.,  Doke,  T.  G.,  Shinde,  A.  A.,  &  Dube,  A.  A.  (2022).  Photography  management  system.  International  Engineering  Journal  for  Research  &  Development,  7(3),  5.  
+https://www.iejrd.com/index.php/iejrd/article/view/2812 
+3.  Leveraging  Portfolio  Websites  as  Business  Process  Management  Enablers  to  Improve  Operational  Effectiveness:  A  Case  Study  of  a  Technology  Service  Company  
+Malik,  A.,  Eka,  M.,  &  Serban,  R.  (2026).  Leveraging  portfolio  websites  as  business  process  management  enablers  to  improve  operational  effectiveness:  A  case  study  of  a  technology  service  company.  Bigint  Computing  Journal,  4(1),  30�39.  
+https://journal.aira.or.id/bigint/article/download/1482/626/7860 
+4.  Design  and  implementation  of  a  product  configurator  and  demand  system  for  custom  manufacturing  in  e-commerce  
+Vokounov�,  E.  (2026).  Design  and  implementation  of  a  product  configurator  and  inquiry  system  for  custom  manufacturing  in  e-commerce  [Diploma  thesis,  Prague  University  of  Economics  and  Business].  
+https://vskp.vse.cz/100164_navrh-a-implementace-produktoveho-konfiguratoru-a-poptavkoveho-systemu-pro-zakazkovou-vyrobu-v-e-commerce? 
+5.  The  nexus  between  quality  of  customer  relationship  management  systems  and  customers�  
+Nilashi,  M.,  Abumalloh,  R.  A.,  Ahmadi,  H.,  Samad,  S.,  Alrizq,  M.,  Abosaq,  H.,  &  Alghamdi,  A.  (2023).  The  nexus  between  quality  of  customer  relationship  management  systems  and  
+https://www.sciencedirect.com/science/article/pii/S2405844023090369 
+===== PAGE 2 =====
+satisfaction:  Evidence  from  online  customers�  reviews  
+customers�  satisfaction:  Evidence  from  online  customers�  reviews.  Heliyon,  9,  e21828.  
+6.  Security  Analysis  of  Web-based  Information  Systems  Through  Vulnerability  Assessment  Using  the  Framework  of  OWASP  Web  Security  Testing  Guide  and  Common  Vulnerability  Scoring  System   
+Abdallah,  M.  R.,  Hatta,  P.,  &  Budiyanto,  C.  W.  (2024).  Security  analysis  of  web-based  information  systems  through  vulnerability  assessment  using  the  framework  of  OWASP  Web  Security  Testing  Guide  and  Common  Vulnerability  Scoring  System.  Journal  of  Informatics  and  Vocational  Education,  7(3),  114�123.  
+https://journal.uns.ac.id/index.php/joive/article/download/2411/1276/9666 
+    

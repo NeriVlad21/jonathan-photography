@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Navigate, Routes, Route } from 'react-router-dom'
 import { ToastProvider } from './context/ToastContext.jsx'
 import { AdminAuthProvider } from './context/AdminAuthContext.jsx'
 
@@ -9,7 +9,6 @@ import PortfolioCategory from './pages/PortfolioCategory.jsx'
 import PortfolioShoot from './pages/PortfolioShoot.jsx'
 import PhotoView from './pages/PhotoView.jsx'
 import Services from './pages/Services.jsx'
-import EstimatorPage from './pages/EstimatorPage.jsx'
 import Booking from './pages/Booking.jsx'
 import BookingSuccess from './pages/BookingSuccess.jsx'
 import Contact from './pages/Contact.jsx'
@@ -72,7 +71,7 @@ export default function App() {
               element={<PortfolioShoot />}
             />
             <Route path="/services" element={<Services />} />
-            <Route path="/estimator" element={<EstimatorPage />} />
+            <Route path="/estimator" element={<Navigate to="/booking" replace />} />
             <Route path="/booking" element={<Booking />} />
             <Route
               path="/booking/success"

@@ -26,20 +26,32 @@ class Database
             $db['name']
         );
 
-        try {
-            self::$connection = new PDO($dsn, $db['user'], $db['password'], [
-                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES   => false,
-            ]);
-        } catch (PDOException $e) {
+        $lastError = null;
+        for ($attempt = 1; $attempt <= 3; $attempt++) {
+            try {
+                self::$connection = new PDO($dsn, $db['user'], $db['password'], [
+                    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                    PDO::ATTR_EMULATE_PREPARES   => false,
+                    PDO::ATTR_TIMEOUT            => 3,
+                ]);
+                break;
+            } catch (PDOException $e) {
+                $lastError = $e;
+                if ($attempt < 3) {
+                    usleep(150000 * $attempt);
+                }
+            }
+        }
+
+        if (self::$connection === null) {
             // Never leak connection details to the client.
-            error_log('[DB CONNECTION ERROR] ' . $e->getMessage());
-            http_response_code(500);
+            error_log('[DB CONNECTION ERROR] ' . ($lastError?->getMessage() ?? 'Unknown connection failure'));
+            http_response_code(503);
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => false,
-                'message' => 'The server could not connect to the database. Please try again shortly.',
+                'message' => 'The database is temporarily unavailable. Please retry in a moment.',
             ]);
             exit;
         }
