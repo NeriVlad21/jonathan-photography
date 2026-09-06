@@ -1129,3 +1129,123 @@ body .admin-login-page {
   .admin-shell .estimator-settings-panel__head,
   .admin-shell .portfolio-admin__main-header { align-items: flex-start; flex-direction: column; gap: 10px; }
 }
+
+/* ============================================================
+   CLIENT REQUESTS — UNIFIED ESTIMATE + BOOKING WORKSPACE
+   ============================================================ */
+.client-requests-page { min-height: calc(100vh - 68px); }
+.client-requests-content { max-width: 1440px; padding-top: 32px; }
+.client-requests-hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; margin-bottom: 24px; }
+.client-requests-eyebrow { color: var(--admin-muted); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+.client-requests-hero h2 { margin: 9px 0 8px; font-size: clamp(2.5rem, 6vw, 5.2rem); line-height: 0.92; letter-spacing: -0.065em; }
+.client-requests-hero p { max-width: 680px; margin: 0; color: var(--admin-muted); font-size: 0.92rem; line-height: 1.55; }
+.client-requests-legend { display: flex; align-items: center; gap: 9px; flex: 0 0 auto; padding: 12px 14px; border-radius: 999px; background: #fff; box-shadow: 0 5px 20px rgba(17,17,15,0.05); color: var(--admin-muted); font-size: 0.68rem; font-weight: 700; }
+.client-requests-legend i { width: 22px; height: 1px; background: var(--admin-line); }
+.client-requests-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+.client-requests-tabs button { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; min-height: 76px; padding: 15px 18px; border: 1px solid transparent; border-radius: 12px; background: #fff; color: var(--admin-ink); box-shadow: 0 5px 20px rgba(17,17,15,0.05); text-align: left; }
+.client-requests-tabs button:hover { border-color: var(--admin-line); }
+.client-requests-tabs button.is-active { border-color: var(--admin-ink); background: var(--c-yellow); box-shadow: none; }
+.client-requests-tabs button > span, .client-requests-tabs strong, .client-requests-tabs small { display: block; }
+.client-requests-tabs strong { font-size: 0.92rem; }
+.client-requests-tabs small { margin-top: 3px; color: var(--admin-muted); font-size: 0.72rem; font-weight: 500; }
+.client-requests-view > .bookings-page,
+.client-requests-view > .estimator-leads-page { min-height: 0; }
+.client-requests-view .bookings-content,
+.client-requests-view .estimator-leads-content { width: 100%; max-width: none; padding: 0; }
+.client-requests-view .estimator-leads-intro { display: none; }
+.client-requests-view .bookings-toolbar,
+.client-requests-view .estimator-leads-toolbar { margin-top: 0; }
+
+@media (max-width: 900px) {
+  .client-requests-hero { align-items: flex-start; flex-direction: column; }
+  .client-requests-legend { display: none; }
+}
+
+@media (max-width: 680px) {
+  .client-requests-tabs { grid-template-columns: 1fr; }
+  .client-requests-tabs button { min-height: 68px; }
+}
+
+/* ============================================================
+   ADMIN TYPOGRAPHY + DENSITY REFINEMENT
+   Keeps the workspace compact without sacrificing readability.
+   ============================================================ */
+.admin-shell { font-size: clamp(1rem, 0.96rem + 0.1vw, 1.06rem); line-height: 1.55; }
+
+.admin-shell .admin-sidebar__brand span,
+.admin-shell .admin-sidebar__section,
+.admin-shell .dashboard-stat__label,
+.admin-shell .client-requests-eyebrow,
+.admin-shell .lead-status-dialog__eyebrow,
+.admin-shell .admin-profile-eyebrow,
+.admin-shell .admin-profile-summary__label,
+.admin-shell .admin-profile-section-head span { font-size: 0.72rem; }
+
+.admin-shell .admin-sidebar__link { min-height: 38px; font-size: 0.88rem; }
+.admin-shell .dashboard-header__subtitle,
+.admin-shell .client-requests-hero p { font-size: 0.96rem; line-height: 1.6; }
+.admin-shell .dashboard-panel__meta,
+.admin-shell .client-requests-tabs small,
+.admin-shell .admin-profile-actions p,
+.admin-shell .admin-profile-summary__meta { font-size: 0.8rem; }
+
+.admin-shell .dashboard-activity__badge,
+.admin-shell .estimator-status,
+.admin-shell .status-badge { font-size: 0.7rem; }
+
+.admin-shell .estimator-status-action,
+.admin-shell .calendar-event-cancel { font-size: 0.8rem; }
+
+.admin-shell .bookings-table,
+.admin-shell .archive-table,
+.admin-shell .estimator-leads-table,
+.admin-shell .data-table { font-size: 0.88rem; line-height: 1.5; }
+
+.admin-shell .data-table th,
+.admin-shell .bookings-table th,
+.admin-shell .archive-table th,
+.admin-shell .estimator-leads-table th { font-size: 0.76rem; }
+
+.admin-shell .field label,
+.admin-shell .admin-profile-fields label,
+.admin-shell .admin-profile-current-password,
+.admin-shell .calendar-schedule-field { font-size: 0.82rem; }
+
+.admin-shell input,
+.admin-shell select,
+.admin-shell textarea { font-size: 0.94rem; }
+
+.admin-shell .admin-panel,
+.admin-shell .dashboard-panel,
+.admin-shell .bookings-panel,
+.admin-shell .booking-details-panel,
+.admin-shell .services-editor,
+.admin-shell .services-list-panel,
+.admin-shell .estimator-settings-panel,
+.admin-shell .estimator-leads-panel,
+.admin-shell .archive-panel,
+.admin-shell .portfolio-admin__sidebar,
+.admin-shell .portfolio-admin__main,
+.admin-shell .contact-editor,
+.admin-shell .contact-list-panel { border-radius: 16px; box-shadow: 0 10px 34px rgba(17, 17, 15, 0.065); }
+
+.admin-shell .dashboard-stat,
+.admin-shell .client-requests-tabs button,
+.admin-shell .client-requests-legend { border-radius: 14px; }
+
+.admin-shell .client-requests-tabs strong { font-size: 1rem; }
+.admin-shell .client-requests-tabs small { font-size: 0.8rem; }
+.admin-shell .client-requests-hero h2 { font-size: clamp(3rem, 4.5vw, 4.9rem); text-wrap: balance; }
+
+@media (min-width: 761px) and (max-width: 1440px) {
+  .admin-shell .dashboard-page,
+  .admin-shell .admin-content { padding-inline: clamp(26px, 3vw, 42px); }
+  .admin-shell .dashboard-stat__value { font-size: clamp(1.75rem, 2.25vw, 2.3rem); }
+}
+
+@media (max-width: 760px) {
+  .admin-shell { font-size: 1rem; }
+  .admin-shell .admin-sidebar__link { min-height: 46px !important; font-size: 0.94rem !important; }
+  .admin-shell .client-requests-hero h2 { font-size: clamp(2.4rem, 10vw, 3.4rem); }
+  .admin-shell .client-requests-tabs strong { font-size: 1rem; }
+}

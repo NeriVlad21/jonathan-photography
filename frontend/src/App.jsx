@@ -17,9 +17,8 @@ import ProtectedRoute from './admin/ProtectedRoute.jsx'
 import AdminLogin from './admin/AdminLogin.jsx'
 import AdminLayout from './admin/AdminLayout.jsx'
 import Dashboard from './admin/Dashboard.jsx'
-import Bookings from './admin/Bookings.jsx'
+import ClientRequests from './admin/ClientRequests.jsx'
 import BookingDetails from './admin/BookingDetails.jsx'
-import EstimatorLeads from './admin/EstimatorLeads.jsx'
 import PortfolioManager from './admin/PortfolioManager.jsx'
 import ServicesManager from './admin/ServicesManager.jsx'
 import EstimatorSettings from './admin/EstimatorSettings.jsx'
@@ -89,10 +88,10 @@ export default function App() {
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<Dashboard />} />
               <Route path="dashboard" element={<Dashboard />} />
-              <Route path="bookings" element={<Bookings />} />
+              <Route path="bookings" element={<ClientRequests />} />
               <Route path="bookings/:id" element={<BookingDetails />} />
               <Route path="calendar" element={<AdminBookingCalendar />} />
-              <Route path="leads" element={<EstimatorLeads />} />
+              <Route path="leads" element={<Navigate to="/admin/bookings?view=estimates" replace />} />
               <Route path="portfolio" element={<PortfolioManager />} />
               <Route path="services" element={<ServicesManager />} />
               <Route

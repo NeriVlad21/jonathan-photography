@@ -876,7 +876,7 @@ export default function Dashboard() {
                 <div className="dashboard-stat__top">
 
                   <div className="dashboard-stat__label">
-                    Estimator Uses
+                    Saved Estimates
                   </div>
 
                   <span className="dashboard-stat__marker" />
@@ -942,7 +942,7 @@ export default function Dashboard() {
                   <div className="dashboard-panel__header">
 
                     <h2 className="dashboard-panel__title">
-                      Lead Volume vs Bookings
+                      Saved Estimates vs Bookings
                     </h2>
 
                     <span className="dashboard-panel__meta">
@@ -1012,7 +1012,7 @@ export default function Dashboard() {
 
                         <Area
                           dataKey="leads"
-                          name="Estimator Leads"
+                          name="Saved Estimates"
                           type="monotone"
                           stroke="#6f6d65"
                           fill="#b9b7ae"

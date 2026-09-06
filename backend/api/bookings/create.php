@@ -223,8 +223,10 @@ try {
         }
     }
 
-    // If this email previously priced an estimate, mark that lead as booked.
-    $pdo->prepare('UPDATE estimator_leads SET booked = 1 WHERE email = :email')
+    // A completed request is the authoritative next step in the client journey.
+    // Keep the estimate record, but move matching saved estimates to Booked so
+    // the unified admin workspace does not show the same person as two leads.
+    $pdo->prepare("UPDATE estimator_leads SET booked = 1, status = 'Booked' WHERE email = :email")
         ->execute(['email' => clean_string($input['email'])]);
 
     // 2. Commit the transaction to unlock the database tables

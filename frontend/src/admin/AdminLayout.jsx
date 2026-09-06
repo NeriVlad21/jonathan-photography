@@ -11,7 +11,6 @@ import {
   LayoutDashboard,
   CalendarCheck,
   CalendarDays,
-  TrendingUp,
   Images,
   Sparkles,
   Calculator,
@@ -44,18 +43,13 @@ const NAV = [
     links: [
       {
         to: '/admin/bookings',
-        label: 'Bookings',
+        label: 'Client Requests',
         icon: CalendarCheck
       },
       {
         to: '/admin/calendar',
         label: 'Calendar',
         icon: CalendarDays
-      },
-      {
-        to: '/admin/leads',
-        label: 'Estimator Leads',
-        icon: TrendingUp
       }
     ]
   },
@@ -125,7 +119,6 @@ export default function AdminLayout() {
     location.pathname === '/admin' ||
     location.pathname === '/admin/dashboard' ||
     location.pathname.startsWith('/admin/bookings') ||
-    location.pathname.startsWith('/admin/leads') ||
     location.pathname.startsWith('/admin/archive')
 
   /*
@@ -1584,7 +1577,7 @@ export default function AdminLayout() {
                             <div className="admin-search__group">
 
                               <div className="admin-search__group-label">
-                                Estimator Leads
+                                Saved Estimates
                               </div>
 
                               {searchResults.leads.map(
@@ -1598,7 +1591,7 @@ export default function AdminLayout() {
                                     }
                                     onClick={() => {
                                       navigate(
-                                        '/admin/leads'
+                                        '/admin/bookings?view=estimates'
                                       )
 
                                       clearSearch()
