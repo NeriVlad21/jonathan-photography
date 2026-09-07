@@ -48,6 +48,50 @@ function make_mailer(): ?PHPMailer
     return $mail;
 }
 
+/**
+ * The most recently maintained admin profile is the studio's notification
+ * address. Fall back to the environment setting during setup or recovery.
+ */
+function studio_profile_email(?array $config = null): string
+{
+    static $resolvedEmail = null;
+
+    if ($resolvedEmail !== null) {
+        return $resolvedEmail;
+    }
+
+    $config ??= require __DIR__ . '/../config/config.php';
+    $fallback = trim((string) ($config['smtp']['admin_email'] ?? ''));
+
+    try {
+        require_once __DIR__ . '/../config/database.php';
+        $pdo = Database::connect();
+        $stmt = $pdo->query(
+            "SELECT email FROM admins
+             WHERE email IS NOT NULL AND TRIM(email) <> ''
+             ORDER BY updated_at DESC, id ASC
+             LIMIT 1"
+        );
+        $profileEmail = trim((string) ($stmt->fetchColumn() ?: ''));
+
+        if ($profileEmail !== '' && filter_var($profileEmail, FILTER_VALIDATE_EMAIL)) {
+            return $resolvedEmail = $profileEmail;
+        }
+    } catch (Throwable $e) {
+        error_log('[MAILER] Unable to resolve studio profile email: ' . $e->getMessage());
+    }
+
+    return $resolvedEmail = $fallback;
+}
+
+function add_studio_reply_to(PHPMailer $mail, ?array $config = null): void
+{
+    $studioEmail = studio_profile_email($config);
+    if ($studioEmail !== '') {
+        $mail->addReplyTo($studioEmail, 'Jonathan Photography');
+    }
+}
+
 function peso(float $amount): string
 {
     return '₱' . number_format($amount, 0);
@@ -73,6 +117,7 @@ function send_booking_emails(array $booking): void
     try {
         $mail = make_mailer();
         if ($mail) {
+            add_studio_reply_to($mail, $config);
             $mail->addAddress($booking['email'], $booking['name']);
             $mail->isHTML(true);
             $mail->Subject = "We've got your request, {$booking['name']} — Jonathan Photography";
@@ -87,8 +132,9 @@ function send_booking_emails(array $booking): void
     // ---- Admin notification email ----
     try {
         $mail = make_mailer();
-        if ($mail && !empty($config['smtp']['admin_email'])) {
-            $mail->addAddress($config['smtp']['admin_email']);
+        $studioEmail = studio_profile_email($config);
+        if ($mail && $studioEmail !== '') {
+            $mail->addAddress($studioEmail);
             $mail->isHTML(true);
             $mail->Subject = "New booking request — {$booking['name']} ({$shootType})";
             $mail->Body = admin_email_body($booking);

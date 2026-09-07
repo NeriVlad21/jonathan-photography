@@ -33,6 +33,7 @@ $v = new Validator($input);
 $v->required('name', 'your full name')->maxLength('name', 160)
   ->required('email', 'your email address')->email('email')
   ->required('phone', 'your phone number')->maxLength('phone', 40)
+  ->required('facebook', 'your Facebook profile link')->maxLength('facebook', 255)
   ->required('shoot_type', 'a shoot type')
   ->required('preferred_date', 'a preferred date')
   ->required('message', 'a short message');

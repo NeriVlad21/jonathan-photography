@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Music2, Play } from 'lucide-react'
+import { Play } from 'lucide-react'
 import Hero from '../components/Hero.jsx'
 import SectionHeader from '../components/SectionHeader.jsx'
 import EditorialImage from '../components/EditorialImage.jsx'
@@ -65,6 +65,49 @@ export default function Home() {
 
       <section id="about" className="section home-about">
         <div className="container home-about__inner">
+          <div className="home-about__music-intro">
+            <span className="eyebrow">Favorite songs</span>
+            <h2 className="display">A soundtrack for the scroll.</h2>
+            <p>Choose a song, press play, and let it accompany you through the rest of the story.</p>
+          </div>
+
+          <div className="about-player">
+            <iframe
+              key={`${selectedSong.type}-${selectedSong.spotifyId}`}
+              className="about-player__embed"
+              title={`Listen to ${selectedSong.title} by ${selectedSong.artist}`}
+              src={`https://open.spotify.com/embed/${selectedSong.type}/${selectedSong.spotifyId}?utm_source=generator&theme=0`}
+              width="100%"
+              height="152"
+              frameBorder="0"
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              loading="lazy"
+            />
+
+            <ol className="about-player__tracks">
+              {FAVORITE_SONGS.map((song, index) => {
+                const active = song.title === selectedSong.title
+                return (
+                  <li key={song.title}>
+                    <button
+                      type="button"
+                      className={active ? 'is-active' : ''}
+                      onClick={() => setSelectedSong(song)}
+                      aria-pressed={active}
+                    >
+                      <span className="about-player__track-number">{String(index + 1).padStart(2, '0')}</span>
+                      <span className="about-player__track-copy">
+                        <strong>{song.title}</strong>
+                        <small>{song.artist}</small>
+                      </span>
+                      <Play className="about-player__track-play" size={15} aria-hidden="true" />
+                    </button>
+                  </li>
+                )
+              })}
+            </ol>
+          </div>
+
           <div className="home-about__label">who I am</div>
           <div className="home-about__copy">
             <p>
@@ -101,58 +144,6 @@ export default function Home() {
             <Link to="/portfolio" className="text-link">Explore the stories I have captured →</Link>
           </div>
 
-          <div className="home-about__music-intro">
-            <span className="eyebrow">Favorite songs</span>
-            <h2 className="display">A soundtrack for the scroll.</h2>
-            <p>Choose a song, press play, and let it accompany you through the rest of the story.</p>
-          </div>
-
-          <div className="about-player">
-            <div className="about-player__now">
-              <div className="about-player__mark" aria-hidden="true"><Music2 size={26} /></div>
-              <div>
-                <span>Jonathan&apos;s playlist</span>
-                <strong>For moments worth remembering</strong>
-                <small>Ten handpicked favorites for your scroll</small>
-              </div>
-              <span className="about-player__count">10 tracks</span>
-            </div>
-
-            <iframe
-              key={`${selectedSong.type}-${selectedSong.spotifyId}`}
-              className="about-player__embed"
-              title={`Listen to ${selectedSong.title} by ${selectedSong.artist}`}
-              src={`https://open.spotify.com/embed/${selectedSong.type}/${selectedSong.spotifyId}?utm_source=generator&theme=0`}
-              width="100%"
-              height="152"
-              frameBorder="0"
-              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-              loading="lazy"
-            />
-
-            <ol className="about-player__tracks">
-              {FAVORITE_SONGS.map((song, index) => {
-                const active = song.title === selectedSong.title
-                return (
-                  <li key={song.title}>
-                    <button
-                      type="button"
-                      className={active ? 'is-active' : ''}
-                      onClick={() => setSelectedSong(song)}
-                      aria-pressed={active}
-                    >
-                      <span className="about-player__track-number">{String(index + 1).padStart(2, '0')}</span>
-                      <span className="about-player__track-copy">
-                        <strong>{song.title}</strong>
-                        <small>{song.artist}</small>
-                      </span>
-                      <Play className="about-player__track-play" size={15} aria-hidden="true" />
-                    </button>
-                  </li>
-                )
-              })}
-            </ol>
-          </div>
         </div>
       </section>
 
@@ -209,11 +200,16 @@ export default function Home() {
       {/* Estimator CTA */}
       <section className="home-estimator-cta">
         <div className="container">
-          <span className="eyebrow">Build your package</span>
-          <h2>
-            Get a clear starting price<br />before the conversation.
-          </h2>
-          <Link to="/booking" className="btn btn--dark">Estimate &amp; request a session</Link>
+          <div className="home-estimator-cta__copy">
+            <span className="eyebrow">Build your package</span>
+            <h2>
+              Get a clear starting price<br />before the conversation.
+            </h2>
+            <Link to="/booking" className="btn btn--dark">Estimate &amp; request a session</Link>
+          </div>
+          <div className="home-estimator-cta__art" aria-hidden="true">
+            <img src="/doodles/estimator-camera-doodle.png" alt="" />
+          </div>
         </div>
       </section>
 

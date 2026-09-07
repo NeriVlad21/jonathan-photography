@@ -1249,3 +1249,26 @@ body .admin-login-page {
   .admin-shell .client-requests-hero h2 { font-size: clamp(2.4rem, 10vw, 3.4rem); }
   .admin-shell .client-requests-tabs strong { font-size: 1rem; }
 }
+
+/* ---------- Enlarged admin navigation and profile email guidance ---------- */
+.admin-shell .admin-sidebar { width: 280px; flex-basis: 280px; }
+.admin-shell .admin-sidebar__brand strong { font-size: 1.32rem; }
+.admin-shell .admin-sidebar__brand span,
+.admin-shell .admin-sidebar__section { font-size: 0.76rem; }
+.admin-shell .admin-sidebar__link { min-height: 42px; font-size: 0.97rem; }
+.admin-shell .admin-sidebar__link-icon svg { width: 19px; height: 19px; }
+.admin-shell .admin-topbar { min-height: 82px; }
+.admin-shell .admin-topbar__title { font-size: clamp(1.48rem, 2.1vw, 2.15rem); }
+.admin-shell .admin-search__input { font-size: 0.97rem; }
+.admin-profile-field-help { color: var(--admin-muted); font-size: 0.78rem; font-weight: 500; line-height: 1.45; }
+
+@media (max-width: 1000px) and (min-width: 761px) {
+  .admin-shell .admin-sidebar { width: 240px; flex-basis: 240px; }
+  .admin-shell .admin-sidebar__link { font-size: 0.94rem; }
+}
+
+@media (max-width: 760px) {
+  .admin-shell .admin-sidebar { width: min(86vw, 330px) !important; flex-basis: auto; }
+  .admin-shell .admin-topbar { min-height: 70px; }
+  .admin-shell .admin-topbar__title { font-size: clamp(1.3rem, 5.5vw, 1.6rem); }
+}

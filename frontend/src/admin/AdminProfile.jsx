@@ -80,7 +80,7 @@ export default function AdminProfile() {
           <div>
             <span className="admin-profile-eyebrow">Account / Security</span>
             <h2>Studio profile</h2>
-            <p>Manage the identity and credentials used to access this workspace.</p>
+            <p>Manage your sign-in details and the studio email used for booking notifications and client replies.</p>
           </div>
           <div className="admin-profile-avatar" aria-hidden="true">
             {(profile.username || 'A').charAt(0).toUpperCase()}
@@ -116,11 +116,12 @@ export default function AdminProfile() {
                 </div>
               </label>
               <label>
-                <span>Email address</span>
+                <span>Studio notification email</span>
                 <div className="admin-profile-input-wrap">
                   <Mail size={16} />
                   <input type="email" name="email" value={form.email} onChange={updateField} required maxLength={160} />
                 </div>
+                <small className="admin-profile-field-help">New booking alerts are sent here, and replies to client emails return to this address.</small>
               </label>
             </div>
 

@@ -48,6 +48,7 @@ export default function BookingForm({ estimate, onChangeEstimate }) {
     if (!form.email.trim()) errs.email = 'Please provide your email address.'
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Please enter a valid email address.'
     if (!form.phone.trim()) errs.phone = 'Please provide your phone number.'
+    if (!form.facebook.trim()) errs.facebook = 'Please provide your Facebook profile link.'
     if (!form.shoot_type) errs.shoot_type = 'Please select a shoot type.'
     if (!form.preferred_date) errs.preferred_date = 'Please choose an available preferred date.'
     if (!form.message.trim()) errs.message = 'Please tell us a little about what you need.'
@@ -108,8 +109,17 @@ export default function BookingForm({ estimate, onChangeEstimate }) {
             {errors.phone && <span className="field-error">{errors.phone}</span>}
           </div>
           <div className="field">
-            <label htmlFor="facebook">Facebook Profile (optional)</label>
-            <input id="facebook" value={form.facebook} onChange={update('facebook')} placeholder="facebook.com/yourname" />
+            <label htmlFor="facebook">Facebook Profile Link</label>
+            <input
+              id="facebook"
+              type="url"
+              required
+              className={errors.facebook ? 'has-error' : ''}
+              value={form.facebook}
+              onChange={update('facebook')}
+              placeholder="https://facebook.com/yourname"
+            />
+            {errors.facebook && <span className="field-error">{errors.facebook}</span>}
           </div>
         </div>
 

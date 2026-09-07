@@ -1,8 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Camera } from 'lucide-react'
 
-const STANDARD_CURSOR_TARGETS = 'a, button, input, textarea, select, label, [role="button"], p, h1, h2, h3, h4, li'
-
 export default function CameraCursor() {
   const cursorRef = useRef(null)
 
@@ -17,7 +15,6 @@ export default function CameraCursor() {
       if (!cursor) return
 
       cursor.style.transform = `translate3d(${event.clientX}px, ${event.clientY}px, 0)`
-      cursor.classList.toggle('is-hidden', Boolean(event.target.closest(STANDARD_CURSOR_TARGETS)))
     }
 
     const hideCursor = () => cursorRef.current?.classList.add('is-hidden')

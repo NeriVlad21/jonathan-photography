@@ -160,6 +160,7 @@ if ($method === 'POST') {
     try {
         $mail = make_mailer();
         if ($mail) {
+            add_studio_reply_to($mail);
             $addonLines = '';
             
             // Log Service Type if present

@@ -711,8 +711,8 @@
 .about-player__tracks button:hover .about-player__track-play,
 .about-player__tracks button.is-active .about-player__track-play { color: var(--c-yellow); transform: translateX(2px); }
 
-.camera-cursor { position: fixed; top: -14px; left: -14px; z-index: 9999; display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid var(--c-black); border-radius: 50%; background: var(--c-yellow); color: var(--c-black); opacity: 1; pointer-events: none; transition: opacity 0.12s ease, scale 0.12s ease; will-change: transform; }
-.camera-cursor.is-hidden { opacity: 0; scale: 0.65; }
+.camera-cursor { position: fixed; top: -14px; left: -14px; z-index: 9999; display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid var(--c-black); border-radius: 50%; background: var(--c-yellow); color: var(--c-black); opacity: 1; pointer-events: none; transition: opacity 0.08s ease; will-change: transform; }
+.camera-cursor.is-hidden { opacity: 0; }
 
 @media (pointer: fine) {
   body.has-camera-cursor { cursor: none; }
@@ -1550,4 +1550,104 @@
   .about-player__now small { font-size: 0.78rem; line-height: 1.4; }
   .about-player__embed { padding-inline: 7px; }
   .about-player__tracks { max-height: 300px; padding-inline: 7px; }
+}
+
+/* ---------- Requested homepage alignment refinements ---------- */
+@media (pointer: fine) {
+  body.has-camera-cursor,
+  body.has-camera-cursor * { cursor: none !important; }
+}
+
+.home-about__music-intro:first-child { margin-top: 0; }
+.about-player__embed { padding-top: 16px; }
+
+.preview-strip { align-items: start; }
+.preview-strip__item,
+.preview-strip__item:nth-child(2),
+.preview-strip__item:nth-child(3) { aspect-ratio: 3 / 4; }
+
+.home-estimator-cta { padding: clamp(92px, 10vw, 148px) 0; overflow: hidden; }
+.home-estimator-cta .container {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+  gap: clamp(42px, 7vw, 120px);
+  align-items: center;
+}
+.home-estimator-cta__copy { position: relative; z-index: 1; }
+.home-estimator-cta h2 {
+  max-width: 14ch;
+  margin-bottom: 36px;
+  font-size: clamp(3.4rem, 5.7vw, 6.5rem);
+}
+.home-estimator-cta__art { display: grid; place-items: center; min-width: 0; }
+.home-estimator-cta__art img {
+  width: 150%;
+  max-width: none;
+  max-height: 420px;
+  object-fit: contain;
+  filter: contrast(1.08);
+  transform: translateX(-8%) rotate(2deg);
+}
+
+@media (min-width: 901px) {
+  .navbar,
+  .navbar--scrolled { min-height: 92px; }
+  .navbar--scrolled { min-height: 78px; }
+  .navbar__logo,
+  .navbar--work:not(.navbar--scrolled) .navbar__logo { font-size: 1.4rem; }
+  .navbar__book-button { padding: 15px 25px; font-size: 0.94rem; }
+}
+
+@media (min-width: 1101px) {
+  .navbar__links a,
+  .navbar--work:not(.navbar--scrolled) .navbar__links a { font-size: 1.35rem; }
+  .navbar__links { gap: clamp(30px, 3.4vw, 54px); }
+}
+
+@media (max-width: 1100px) {
+  .navbar__links { display: none; }
+  .navbar__toggle { display: grid; place-items: center; }
+}
+
+@media (min-width: 641px) and (max-width: 860px) {
+  .preview-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  .home-estimator-cta { padding-block: 78px; }
+  .home-estimator-cta .container { grid-template-columns: 1fr; gap: 42px; }
+  .home-estimator-cta h2 { max-width: 13ch; margin: 16px 0 30px; }
+  .home-estimator-cta__art { justify-items: end; }
+  .home-estimator-cta__art img { width: 132%; max-height: 290px; transform: translateX(-5%) rotate(2deg); }
+}
+
+@media (max-width: 640px) {
+  .preview-strip__item,
+  .preview-strip__item:nth-child(2),
+  .preview-strip__item:nth-child(3) { aspect-ratio: 3 / 4; }
+  .about-player__embed { padding-top: 8px; }
+}
+
+/* ---------- About section breathing room ---------- */
+.home-about { padding-block: clamp(100px, 12vw, 168px); }
+.home-about__inner {
+  max-width: 1240px;
+  row-gap: clamp(52px, 5vw, 76px);
+  column-gap: clamp(52px, 8vw, 118px);
+}
+.home-about__music-intro { margin-bottom: -22px; }
+.about-player { width: min(100%, 900px); margin-bottom: clamp(54px, 7vw, 92px); }
+.home-about__copy { line-height: 1.48; }
+.home-about__description { line-height: 1.72; }
+.home-about__skills { gap: 14px; }
+.home-about__skills li { min-height: 64px; padding: 15px 19px; }
+
+@media (max-width: 700px) {
+  .home-about { padding-block: 88px; }
+  .home-about__inner { gap: 34px; }
+  .home-about__music-intro { margin: 0 0 2px; }
+  .about-player { margin: 0 0 48px; }
+  .home-about__label:not(:first-child) { margin-top: 18px; }
+  .home-about__copy { line-height: 1.58; }
+  .home-about__skills { gap: 12px; }
 }
