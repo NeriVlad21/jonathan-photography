@@ -127,9 +127,11 @@ export default function Estimator({ estimator }) {
         hours: selectedHour?.hours || null,
         service_type: selectedService?.name || serviceType,
         service_type_id: selectedService?.id || null,
+        hour_id: selectedHour?.id || null,
         service_price: servicePrice,
         addons: dynamicBreakdown.addons, 
-        total: dynamicTotal
+        total: dynamicTotal,
+        privacy_agreed: true
       })
       showToast('Sent — check your inbox for the breakdown.')
       setEmailModalOpen(false)

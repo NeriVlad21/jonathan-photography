@@ -12,6 +12,7 @@ import Services from './pages/Services.jsx'
 import Booking from './pages/Booking.jsx'
 import BookingSuccess from './pages/BookingSuccess.jsx'
 import Contact from './pages/Contact.jsx'
+import Photobooth from './pages/Photobooth.jsx'
 
 import ProtectedRoute from './admin/ProtectedRoute.jsx'
 import AdminLogin from './admin/AdminLogin.jsx'
@@ -77,6 +78,7 @@ export default function App() {
               element={<BookingSuccess />}
             />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/photobooth" element={<Photobooth />} />
             <Route path="*" element={<NotFound />} />
           </Route>
 

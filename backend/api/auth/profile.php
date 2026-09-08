@@ -53,8 +53,8 @@ $newPassword = (string) ($input['new_password'] ?? '');
 $confirmPassword = (string) ($input['confirm_password'] ?? '');
 
 if ($newPassword !== '') {
-    if (strlen($newPassword) < 8) {
-        json_error('The new password must be at least 8 characters.', 422);
+    if (strlen($newPassword) < 12) {
+        json_error('The new password must be at least 12 characters.', 422);
     }
     if ($newPassword !== $confirmPassword) {
         json_error('The new passwords do not match.', 422);

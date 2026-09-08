@@ -5,16 +5,20 @@ export default function CameraCursor() {
   const cursorRef = useRef(null)
 
   useEffect(() => {
-    const finePointer = window.matchMedia('(pointer: fine)')
+    const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)')
     if (!finePointer.matches) return undefined
 
-    document.body.classList.add('has-camera-cursor')
+    const root = document.documentElement
+    root.classList.add('has-camera-cursor')
 
     const moveCursor = (event) => {
       const cursor = cursorRef.current
       if (!cursor) return
 
-      cursor.style.transform = `translate3d(${event.clientX}px, ${event.clientY}px, 0)`
+      cursor.style.setProperty('--cursor-x', `${event.clientX}px`)
+      cursor.style.setProperty('--cursor-y', `${event.clientY}px`)
+      cursor.classList.add('is-ready')
+      cursor.classList.remove('is-hidden')
     }
 
     const hideCursor = () => cursorRef.current?.classList.add('is-hidden')
@@ -25,7 +29,7 @@ export default function CameraCursor() {
     document.documentElement.addEventListener('mouseenter', showCursor)
 
     return () => {
-      document.body.classList.remove('has-camera-cursor')
+      root.classList.remove('has-camera-cursor')
       window.removeEventListener('pointermove', moveCursor)
       document.documentElement.removeEventListener('mouseleave', hideCursor)
       document.documentElement.removeEventListener('mouseenter', showCursor)

@@ -1,5 +1,7 @@
-# Deny direct access to config/env files served from the backend root.
-<FilesMatch "^\.env">
-    Require all denied
-</FilesMatch>
 Options -Indexes
+
+<FilesMatch "(^\.env|composer\.(json|lock)$|\.sql$|\.log$)">
+  Require all denied
+</FilesMatch>
+
+ServerSignature Off

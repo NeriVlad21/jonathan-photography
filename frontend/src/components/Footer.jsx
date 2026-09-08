@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Camera } from 'lucide-react'
 import { contactsApi } from '../services/api.js'
+import EditorialDoodles from './EditorialDoodles.jsx'
 
 export default function Footer() {
   const [platforms, setPlatforms] = useState([])
@@ -11,6 +13,7 @@ export default function Footer() {
 
   return (
     <footer className="footer">
+      <EditorialDoodles variant="public" />
       <div className="footer__cta">
         <p>Have something worth remembering?</p>
         <Link to="/booking">Let’s photograph it. <span>↗</span></Link>
@@ -30,6 +33,10 @@ export default function Footer() {
             {platforms.map((p) => (
               <a key={p.id} href={p.link} target="_blank" rel="noreferrer">{p.label}</a>
             ))}
+            <Link className="footer__found-camera" to="/photobooth" aria-label="Open the hidden Jonathan Photography photobooth" title="A hidden frame">
+              <Camera size={12} strokeWidth={1.8} aria-hidden="true" />
+              <span className="visually-hidden">Open the hidden photobooth</span>
+            </Link>
           </div>
           <div className="footer__col">
             <h5>Studio</h5>

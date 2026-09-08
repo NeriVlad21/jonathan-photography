@@ -139,8 +139,69 @@ if ($method === 'POST') {
     }
 
     $v = new Validator($input);
-    $v->required('name', 'your name')->required('email', 'your email')->email('email')->required('total');
+    $v->required('name', 'your name')->maxLength('name', 160)
+        ->required('email', 'your email')->email('email')->maxLength('email', 160)
+        ->required('service_type_id', 'a service')
+        ->required('hour_id', 'a coverage option')
+        ->boolTrue('privacy_agreed', 'Please agree to the privacy notice before continuing.');
     if ($v->fails()) json_error('Please fix the errors below.', 422, $v->errors());
+
+    // Browser-supplied labels, prices, quantities, and totals are untrusted.
+    // Rebuild the complete estimate from active database records.
+    $serviceId = (int) ($input['service_type_id'] ?? 0);
+    $hourId = (int) ($input['hour_id'] ?? 0);
+    $submittedAddons = is_array($input['addons'] ?? null) ? $input['addons'] : [];
+
+    $serviceStmt = $pdo->prepare(
+        'SELECT id, name, starting_price FROM services WHERE id = :id AND visible = 1 LIMIT 1'
+    );
+    $serviceStmt->execute(['id' => $serviceId]);
+    $service = $serviceStmt->fetch(PDO::FETCH_ASSOC);
+
+    $hourStmt = $pdo->prepare(
+        'SELECT id, label, hours, price FROM estimator_hours WHERE id = :id AND active = 1 LIMIT 1'
+    );
+    $hourStmt->execute(['id' => $hourId]);
+    $hour = $hourStmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$service || !$hour) {
+        json_error('One of the selected estimate options is no longer available.', 422);
+    }
+
+    $canonicalAddons = [];
+    $seenAddonIds = [];
+    $total = (float) $service['starting_price'] + (float) $hour['price'];
+    $addonLookup = $pdo->prepare(
+        'SELECT id, label, description, price, is_quantity_based
+         FROM estimator_addons WHERE id = :id AND active = 1 LIMIT 1'
+    );
+    foreach ($submittedAddons as $submittedAddon) {
+        if (!is_array($submittedAddon)) continue;
+        $addonId = (int) ($submittedAddon['id'] ?? 0);
+        if ($addonId < 1 || isset($seenAddonIds[$addonId])) continue;
+        $addonLookup->execute(['id' => $addonId]);
+        $addon = $addonLookup->fetch(PDO::FETCH_ASSOC);
+        if (!$addon) json_error('One of the selected add-ons is no longer available.', 422);
+        $quantity = !empty($addon['is_quantity_based'])
+            ? max(1, min(24, (int) ($submittedAddon['quantity'] ?? 1)))
+            : 1;
+        $lineTotal = (float) $addon['price'] * $quantity;
+        $total += $lineTotal;
+        $seenAddonIds[$addonId] = true;
+        $canonicalAddons[] = [
+            'id' => (int) $addon['id'],
+            'label' => (string) $addon['label'],
+            'description' => (string) ($addon['description'] ?? ''),
+            'price' => (float) $addon['price'],
+            'quantity' => $quantity,
+            'total' => $lineTotal,
+        ];
+    }
+
+    if ($total <= 0) json_error('The selected package does not have a valid estimate.', 422);
+
+    $cleanName = clean_string($input['name']);
+    $cleanEmail = strtolower(clean_string($input['email']));
 
     // Status defaults to 'New' inside the database
     $stmt = $pdo->prepare(
@@ -148,12 +209,12 @@ if ($method === 'POST') {
          VALUES (:name, :email, :hours, :addons, :service, :total)'
     );
     $stmt->execute([
-        'name'    => clean_string($input['name']),
-        'email'   => clean_string($input['email']),
-        'hours'   => isset($input['hours']) ? (float) $input['hours'] : null,
-        'addons'  => json_encode($input['addons'] ?? [], JSON_UNESCAPED_SLASHES),
-        'service' => clean_string($input['service_type'] ?? ''),
-        'total'   => (float) $input['total'],
+        'name'    => $cleanName,
+        'email'   => $cleanEmail,
+        'hours'   => (float) $hour['hours'],
+        'addons'  => json_encode($canonicalAddons, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
+        'service' => (string) $service['name'],
+        'total'   => $total,
     ]);
 
     // Best-effort email of the estimate — never block the save on this.
@@ -164,17 +225,17 @@ if ($method === 'POST') {
             $addonLines = '';
             
             // Log Service Type if present
-            if (!empty($input['service_type'])) {
-                $serviceName = htmlspecialchars($input['service_type']);
-                $servicePrice = isset($input['service_price']) ? peso((float) $input['service_price']) : '';
+            if (!empty($service['name'])) {
+                $serviceName = htmlspecialchars((string) $service['name'], ENT_QUOTES, 'UTF-8');
+                $servicePrice = peso((float) $service['starting_price']);
                 $addonLines .= "<tr><td style='padding:4px 0;color:#777;'><strong>Service:</strong> {$serviceName}</td><td style='padding:4px 0;text-align:right;'>{$servicePrice}</td></tr>";
             }
             
             // Loop through add-ons and calculate quantities
-            foreach (($input['addons'] ?? []) as $addon) {
+            foreach ($canonicalAddons as $addon) {
                 $qty = isset($addon['quantity']) ? (int) $addon['quantity'] : 1;
                 $qtyPrefix = $qty > 1 ? "{$qty}x " : "";
-                $label = htmlspecialchars($qtyPrefix . ($addon['label'] ?? ''));
+                $label = htmlspecialchars($qtyPrefix . ($addon['label'] ?? ''), ENT_QUOTES, 'UTF-8');
                 
                 // Use the pre-multiplied total sent by the frontend, fallback to price * qty
                 $addonTotal = isset($addon['total']) ? (float) $addon['total'] : ((float) ($addon['price'] ?? 0) * $qty);
@@ -183,13 +244,13 @@ if ($method === 'POST') {
                 $addonLines .= "<tr><td style='padding:4px 0;color:#777;'>{$label}</td><td style='padding:4px 0;text-align:right;'>{$priceFormatted}</td></tr>";
             }
             
-            $mail->addAddress($input['email'], $input['name']);
+            $mail->addAddress($cleanEmail, $cleanName);
             $mail->isHTML(true);
             $mail->Subject = 'Your Jonathan Photography estimate';
             $mail->Body = "<div style='font-family:Georgia,serif;max-width:520px;margin:0 auto;'>
                 <h2 style='border-bottom:3px solid #F5D000;padding-bottom:8px;'>Your Estimate</h2>
                 <table style='width:100%;border-collapse:collapse;font-size:14px;'>{$addonLines}
-                <tr><td style='padding-top:10px;font-weight:bold;'>Estimated Total</td><td style='padding-top:10px;text-align:right;font-weight:bold;'>" . peso((float) $input['total']) . "</td></tr>
+                <tr><td style='padding-top:10px;font-weight:bold;'>Estimated Total</td><td style='padding-top:10px;text-align:right;font-weight:bold;'>" . peso($total) . "</td></tr>
                 </table>
                 <p style='color:#777;font-size:13px;margin-top:20px;'>This is a baseline estimate — we're happy to customize it during a consultation. Ready to move forward? Just reply to this email or visit our booking page.</p>
                 </div>";

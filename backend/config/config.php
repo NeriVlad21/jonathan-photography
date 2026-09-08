@@ -39,6 +39,7 @@ return [
         // Path as served publicly (adjust to match your web server's document root).
         'public_path'   => '/uploads/portfolio',
         'max_bytes'     => 8 * 1024 * 1024, // 8 MB per image
+        'max_pixels'    => 40 * 1000 * 1000, // decompression-bomb guard
         'allowed_mimes' => [
             'image/jpeg' => 'jpg',
             'image/png'  => 'png',
@@ -49,11 +50,14 @@ return [
     'session' => [
         'name'            => 'jp_admin_session',
         'lifetime_seconds' => 60 * 60 * 8, // 8 hours
+        'idle_seconds'     => 60 * 30,
     ],
 
     // Basic in-memory rate limit for public form submissions (per IP).
     'rate_limit' => [
         'booking_max_per_hour' => 6,
         'lead_max_per_hour'    => 12,
+        'login_max_per_15_minutes' => 10,
+        'login_identifier_max_per_15_minutes' => 5,
     ],
 ];

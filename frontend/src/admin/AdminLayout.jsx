@@ -26,6 +26,7 @@ import {
 
 import { useAdminAuth } from '../context/AdminAuthContext.jsx'
 import { searchApi } from '../services/api.js'
+import EditorialDoodles from '../components/EditorialDoodles.jsx'
 
 const NAV = [
   {
@@ -264,7 +265,6 @@ export default function AdminLayout() {
 
   return (
     <div className="admin-shell">
-
       <style>{`
 
         /*
@@ -307,7 +307,7 @@ export default function AdminLayout() {
 
           flex-direction: column;
 
-          overflow-y: auto;
+          overflow: hidden;
 
           background:
             #111;
@@ -371,6 +371,18 @@ export default function AdminLayout() {
         .admin-sidebar__nav {
           flex:
             1;
+
+          min-height:
+            0;
+
+          overflow-y:
+            auto;
+
+          overscroll-behavior-y:
+            contain;
+
+          scrollbar-gutter:
+            stable;
 
           padding:
             16px 12px 20px;
@@ -1308,6 +1320,7 @@ export default function AdminLayout() {
       <aside id="admin-navigation" className={`admin-sidebar ${isNavOpen ? 'is-open' : ''}`}>
 
         <div className="admin-sidebar__brand">
+          <EditorialDoodles variant="admin" />
           <strong>jonathan</strong>
           <span>photography / studio</span>
           <button type="button" className="admin-sidebar__close" onClick={() => setIsNavOpen(false)} aria-label="Close admin navigation">

@@ -22,6 +22,9 @@ if ($method !== 'GET') {
 }
 
 $query = $_GET['q'] ?? '';
+if (!is_string($query) || mb_strlen($query) > 100) {
+    json_error('Search text is too long.', 422);
+}
 
 // If search is empty, return empty arrays
 if (empty(trim($query))) {

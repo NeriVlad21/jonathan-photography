@@ -28,7 +28,10 @@ if ($v->fails()) {
 
 // Basic brute-force throttling.
 $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-if (!rate_limit_check('admin_login', $ip, 20)) {
+$config = require __DIR__ . '/../../config/config.php';
+$normalizedIdentifier = strtolower(trim((string) ($input['username'] ?? '')));
+if (!rate_limit_check('admin_login_ip', $ip, $config['rate_limit']['login_max_per_15_minutes'], 900)
+    || !rate_limit_check('admin_login_identifier', $normalizedIdentifier, $config['rate_limit']['login_identifier_max_per_15_minutes'], 900)) {
     json_error('Too many login attempts. Please try again later.', 429);
 }
 
@@ -49,7 +52,8 @@ $stmt->execute([
 ]);
 $admin = $stmt->fetch();
 
-if (!$admin || !password_verify($password, $admin['password_hash'])) {
+$hashToVerify = $admin['password_hash'] ?? '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.';
+if (!password_verify($password, $hashToVerify) || !$admin) {
     json_error('Incorrect username or password.', 401);
 }
 
@@ -57,6 +61,8 @@ session_regenerate_id(true);
 $_SESSION['admin_id'] = $admin['id'];
 $_SESSION['admin_username'] = $admin['username'];
 $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+$_SESSION['_absolute_started_at'] = time();
+$_SESSION['_last_activity'] = time();
 
 json_success([
     'admin' => ['id' => $admin['id'], 'username' => $admin['username']],

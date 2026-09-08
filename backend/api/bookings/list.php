@@ -23,12 +23,18 @@ $params = [];
 
 // Filter by Status
 if (!empty($_GET['status'])) {
+    if (!in_array($_GET['status'], ['NEW', 'CONFIRMED', 'CANCELLED'], true)) {
+        json_error('Invalid booking status.', 422);
+    }
     $where[] = 'status = :status';
     $params['status'] = $_GET['status'];
 }
 
 // Filter by Search (Name or Email)
 if (!empty($_GET['search'])) {
+    if (mb_strlen((string) $_GET['search']) > 100) {
+        json_error('Search text is too long.', 422);
+    }
     $where[] = '(name LIKE :search OR email LIKE :search)';
     $params['search'] = '%' . $_GET['search'] . '%';
 }

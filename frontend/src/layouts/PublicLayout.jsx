@@ -11,6 +11,13 @@ export default function PublicLayout() {
     window.scrollTo(0, 0)
   }, [location.pathname])
 
+  useEffect(() => {
+    const root = document.documentElement
+    root.classList.add('public-scroll-theme')
+
+    return () => root.classList.remove('public-scroll-theme')
+  }, [])
+
   return (
     <div className="public-shell">
       <CameraCursor />

@@ -26,10 +26,6 @@ function handle_image_upload(array $file, string $subfolder = ''): array
 {
     $config = (require __DIR__ . '/../config/config.php')['uploads'];
 
-    // OVERRIDE: Force a 256MB limit for high-res professional portraits.
-    // This bypasses the smaller default limit inside your config.php file.
-    $config['max_bytes'] = 256 * 1024 * 1024;
-
     if (!isset($file['error']) || is_array($file['error'])) {
         throw new UploadException('Malformed upload.');
     }
@@ -64,6 +60,10 @@ function handle_image_upload(array $file, string $subfolder = ''): array
     $imageInfo = @getimagesize($file['tmp_name']);
     if ($imageInfo === false) {
         throw new UploadException('The file does not appear to be a valid image.');
+    }
+    $pixels = (int) $imageInfo[0] * (int) $imageInfo[1];
+    if ($pixels < 1 || $pixels > $config['max_pixels']) {
+        throw new UploadException('The image dimensions are too large to process safely.');
     }
 
     $extension = $config['allowed_mimes'][$mime];

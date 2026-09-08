@@ -93,31 +93,36 @@ function honeypot_tripped(array $input, string $field = 'website'): bool
  * Very small in-file rate limiter keyed by IP + action.
  * Good enough to blunt naive spam bots without needing Redis.
  */
-function rate_limit_check(string $action, string $ip, int $maxPerHour): bool
+function rate_limit_check(string $action, string $ip, int $maxHits, int $windowSeconds = 3600): bool
 {
     $dir = sys_get_temp_dir() . '/jp_rate_limit';
     if (!is_dir($dir)) {
         @mkdir($dir, 0700, true);
     }
-    $key = md5($action . '|' . $ip);
+    $key = hash('sha256', $action . '|' . $ip);
     $file = $dir . '/' . $key . '.json';
 
     $now = time();
-    $windowStart = $now - 3600;
+    $windowStart = $now - max(60, $windowSeconds);
     $hits = [];
-
-    if (is_file($file)) {
-        $raw = json_decode((string) file_get_contents($file), true);
+    $handle = @fopen($file, 'c+');
+    if ($handle === false) return false;
+    try {
+        if (!flock($handle, LOCK_EX)) return false;
+        rewind($handle);
+        $raw = json_decode((string) stream_get_contents($handle), true);
         if (is_array($raw)) {
-            $hits = array_filter($raw, fn($t) => $t > $windowStart);
+            $hits = array_values(array_filter($raw, fn($t) => is_int($t) && $t > $windowStart));
         }
+        if (count($hits) >= $maxHits) return false;
+        $hits[] = $now;
+        ftruncate($handle, 0);
+        rewind($handle);
+        fwrite($handle, json_encode($hits, JSON_THROW_ON_ERROR));
+        fflush($handle);
+        return true;
+    } finally {
+        flock($handle, LOCK_UN);
+        fclose($handle);
     }
-
-    if (count($hits) >= $maxPerHour) {
-        return false;
-    }
-
-    $hits[] = $now;
-    @file_put_contents($file, json_encode(array_values($hits)));
-    return true;
 }
