@@ -27,7 +27,11 @@ class Database
         );
 
         $lastError = null;
-        for ($attempt = 1; $attempt <= 3; $attempt++) {
+        // XAMPP/MariaDB can briefly refuse connections while it is waking up or
+        // recycling. Retry a few short times so public reads do not fail during
+        // that small window, while still returning a bounded 503 for real outages.
+        $maxAttempts = 5;
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
             try {
                 self::$connection = new PDO($dsn, $db['user'], $db['password'], [
                     PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
@@ -40,8 +44,8 @@ class Database
                 break;
             } catch (PDOException $e) {
                 $lastError = $e;
-                if ($attempt < 3) {
-                    usleep(150000 * $attempt);
+                if ($attempt < $maxAttempts) {
+                    usleep(100000 * (2 ** ($attempt - 1)));
                 }
             }
         }

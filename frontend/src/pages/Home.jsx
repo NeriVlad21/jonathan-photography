@@ -7,25 +7,20 @@ import EditorialImage from '../components/EditorialImage.jsx'
 import Faq from '../components/Faq.jsx'
 import { portfolioApi, servicesApi } from '../services/api.js'
 import { temporaryPhotosForCategory } from '../data/temporaryPortfolio.js'
+import { useMusicPlayer } from '../context/MusicPlayerContext.jsx'
 
-const FAVORITE_SONGS = [
-  { title: 'I Want It That Way', artist: 'Backstreet Boys', type: 'track', spotifyId: '47BBI51FKFwOMlIiX6m8ya' },
-  { title: 'Wonderful Tonight', artist: 'Eric Clapton', type: 'track', spotifyId: '524OAAojQlHE0DSmUT0oX3' },
-  { title: 'Wake Me Up Before You Go-Go', artist: 'Wham!', type: 'track', spotifyId: '5qFPs70nZD1fQZOi7u7cIZ' },
-  { title: '214', artist: 'Rivermaya', type: 'track', spotifyId: '7gZ3kWNtIxFgxjsm5OTVMB' },
-  { title: 'Every Breath You Take', artist: 'The Police', type: 'track', spotifyId: '1JSTJqkT5qHq8MDJnJbRE1' },
-  { title: 'Kahit Maputi Na Ang Buhok Ko', artist: 'Rey Valera', type: 'track', spotifyId: '1ZQIagXD5ku6N7LD6kLa0C' },
-  { title: 'Truly Madly Deeply', artist: 'Savage Garden', type: 'track', spotifyId: '2ntpyUU3itxHWcJnOJmVic' },
-  { title: 'With a Smile', artist: 'Eraserheads', type: 'track', spotifyId: '1NopgVCMVhCKIm64tF7auX' },
-  { title: 'Tuwing Umuulan at Kapiling Ka', artist: 'Eraserheads', type: 'track', spotifyId: '61jPZwzRkdQ0dZP3bDtyTX' },
-  { title: 'How Deep Is Your Love', artist: 'Bee Gees', type: 'track', spotifyId: '0Fao76Lcqht5xhyqOJeRCs' }
+const FALLBACK_CATEGORIES = [
+  { id: 'fallback-weddings', name: 'Weddings', slug: 'weddings' },
+  { id: 'fallback-engagement', name: 'Engagement', slug: 'engagement' },
+  { id: 'fallback-portraits', name: 'Portraits', slug: 'portraits' },
+  { id: 'fallback-events', name: 'Events', slug: 'events' }
 ]
 
 export default function Home() {
   const location = useLocation()
-  const [categories, setCategories] = useState([])
+  const [categories, setCategories] = useState(FALLBACK_CATEGORIES)
   const [services, setServices] = useState([])
-  const [selectedSong, setSelectedSong] = useState(FAVORITE_SONGS[0])
+  const { songs, selectedSong, selectSong, openPlayer } = useMusicPlayer()
 
   useEffect(() => {
     portfolioApi.categories().then((c) => setCategories(c.slice(0, 4))).catch(() => {})
@@ -72,27 +67,25 @@ export default function Home() {
           </div>
 
           <div className="about-player">
-            <iframe
-              key={`${selectedSong.type}-${selectedSong.spotifyId}`}
-              className="about-player__embed"
-              title={`Listen to ${selectedSong.title} by ${selectedSong.artist}`}
-              src={`https://open.spotify.com/embed/${selectedSong.type}/${selectedSong.spotifyId}?utm_source=generator&theme=0`}
-              width="100%"
-              height="152"
-              frameBorder="0"
-              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-              loading="lazy"
-            />
+            <button type="button" className="about-player__now" onClick={openPlayer}>
+              <span className="about-player__mark"><Play size={19} aria-hidden="true" /></span>
+              <span className="about-player__now-copy">
+                <small>Selected soundtrack</small>
+                <strong>{selectedSong.title}</strong>
+                <small>{selectedSong.artist} · open player</small>
+              </span>
+              <span className="about-player__count">10 tracks</span>
+            </button>
 
             <ol className="about-player__tracks">
-              {FAVORITE_SONGS.map((song, index) => {
+              {songs.map((song, index) => {
                 const active = song.title === selectedSong.title
                 return (
                   <li key={song.title}>
                     <button
                       type="button"
                       className={active ? 'is-active' : ''}
-                      onClick={() => setSelectedSong(song)}
+                      onClick={() => selectSong(song)}
                       aria-pressed={active}
                     >
                       <span className="about-player__track-number">{String(index + 1).padStart(2, '0')}</span>
@@ -183,15 +176,16 @@ export default function Home() {
           />
           <div className="service-list">
             {services.map((s, i) => (
-              <div className="service-row" key={s.id}>
+              <Link className="service-row service-row--link" to={`/booking?service=${encodeURIComponent(s.slug || s.name)}#estimator`} key={s.id}>
                 <span className="service-row__num">{String(i + 1).padStart(2, '0')}</span>
                 <div>
                   <div className="display service-row__name">{s.name}</div>
                 </div>
                 <div className="service-row__price">
                   {s.starting_price ? `From ₱${Number(s.starting_price).toLocaleString()}` : 'Inquire'}
+                  <span className="service-row__arrow" aria-hidden="true">↗</span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

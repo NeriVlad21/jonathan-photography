@@ -45,7 +45,7 @@ export default function Services() {
             </h2>
             <div className="service-list">
               {items.map((s, i) => (
-                <div className="service-row" key={s.id}>
+                <Link className="service-row service-row--link" to={`/booking?service=${encodeURIComponent(s.slug || s.name)}#estimator`} key={s.id}>
                   <span className="service-row__num">{String(i + 1).padStart(2, '0')}</span>
                   <div>
                     <div className="display service-row__name">{s.name}</div>
@@ -53,8 +53,9 @@ export default function Services() {
                   </div>
                   <div className="service-row__price">
                     {s.starting_price ? `From ${peso(s.starting_price)}` : 'Inquire'}
+                    <span className="service-row__arrow" aria-hidden="true">↗</span>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>

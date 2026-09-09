@@ -3,6 +3,8 @@ import { useEffect } from 'react'
 import Navbar from '../components/Navbar.jsx'
 import Footer from '../components/Footer.jsx'
 import CameraCursor from '../components/CameraCursor.jsx'
+import PersistentMusicPlayer from '../components/PersistentMusicPlayer.jsx'
+import { MusicPlayerProvider } from '../context/MusicPlayerContext.jsx'
 
 export default function PublicLayout() {
   const location = useLocation()
@@ -19,13 +21,16 @@ export default function PublicLayout() {
   }, [])
 
   return (
-    <div className="public-shell">
-      <CameraCursor />
-      <Navbar />
-      <main>
-        <Outlet />
-      </main>
-      <Footer />
-    </div>
+    <MusicPlayerProvider>
+      <div className="public-shell">
+        <CameraCursor />
+        <Navbar />
+        <main>
+          <Outlet />
+        </main>
+        <PersistentMusicPlayer />
+        <Footer />
+      </div>
+    </MusicPlayerProvider>
   )
 }

@@ -85,7 +85,10 @@ if (!$service || !$hour) {
     ]);
 }
 
-$estimateTotal = (float) ($service['starting_price'] ?? 0) + (float) $hour['price'];
+$serviceMinimum = (float) ($service['starting_price'] ?? 0);
+$coverageRate = (float) $hour['price'];
+$coverageAdjustment = max(0, $coverageRate - $serviceMinimum);
+$estimateTotal = $serviceMinimum + $coverageAdjustment;
 $canonicalAddons = [];
 $seenAddonIds = [];
 $addonStmt = $pdo->prepare(
@@ -133,13 +136,14 @@ $breakdown = [
     'service' => [
         'id' => (int) $service['id'],
         'name' => (string) $service['name'],
-        'price' => (float) ($service['starting_price'] ?? 0),
+        'price' => $serviceMinimum,
     ],
     'hours' => [
         'id' => (int) $hour['id'],
         'label' => (string) $hour['label'],
         'hours' => (float) $hour['hours'],
-        'price' => (float) $hour['price'],
+        'price' => $coverageAdjustment,
+        'rate_price' => $coverageRate,
     ],
     'addons' => $canonicalAddons,
     'total' => $estimateTotal,

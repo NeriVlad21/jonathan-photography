@@ -2,20 +2,35 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Camera, CameraOff, RefreshCw, RotateCcw, Sparkles } from 'lucide-react'
 import { servicesApi } from '../services/api.js'
 
-const FALLBACK_FILTERS = ['Weddings', 'Engagement', 'Birthday', 'Christening', 'Debut', 'Burial', 'Portrait']
+const FILTER_RECIPES = {
+  Wedding: { filter: 'brightness(1.08) contrast(.96) saturate(.78) sepia(.14)', accent: '#ead6bd', note: 'Soft ivory' },
+  Engagement: { filter: 'brightness(1.05) contrast(1.12) saturate(1.05) sepia(.06)', accent: '#f2cb05', note: 'Warm film' },
+  Birthday: { filter: 'brightness(1.08) contrast(1.04) saturate(1.42)', accent: '#e58a62', note: 'Bright color' },
+  Christening: { filter: 'brightness(1.14) contrast(.9) saturate(.68) hue-rotate(8deg)', accent: '#d7e7e4', note: 'Airy pastel' },
+  Debut: { filter: 'brightness(1.02) contrast(1.18) saturate(.92) sepia(.16)', accent: '#bca2c8', note: 'Editorial plum' },
+  Burial: { filter: 'grayscale(1) contrast(1.18) brightness(.88)', accent: '#b9b7ae', note: 'Monochrome' },
+  Portrait: { filter: 'contrast(1.12) saturate(.72) sepia(.18)', accent: '#cab08a', note: 'Classic portrait' },
+  Event: { filter: 'brightness(1.04) contrast(1.15) saturate(1.18)', accent: '#a7c7d9', note: 'Clean documentary' },
+  Other: { filter: 'none', accent: '#f5f4ef', note: 'Natural color' }
+}
 
-const FILTER_RECIPES = [
-  { filter: 'brightness(1.05) contrast(1.04) saturate(.88) sepia(.08)', accent: '#ead6bd' },
-  { filter: 'brightness(1.07) contrast(1.08) saturate(1.08) sepia(.04)', accent: '#f2cb05' },
-  { filter: 'brightness(1.08) contrast(1.03) saturate(1.24)', accent: '#e58a62' },
-  { filter: 'brightness(1.1) contrast(.96) saturate(.82)', accent: '#d7e7e4' },
-  { filter: 'brightness(1.03) contrast(1.12) saturate(.92) sepia(.12)', accent: '#bca2c8' },
-  { filter: 'grayscale(.88) contrast(1.12) brightness(.92)', accent: '#b9b7ae' },
-  { filter: 'contrast(1.08) saturate(.78) sepia(.1)', accent: '#cab08a' }
-]
+const FALLBACK_FILTERS = Object.keys(FILTER_RECIPES)
+
+function canonicalFilter(name = '') {
+  const value = name.toLowerCase()
+  if (value.includes('wedding')) return 'Wedding'
+  if (value.includes('engagement')) return 'Engagement'
+  if (value.includes('birthday')) return 'Birthday'
+  if (value.includes('christen') || value.includes('bapt')) return 'Christening'
+  if (value.includes('debut')) return 'Debut'
+  if (value.includes('burial') || value.includes('funeral')) return 'Burial'
+  if (value.includes('portrait')) return 'Portrait'
+  if (value.includes('event') || value.includes('coverage') || value.includes('photo') || value.includes('video')) return 'Event'
+  return 'Other'
+}
 
 function uniqueServiceNames(rows) {
-  const names = rows.map((service) => service?.name?.trim()).filter(Boolean)
+  const names = rows.map((service) => canonicalFilter(service?.name)).filter(Boolean)
   return [...new Set([...FALLBACK_FILTERS, ...names])]
 }
 
@@ -34,10 +49,7 @@ export default function Photobooth() {
     servicesApi.list().then((rows) => setFilters(uniqueServiceNames(Array.isArray(rows) ? rows : []))).catch(() => {})
   }, [])
 
-  const recipe = useMemo(() => {
-    const index = Math.max(0, filters.indexOf(selected))
-    return FILTER_RECIPES[index % FILTER_RECIPES.length]
-  }, [filters, selected])
+  const recipe = useMemo(() => FILTER_RECIPES[selected] || FILTER_RECIPES.Other, [selected])
 
   const stopCamera = () => {
     streamRef.current?.getTracks().forEach((track) => track.stop())
@@ -136,6 +148,7 @@ export default function Photobooth() {
               </div>
             )}
             <span className="photobooth-stage__mark">JP / FOUND FRAME</span>
+            <span className="photobooth-stage__finish">{selected} / {recipe.note}</span>
           </div>
 
           <aside className="photobooth-controls">
@@ -146,8 +159,8 @@ export default function Photobooth() {
             <div className="photobooth-filters" role="list" aria-label="Photobooth filters">
               {filters.map((name) => (
                 <button key={name} type="button" className={selected === name ? 'is-active' : ''} onClick={() => setSelected(name)}>
-                  <i style={{ background: FILTER_RECIPES[filters.indexOf(name) % FILTER_RECIPES.length].accent }} />
-                  {name}
+                  <i style={{ background: FILTER_RECIPES[name]?.accent || FILTER_RECIPES.Other.accent }} />
+                  <span>{name}<small>{FILTER_RECIPES[name]?.note || FILTER_RECIPES.Other.note}</small></span>
                 </button>
               ))}
             </div>

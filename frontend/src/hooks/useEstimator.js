@@ -31,9 +31,12 @@ export function useEstimator() {
           setHourId(data.hours[0].id)
         }
 
-        // Select the first active service by default
         if (data?.services?.length) {
-          setServiceType(data.services[0].name)
+          const requestedService = new URLSearchParams(window.location.search).get('service')
+          const matchedService = requestedService
+            ? data.services.find((service) => service.slug === requestedService || service.name === requestedService)
+            : null
+          setServiceType((matchedService || data.services[0]).name)
         }
       })
       .catch((e) => {
@@ -112,7 +115,7 @@ export function useEstimator() {
       return sum + (Number(addon.price || 0) * qty)
     }, 0)
 
-    return servicePrice + hourPrice + addonsPrice
+    return Math.max(servicePrice, hourPrice) + addonsPrice
   }, [selectedService, selectedHour, selectedAddons, addonQuantities])
 
   // ============================================================
@@ -135,7 +138,8 @@ export function useEstimator() {
           id: selectedHour.id,
           label: selectedHour.label,
           hours: selectedHour.hours,
-          price: Number(selectedHour.price || 0)
+          price: Math.max(0, Number(selectedHour.price || 0) - Number(selectedService?.starting_price || 0)),
+          rate_price: Number(selectedHour.price || 0)
         }
       : null,
 

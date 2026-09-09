@@ -16,6 +16,7 @@ export default function Estimator({ estimator }) {
   const [privacyModalOpen, setPrivacyModalOpen] = useState(false)
   const [leadName, setLeadName] = useState('')
   const [leadEmail, setLeadEmail] = useState('')
+  const [privacyAgreed, setPrivacyAgreed] = useState(false)
   const [sendingLead, setSendingLead] = useState(false)
   const [margin, setMargin] = useState(15)
 
@@ -77,7 +78,8 @@ export default function Estimator({ estimator }) {
     return sum + (Number(addon.price || 0) * qty)
   }, 0)
 
-  const dynamicTotal = servicePrice + hourPrice + addonsPrice
+  const coverageAdjustment = Math.max(0, hourPrice - servicePrice)
+  const dynamicTotal = servicePrice + coverageAdjustment + addonsPrice
   const maxTotal = dynamicTotal + dynamicTotal * (margin / 100)
 
   // ============================================================
@@ -89,7 +91,7 @@ export default function Estimator({ estimator }) {
       ? { id: selectedService.id, name: selectedService.name, price: servicePrice }
       : null,
     hours: selectedHour
-      ? { id: selectedHour.id, label: selectedHour.label, hours: selectedHour.hours, price: hourPrice }
+      ? { id: selectedHour.id, label: selectedHour.label, hours: selectedHour.hours, price: coverageAdjustment, rate_price: hourPrice }
       : null,
     addons: selectedAddons.map((addon) => {
       const qty = addon.is_quantity_based ? (addonQuantities[addon.id] || 1) : 1
@@ -114,7 +116,14 @@ export default function Estimator({ estimator }) {
     saveBookingEstimate(dynamicBreakdown)
     navigate('/booking', { state: { estimate: dynamicBreakdown } })
   }
-  const handleFormSubmit = (e) => { e.preventDefault(); setPrivacyModalOpen(true) }
+  const handleFormSubmit = (e) => {
+    e.preventDefault()
+    if (!privacyAgreed) {
+      showToast('Please agree to the data privacy notice before sending.', 'error')
+      return
+    }
+    handleFinalSubmit()
+  }
 
   const handleFinalSubmit = async () => {
     setPrivacyModalOpen(false)
@@ -137,6 +146,7 @@ export default function Estimator({ estimator }) {
       setEmailModalOpen(false)
       setLeadName('')
       setLeadEmail('')
+      setPrivacyAgreed(false)
     } catch (err) {
       showToast(err.message, 'error')
     } finally {
@@ -152,7 +162,7 @@ export default function Estimator({ estimator }) {
           ======================================================== */}
       <div>
         <div className="estimator-block">
-          <div className="estimator-block__label"><h3 className="display">What are we shooting?</h3></div>
+          <div className="estimator-block__label"><h3 className="display">Choose the occasion</h3></div>
           <div className="option-grid">
             {services.length === 0 ? (
               <div style={{ color: '#6b7280', fontSize: '0.9rem' }}>No services are currently available.</div>
@@ -172,7 +182,12 @@ export default function Estimator({ estimator }) {
         </div>
 
         <div className="estimator-block">
-          <div className="estimator-block__label"><h3 className="display">Coverage Hours</h3></div>
+          <div className="estimator-block__label">
+            <div>
+              <h3 className="display">Choose a coverage starting point</h3>
+              <p className="estimator-block__help">Your occasion has a starting minimum. Coverage only increases it when the time-based rate is higher.</p>
+            </div>
+          </div>
           <div className="option-grid">
             {config.hours.map((h) => (
               <button
@@ -185,6 +200,7 @@ export default function Estimator({ estimator }) {
               </button>
             ))}
           </div>
+          <p className="estimator-custom-note">Need an exact or split schedule? Choose the nearest option now—the final hours and timeline can be customized during consultation.</p>
         </div>
 
         {/* ======================================================
@@ -263,8 +279,8 @@ export default function Estimator({ estimator }) {
         )}
         {selectedHour && (
           <div className="estimate-summary__line">
-            <span>{selectedHour.label}</span>
-            <span>{peso(hourPrice)}</span>
+            <span>{selectedHour.label} coverage</span>
+            <span>{coverageAdjustment > 0 ? `+${peso(coverageAdjustment)}` : 'Included'}</span>
           </div>
         )}
         {selectedAddons.map((addon) => {
@@ -315,16 +331,29 @@ export default function Estimator({ estimator }) {
                 <label htmlFor="lead-email">Email</label>
                 <input id="lead-email" type="email" required value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)} />
               </div>
+              <label className="estimate-privacy-consent">
+                <input type="checkbox" checked={privacyAgreed} onChange={(e) => setPrivacyAgreed(e.target.checked)} required />
+                <span>I agree that my name and email may be used to send this estimate and respond to my inquiry.</span>
+              </label>
+              <button type="button" className="estimate-privacy-link" onClick={() => setPrivacyModalOpen(true)}>Read the Data Privacy Notice</button>
               <div className="modal-card__actions">
                 <button type="button" className="btn btn--ghost-light btn--sm" onClick={() => setEmailModalOpen(false)}>Cancel</button>
-                <button type="submit" className="btn btn--primary btn--sm" disabled={sendingLead}>{sendingLead ? 'Sending…' : 'Send Estimate'}</button>
+                <button type="submit" className="btn btn--primary btn--sm" disabled={sendingLead || !privacyAgreed}>{sendingLead ? 'Sending…' : 'Send Estimate'}</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      <PrivacyModal isOpen={privacyModalOpen} onClose={() => setPrivacyModalOpen(false)} onAccept={handleFinalSubmit} />
+      <PrivacyModal
+        isOpen={privacyModalOpen}
+        onClose={() => setPrivacyModalOpen(false)}
+        onAccept={() => {
+          setPrivacyAgreed(true)
+          setPrivacyModalOpen(false)
+          showToast('Data privacy agreement accepted.')
+        }}
+      />
 
     </div>
   )

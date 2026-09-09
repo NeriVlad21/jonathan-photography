@@ -1272,3 +1272,5 @@ body .admin-login-page {
   .admin-shell .admin-topbar { min-height: 70px; }
   .admin-shell .admin-topbar__title { font-size: clamp(1.3rem, 5.5vw, 1.6rem); }
 }
+
+.services-form-help { display: block; margin: -3px 0 8px; color: var(--admin-muted, #686861); font-size: .74rem; line-height: 1.4; }

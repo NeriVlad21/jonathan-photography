@@ -170,7 +170,10 @@ if ($method === 'POST') {
 
     $canonicalAddons = [];
     $seenAddonIds = [];
-    $total = (float) $service['starting_price'] + (float) $hour['price'];
+    $serviceMinimum = (float) $service['starting_price'];
+    $coverageRate = (float) $hour['price'];
+    $coverageAdjustment = max(0, $coverageRate - $serviceMinimum);
+    $total = $serviceMinimum + $coverageAdjustment;
     $addonLookup = $pdo->prepare(
         'SELECT id, label, description, price, is_quantity_based
          FROM estimator_addons WHERE id = :id AND active = 1 LIMIT 1'
@@ -230,6 +233,10 @@ if ($method === 'POST') {
                 $servicePrice = peso((float) $service['starting_price']);
                 $addonLines .= "<tr><td style='padding:4px 0;color:#777;'><strong>Service:</strong> {$serviceName}</td><td style='padding:4px 0;text-align:right;'>{$servicePrice}</td></tr>";
             }
+
+            $coverageLabel = htmlspecialchars((string) $hour['label'], ENT_QUOTES, 'UTF-8');
+            $coveragePrice = $coverageAdjustment > 0 ? '+' . peso($coverageAdjustment) : 'Included';
+            $addonLines .= "<tr><td style='padding:4px 0;color:#777;'><strong>Coverage:</strong> {$coverageLabel}</td><td style='padding:4px 0;text-align:right;'>{$coveragePrice}</td></tr>";
             
             // Loop through add-ons and calculate quantities
             foreach ($canonicalAddons as $addon) {

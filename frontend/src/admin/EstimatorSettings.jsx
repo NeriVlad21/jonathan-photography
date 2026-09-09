@@ -207,6 +207,20 @@ export default function EstimatorSettings() {
     }
   }
 
+  const setServicePriceDraft = (
+    service,
+    value
+  ) => {
+    setConfig((current) => ({
+      ...current,
+      services: current.services.map((item) =>
+        item.id === service.id
+          ? { ...item, starting_price: value }
+          : item
+      )
+    }))
+  }
+
   const updateServiceField = async (
     service,
     field,
@@ -1724,8 +1738,7 @@ export default function EstimatorSettings() {
                   </h2>
 
                   <p className="estimator-settings-panel__description">
-                    Set the individual starting price
-                    used by the public estimator.
+                    These are the same service prices used in Services. A change here updates both areas.
                   </p>
 
                 </div>
@@ -1780,11 +1793,15 @@ export default function EstimatorSettings() {
                               ''
                             }
                             onChange={(event) =>
-                              updateServicePrice(
+                              setServicePriceDraft(
                                 service,
                                 event.target.value
                               )
                             }
+                            onBlur={(event) => updateServicePrice(service, event.target.value)}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter') event.currentTarget.blur()
+                            }}
                             className="estimator-price-input"
                             title="Starting price"
                           />

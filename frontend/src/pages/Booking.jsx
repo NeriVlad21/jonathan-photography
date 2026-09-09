@@ -33,7 +33,7 @@ export default function Booking() {
           : 'Choose your service, coverage, and extras. Continue only if you want to request a session—the estimate remains yours with no obligation to book.'}
         note={estimate ? 'Step 2 of 2 · Booking request' : 'Step 1 of 2 · Package estimate'}
       />
-      <section className="page-content">
+      <section className="page-content" id="estimator">
         <div className="container">
           {estimate ? (
             <BookingFormComponent

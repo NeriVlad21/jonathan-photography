@@ -1142,6 +1142,10 @@ export default function ServicesManager() {
                     Starting Price
                   </label>
 
+                  <small className="services-form-help">
+                    Shared with Estimator settings and the public package builder.
+                  </small>
+
                   <input
                     id="svc-price"
                     type="number"

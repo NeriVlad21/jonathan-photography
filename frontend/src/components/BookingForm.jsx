@@ -235,12 +235,12 @@ export default function BookingForm({ estimate, onChangeEstimate }) {
             )}
             {estimate.hours && (
               <div className="estimate-summary__line" style={{ color: '#1A1A1A', borderColor: 'var(--c-hairline)' }}>
-                <span>{estimate.hours.label}</span><span>{peso(estimate.hours.price)}</span>
+                <span>{estimate.hours.label} coverage</span><span>{Number(estimate.hours.price || 0) > 0 ? `+${peso(estimate.hours.price)}` : 'Included'}</span>
               </div>
             )}
             {estimate.addons && estimate.addons.map((a) => (
               <div className="estimate-summary__line" style={{ color: '#1A1A1A', borderColor: 'var(--c-hairline)' }} key={a.label}>
-                <span>{a.label}</span><span>{peso(a.price)}</span>
+                <span>{Number(a.quantity || 1) > 1 ? `${a.quantity}× ` : ''}{a.label}</span><span>{peso(a.total ?? a.price)}</span>
               </div>
             ))}
             <div className="estimate-summary__total" style={{ color: '#0A0A0A' }}>

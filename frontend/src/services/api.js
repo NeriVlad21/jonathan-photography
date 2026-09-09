@@ -91,39 +91,50 @@ async function request(
   }
 
   let res
-
-  try {
-    res = await fetch(`${BASE_URL}${path}`, {
-      method,
-      headers,
-      credentials: 'include',
-      body: body
-        ? (
-            isForm
-              ? body
-              : JSON.stringify(body)
-          )
-        : undefined
-    })
-  } catch (error) {
-    throw new ApiError(
-      'Unable to connect to the server.',
-      0,
-      {
-        originalError: error
-      }
-    )
-  }
-
   let json
+  const maxAttempts = method === 'GET' ? 2 : 1
 
-  try {
-    json = await res.json()
-  } catch {
-    throw new ApiError(
-      'The server returned an unexpected response.',
-      res.status
-    )
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      res = await fetch(`${BASE_URL}${path}`, {
+        method,
+        headers,
+        credentials: 'include',
+        body: body
+          ? (
+              isForm
+                ? body
+                : JSON.stringify(body)
+            )
+          : undefined
+      })
+    } catch (error) {
+      if (attempt < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, 250))
+        continue
+      }
+      throw new ApiError(
+        'Unable to connect to the server.',
+        0,
+        { originalError: error }
+      )
+    }
+
+    try {
+      json = await res.json()
+    } catch {
+      throw new ApiError(
+        'The server returned an unexpected response.',
+        res.status
+      )
+    }
+
+    if (res.status === 503 && attempt < maxAttempts) {
+      await new Promise((resolve) => setTimeout(resolve, 250))
+      continue
+    }
+
+    break
   }
 
   if (!res.ok || !json.success) {

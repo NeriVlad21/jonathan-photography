@@ -4,11 +4,17 @@ import { Camera } from 'lucide-react'
 import { contactsApi } from '../services/api.js'
 import EditorialDoodles from './EditorialDoodles.jsx'
 
+const CONTACT_FALLBACK = [
+  { id: 'contact-page', label: 'Contact details', link: '/contact', internal: true }
+]
+
 export default function Footer() {
-  const [platforms, setPlatforms] = useState([])
+  const [platforms, setPlatforms] = useState(CONTACT_FALLBACK)
 
   useEffect(() => {
-    contactsApi.list().then(setPlatforms).catch(() => setPlatforms([]))
+    contactsApi.list()
+      .then((rows) => setPlatforms(Array.isArray(rows) && rows.length ? rows : CONTACT_FALLBACK))
+      .catch(() => setPlatforms(CONTACT_FALLBACK))
   }, [])
 
   return (
@@ -30,8 +36,10 @@ export default function Footer() {
           </div>
           <div className="footer__col">
             <h5>Connect</h5>
-            {platforms.map((p) => (
-              <a key={p.id} href={p.link} target="_blank" rel="noreferrer">{p.label}</a>
+            {platforms.map((p) => p.internal ? (
+              <Link key={p.id} to={p.link}>{p.label}</Link>
+            ) : (
+              <a key={p.id} href={p.link} target={p.link?.startsWith('http') ? '_blank' : undefined} rel={p.link?.startsWith('http') ? 'noreferrer' : undefined}>{p.label}</a>
             ))}
             <Link className="footer__found-camera" to="/photobooth" aria-label="Open the hidden Jonathan Photography photobooth" title="A hidden frame">
               <Camera size={12} strokeWidth={1.8} aria-hidden="true" />
