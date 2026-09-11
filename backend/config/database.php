@@ -10,6 +10,11 @@ class Database
 {
     private static ?PDO $connection = null;
 
+    public static function disconnect(): void
+    {
+        self::$connection = null;
+    }
+
     public static function connect(): PDO
     {
         if (self::$connection !== null) {
@@ -30,14 +35,14 @@ class Database
         // XAMPP/MariaDB can briefly refuse connections while it is waking up or
         // recycling. Retry a few short times so public reads do not fail during
         // that small window, while still returning a bounded 503 for real outages.
-        $maxAttempts = 5;
+        $maxAttempts = 3;
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
             try {
                 self::$connection = new PDO($dsn, $db['user'], $db['password'], [
                     PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                     PDO::ATTR_EMULATE_PREPARES   => false,
-                    PDO::ATTR_TIMEOUT            => 3,
+                    PDO::ATTR_TIMEOUT            => 2,
                     PDO::ATTR_PERSISTENT         => false,
                     PDO::MYSQL_ATTR_INIT_COMMAND => "SET SESSION sql_mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'",
                 ]);
@@ -45,7 +50,7 @@ class Database
             } catch (PDOException $e) {
                 $lastError = $e;
                 if ($attempt < $maxAttempts) {
-                    usleep(100000 * (2 ** ($attempt - 1)));
+                    usleep($attempt === 1 ? 100000 : 250000);
                 }
             }
         }

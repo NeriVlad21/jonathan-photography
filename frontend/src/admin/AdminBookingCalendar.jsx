@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CalendarDays, Download, Mail, MapPin, Phone, Plus, X } from 'lucide-react'
-import html2pdf from 'html2pdf.js'
 import { bookingsApi } from '../services/api.js'
 import { formatDate, peso } from '../utils/format.js'
 import MonthCalendar, { addDays, monthBounds, toDateKey } from '../components/MonthCalendar.jsx'
@@ -235,21 +234,14 @@ function CalendarWorkspace({ archive = false }) {
     const bounds = monthBounds(month)
 
     const loadCalendar = async () => {
-      let lastError = null
-      for (let attempt = 0; attempt < 3; attempt += 1) {
-        try {
-          const data = await bookingsApi.calendar(bounds.start, bounds.end)
-          if (active) setEvents(Array.isArray(data) ? data : [])
-          return
-        } catch (error) {
-          lastError = error
-          if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 350 * (attempt + 1)))
+      try {
+        const data = await bookingsApi.calendar(bounds.start, bounds.end)
+        if (active) setEvents(Array.isArray(data) ? data : [])
+      } catch (error) {
+        if (active) {
+          setEvents([])
+          setLoadError(error?.message || 'The booking calendar could not be loaded.')
         }
-      }
-
-      if (active) {
-        setEvents([])
-        setLoadError(lastError?.message || 'The booking calendar could not be loaded.')
       }
     }
 
@@ -280,6 +272,7 @@ function CalendarWorkspace({ archive = false }) {
     const bounds = rangeBounds(range, month)
     setExporting(true)
     try {
+      const { default: html2pdf } = await import('html2pdf.js')
       const data = await bookingsApi.calendar(bounds.start, bounds.end)
       const label = `${range.charAt(0).toUpperCase() + range.slice(1)} booking calendar`
       setPrintData({ bounds, events: Array.isArray(data) ? data : [], label })

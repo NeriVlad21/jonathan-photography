@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { dashboardApi } from '../services/api.js'
 import { peso, formatDateTime } from '../utils/format.js'
 import LoadingState from '../components/LoadingState.jsx'
-import html2pdf from 'html2pdf.js'
 import {
   AreaChart,
   Area,
@@ -46,6 +45,7 @@ export default function Dashboard() {
   }
 
   const exportToPDF = async () => {
+    const { default: html2pdf } = await import('html2pdf.js')
     const element =
       document.getElementById(
         'export-container'

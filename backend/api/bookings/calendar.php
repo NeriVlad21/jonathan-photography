@@ -31,47 +31,9 @@ if ($method === 'GET') {
         json_error('Calendar ranges must be between 1 and 370 days.', 422);
     }
 
-    // Self-heal legacy or interrupted synchronization so every dated
-    // booking request has a linked calendar record.
-    $sync = $pdo->prepare(
-        'INSERT INTO calendar_events
-            (booking_id, reference_code, name, email, phone, shoot_type, event_date, location, notes, status)
-         SELECT b.id,
-                CONCAT(CASE WHEN b.status = \'NEW\' THEN \'REQ-\' ELSE \'CAL-\' END, b.reference_code),
-                b.name, b.email, b.phone, b.shoot_type, b.preferred_date, b.location, b.message,
-                CASE
-                    WHEN b.status = \'NEW\' THEN \'REQUESTED\'
-                    WHEN b.status = \'CONFIRMED\' THEN \'BOOKED\'
-                    ELSE \'CANCELLED\'
-                END
-         FROM bookings b
-         LEFT JOIN calendar_events ce ON ce.booking_id = b.id
-         WHERE ce.id IS NULL
-           AND b.preferred_date BETWEEN :sync_start AND :sync_end
-           AND b.status IN (\'NEW\', \'CONFIRMED\', \'CANCELLED\')'
-    );
-    $sync->execute(['sync_start' => $start, 'sync_end' => $end]);
-
-    $refreshLinked = $pdo->prepare(
-        'UPDATE calendar_events ce
-         INNER JOIN bookings b ON b.id = ce.booking_id
-         SET ce.reference_code = CONCAT(CASE WHEN b.status = \'NEW\' THEN \'REQ-\' ELSE \'CAL-\' END, b.reference_code),
-             ce.name = b.name,
-             ce.email = b.email,
-             ce.phone = b.phone,
-             ce.shoot_type = b.shoot_type,
-             ce.event_date = b.preferred_date,
-             ce.location = b.location,
-             ce.notes = b.message,
-             ce.status = CASE
-                 WHEN b.status = \'NEW\' THEN \'REQUESTED\'
-                 WHEN b.status = \'CONFIRMED\' THEN \'BOOKED\'
-                 ELSE \'CANCELLED\'
-             END
-         WHERE b.preferred_date BETWEEN :refresh_start AND :refresh_end
-           AND b.status IN (\'NEW\', \'CONFIRMED\', \'CANCELLED\')'
-    );
-    $refreshLinked->execute(['refresh_start' => $start, 'refresh_end' => $end]);
+    // Booking creation and status endpoints maintain calendar_events inside
+    // their own transactions. A calendar read therefore stays read-only and
+    // does not lock or rewrite the schedule on every page load.
 
     $stmt = $pdo->prepare(
         'SELECT CONCAT(\'schedule-\', ce.id) AS id,

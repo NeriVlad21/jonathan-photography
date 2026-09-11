@@ -18,26 +18,43 @@ const MusicPlayerContext = createContext(null)
 export function MusicPlayerProvider({ children }) {
   const [selectedSong, setSelectedSong] = useState(FAVORITE_SONGS[0])
   const [isOpen, setIsOpen] = useState(false)
-  const [isMinimized, setIsMinimized] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
+
+  const selectAt = (index) => {
+    const wrappedIndex = (index + FAVORITE_SONGS.length) % FAVORITE_SONGS.length
+    setSelectedSong(FAVORITE_SONGS[wrappedIndex])
+    setIsOpen(true)
+    setIsPlaying(true)
+  }
 
   const value = useMemo(() => ({
     songs: FAVORITE_SONGS,
     selectedSong,
     isOpen,
-    isMinimized,
+    isPlaying,
     selectSong(song) {
       setSelectedSong(song)
       setIsOpen(true)
-      setIsMinimized(false)
+      setIsPlaying(true)
     },
     openPlayer() {
       setIsOpen(true)
-      setIsMinimized(false)
+      setIsPlaying(true)
     },
-    minimizePlayer() {
-      setIsMinimized(true)
+    togglePlayback() {
+      setIsOpen(true)
+      setIsPlaying((playing) => !playing)
+    },
+    stopPlayback() {
+      setIsPlaying(false)
+    },
+    nextSong() {
+      selectAt(FAVORITE_SONGS.findIndex((song) => song.youtubeId === selectedSong.youtubeId) + 1)
+    },
+    previousSong() {
+      selectAt(FAVORITE_SONGS.findIndex((song) => song.youtubeId === selectedSong.youtubeId) - 1)
     }
-  }), [selectedSong, isOpen, isMinimized])
+  }), [selectedSong, isOpen, isPlaying])
 
   return <MusicPlayerContext.Provider value={value}>{children}</MusicPlayerContext.Provider>
 }

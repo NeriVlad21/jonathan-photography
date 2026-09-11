@@ -220,6 +220,10 @@ if ($method === 'POST') {
         'total'   => $total,
     ]);
 
+    // Email delivery must not keep a database connection occupied.
+    Database::disconnect();
+    $pdo = null;
+
     // Best-effort email of the estimate — never block the save on this.
     try {
         $mail = make_mailer();

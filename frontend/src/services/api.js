@@ -153,8 +153,19 @@ async function request(
 // BASIC HTTP HELPERS
 // ============================================================
 
-const get = (path) =>
-  request(path)
+const inflightGets = new Map()
+
+const get = (path) => {
+  if (inflightGets.has(path)) {
+    return inflightGets.get(path)
+  }
+
+  const pending = request(path)
+    .finally(() => inflightGets.delete(path))
+
+  inflightGets.set(path, pending)
+  return pending
+}
 
 const post = (path, body) =>
   request(path, {
@@ -452,42 +463,6 @@ export const estimatorApi = {
       `/estimator/config.php${
         all ? '?all=1' : ''
       }`
-    ),
-
-  // ----------------------------------------------------------
-  // SERVICE TYPE PRICING
-  // ----------------------------------------------------------
-
-  serviceTypes: (
-    all = false
-  ) =>
-    get(
-      `/estimator/service-types.php${
-        all ? '?all=1' : ''
-      }`
-    ),
-
-  createServiceType: (
-    data
-  ) =>
-    post(
-      '/estimator/service-types.php',
-      data
-    ),
-
-  updateServiceType: (
-    data
-  ) =>
-    put(
-      '/estimator/service-types.php',
-      data
-    ),
-
-  deleteServiceType: (
-    id
-  ) =>
-    del(
-      `/estimator/service-types.php?id=${id}`
     ),
 
   // ----------------------------------------------------------

@@ -205,6 +205,7 @@ CREATE TABLE calendar_events (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_calendar_events_date_status (event_date, status),
+  INDEX idx_calendar_events_date_created (event_date, created_at),
   CONSTRAINT fk_calendar_event_booking FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 

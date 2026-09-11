@@ -11,7 +11,6 @@ import {
 
 import LoadingState from '../components/LoadingState.jsx'
 import EmptyState from '../components/EmptyState.jsx'
-import html2pdf from 'html2pdf.js'
 import { CalendarArchivePanel } from './AdminBookingCalendar.jsx'
 
 const TIMEFRAMES = [
@@ -125,6 +124,7 @@ export default function Archive() {
   */
 
   const exportToPDF = async () => {
+    const { default: html2pdf } = await import('html2pdf.js')
     const element =
       document.getElementById(
         'archive-export-container'

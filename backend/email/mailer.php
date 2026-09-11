@@ -73,11 +73,13 @@ function studio_profile_email(?array $config = null): string
              LIMIT 1"
         );
         $profileEmail = trim((string) ($stmt->fetchColumn() ?: ''));
+        Database::disconnect();
 
         if ($profileEmail !== '' && filter_var($profileEmail, FILTER_VALIDATE_EMAIL)) {
             return $resolvedEmail = $profileEmail;
         }
     } catch (Throwable $e) {
+        Database::disconnect();
         error_log('[MAILER] Unable to resolve studio profile email: ' . $e->getMessage());
     }
 

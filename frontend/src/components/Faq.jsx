@@ -1,35 +1,27 @@
 const FAQS = [
   {
-    question: 'How do the estimate and booking request work?',
-    answer: 'Start by choosing a photography service, coverage, and any add-ons in the estimator. You will see an estimated total before you continue to the booking form. Your selected estimate is included with the request so the studio knows what you are looking for.',
+    question: 'Is the amount from the estimator the final price?',
+    answer: 'No. It is a planning estimate based on the occasion, coverage time, and add-ons you select. The final quotation may change after the studio confirms the exact schedule, location, travel requirements, deliverables, special requests, and availability with you. You may use the estimator without continuing to a booking request.',
   },
   {
-    question: 'Can I use the estimator without booking?',
-    answer: 'Yes. You can calculate an estimate for planning purposes without submitting a booking request. Booking is only required when you decide to continue and ask the studio about a date.',
+    question: 'Does submitting the form reserve my date?',
+    answer: 'No. Submitting the form creates a booking request for the studio to review; it is not an automatic confirmation or final contract. Your session is confirmed only after Jonathan Photography contacts you, verifies availability, and both sides agree on the package, price, schedule, and any required payment arrangements.',
   },
   {
-    question: 'Is the estimated price the final price?',
-    answer: 'No. The website provides a preliminary estimate based on your selections. The studio will confirm the final package, price, schedule, location, and any special requirements with you directly.',
+    question: 'What happens after I send a booking request?',
+    answer: 'The website gives you a request reference, while the studio receives the event information, preferred date, selected estimate, and contact details you submitted. The administrator can contact you through your provided email or phone number. You may also follow up through any channel listed on the Contact page and include your reference number so the request is easier to locate.',
   },
   {
-    question: 'Does submitting a request confirm my booking?',
-    answer: 'Not yet. A submitted form is a booking request, not a final reservation. The requested date is temporarily marked unavailable while the studio reviews it, and the booking becomes confirmed only after the studio contacts you and both sides agree on the details.',
+    question: 'Can the coverage hours or package be customized?',
+    answer: 'Yes. Select the closest available options to create a useful starting estimate, then explain your preferred timeline or special requirements in the request. Split schedules, additional locations, specific deliverables, and other details can be discussed directly before the studio provides the final quotation.',
   },
   {
-    question: 'How does the availability calendar work?',
-    answer: 'Choose an available date when completing your request. Dates with pending requests or confirmed sessions cannot be selected. If a request is cancelled, that date becomes available again unless another studio booking is already scheduled.',
+    question: 'Why is a date unavailable, and can I change my request?',
+    answer: 'The calendar blocks dates that already have a pending request, a confirmed session, or another studio commitment. To request a different date, correct information, or cancel, contact the studio and provide your request reference. Availability can change, so an open date on the calendar still requires direct confirmation.',
   },
   {
-    question: 'What happens after I submit a booking request?',
-    answer: 'You will receive a request reference, and the studio will receive your contact details, preferred date, event information, and estimate. The studio can then contact you outside the website to discuss and finalize the session.',
-  },
-  {
-    question: 'Can I change or cancel my request?',
-    answer: 'Yes. Contact the studio and provide your request reference so the details can be reviewed or the request can be cancelled. Once it is cancelled in the system, the calendar is updated automatically.',
-  },
-  {
-    question: 'How is my personal information used?',
-    answer: 'Your information is used to review your request, prepare for your session, and communicate with you about the booking. Please review the privacy notice on the booking form before submitting your details.',
+    question: 'What information is collected and how is it used?',
+    answer: 'The form collects the contact and event details needed to identify you, review availability, prepare an estimate, and communicate about your request. It is not used to capture payment on the website. Read and accept the data privacy notice beside the form before submitting, and avoid placing unnecessary sensitive information in the event notes.',
   },
 ]
 

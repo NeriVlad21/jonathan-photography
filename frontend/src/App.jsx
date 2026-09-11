@@ -1,32 +1,33 @@
+import { lazy, Suspense } from 'react'
 import { Navigate, Routes, Route } from 'react-router-dom'
 import { ToastProvider } from './context/ToastContext.jsx'
 import { AdminAuthProvider } from './context/AdminAuthContext.jsx'
 
 import PublicLayout from './layouts/PublicLayout.jsx'
-import Home from './pages/Home.jsx'
-import Portfolio from './pages/Portfolio.jsx'
-import PortfolioCategory from './pages/PortfolioCategory.jsx'
-import PortfolioShoot from './pages/PortfolioShoot.jsx'
-import PhotoView from './pages/PhotoView.jsx'
-import Services from './pages/Services.jsx'
-import Booking from './pages/Booking.jsx'
-import BookingSuccess from './pages/BookingSuccess.jsx'
-import Contact from './pages/Contact.jsx'
-import Photobooth from './pages/Photobooth.jsx'
-
 import ProtectedRoute from './admin/ProtectedRoute.jsx'
-import AdminLogin from './admin/AdminLogin.jsx'
-import AdminLayout from './admin/AdminLayout.jsx'
-import Dashboard from './admin/Dashboard.jsx'
-import ClientRequests from './admin/ClientRequests.jsx'
-import BookingDetails from './admin/BookingDetails.jsx'
-import PortfolioManager from './admin/PortfolioManager.jsx'
-import ServicesManager from './admin/ServicesManager.jsx'
-import EstimatorSettings from './admin/EstimatorSettings.jsx'
-import ContactManager from './admin/ContactManager.jsx'
-import Archive from './admin/Archive.jsx'
-import AdminProfile from './admin/AdminProfile.jsx'
-import AdminBookingCalendar from './admin/AdminBookingCalendar.jsx'
+
+const Home = lazy(() => import('./pages/Home.jsx'))
+const Portfolio = lazy(() => import('./pages/Portfolio.jsx'))
+const PortfolioCategory = lazy(() => import('./pages/PortfolioCategory.jsx'))
+const PortfolioShoot = lazy(() => import('./pages/PortfolioShoot.jsx'))
+const PhotoView = lazy(() => import('./pages/PhotoView.jsx'))
+const Services = lazy(() => import('./pages/Services.jsx'))
+const Booking = lazy(() => import('./pages/Booking.jsx'))
+const BookingSuccess = lazy(() => import('./pages/BookingSuccess.jsx'))
+const Contact = lazy(() => import('./pages/Contact.jsx'))
+const Photobooth = lazy(() => import('./pages/Photobooth.jsx'))
+const AdminLogin = lazy(() => import('./admin/AdminLogin.jsx'))
+const AdminLayout = lazy(() => import('./admin/AdminLayout.jsx'))
+const Dashboard = lazy(() => import('./admin/Dashboard.jsx'))
+const ClientRequests = lazy(() => import('./admin/ClientRequests.jsx'))
+const BookingDetails = lazy(() => import('./admin/BookingDetails.jsx'))
+const PortfolioManager = lazy(() => import('./admin/PortfolioManager.jsx'))
+const ServicesManager = lazy(() => import('./admin/ServicesManager.jsx'))
+const EstimatorSettings = lazy(() => import('./admin/EstimatorSettings.jsx'))
+const ContactManager = lazy(() => import('./admin/ContactManager.jsx'))
+const Archive = lazy(() => import('./admin/Archive.jsx'))
+const AdminProfile = lazy(() => import('./admin/AdminProfile.jsx'))
+const AdminBookingCalendar = lazy(() => import('./admin/AdminBookingCalendar.jsx'))
 
 function NotFound() {
   return (
@@ -56,7 +57,8 @@ export default function App() {
   return (
     <ToastProvider>
       <AdminAuthProvider>
-        <Routes>
+        <Suspense fallback={<div className="route-loading" role="status">Loading page…</div>}>
+          <Routes>
           {/* Public site */}
           <Route element={<PublicLayout />}>
             <Route path="/" element={<Home />} />
@@ -107,7 +109,8 @@ export default function App() {
               <Route path="archive" element={<Archive />} />
             </Route>
           </Route>
-        </Routes>
+          </Routes>
+        </Suspense>
       </AdminAuthProvider>
     </ToastProvider>
   )

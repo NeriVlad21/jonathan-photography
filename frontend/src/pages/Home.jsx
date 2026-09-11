@@ -72,7 +72,7 @@ export default function Home() {
               <span className="about-player__now-copy">
                 <small>Selected soundtrack</small>
                 <strong>{selectedSong.title}</strong>
-                <small>{selectedSong.artist} · open player</small>
+                <small>{selectedSong.artist} · play soundtrack</small>
               </span>
               <span className="about-player__count">10 tracks</span>
             </button>

@@ -237,9 +237,10 @@ try {
     // 2. Commit the transaction to unlock the database tables
     $pdo->commit();
     
-    // 3. CRITICAL FIX: Kill the database connection NOW. 
-    // Do not hold MariaDB hostage while SMTP takes 5 seconds to send an email!
-    $pdo = null; 
+    // Release the shared PDO connection before SMTP work, which can take
+    // several seconds on a slow mail server.
+    Database::disconnect();
+    $pdo = null;
 
 } catch (Throwable $e) {
     // Safely rollback ONLY if a transaction was actually started
@@ -247,6 +248,7 @@ try {
         $pdo->rollBack();
     }
     // Release connection on fail too
+    Database::disconnect();
     $pdo = null;
     
     log_server_error('BOOKING_CREATE', $e);

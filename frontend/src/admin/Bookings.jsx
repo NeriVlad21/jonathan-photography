@@ -4,7 +4,6 @@ import { bookingsApi } from '../services/api.js'
 import { peso, formatDateTime } from '../utils/format.js'
 import LoadingState from '../components/LoadingState.jsx'
 import EmptyState from '../components/EmptyState.jsx'
-import html2pdf from 'html2pdf.js'
 import {
   Search,
   SlidersHorizontal,
@@ -162,6 +161,7 @@ export default function Bookings() {
   */
 
   const exportToPDF = async () => {
+    const { default: html2pdf } = await import('html2pdf.js')
     const element =
       document.getElementById(
         'bookings-export-container'

@@ -3,14 +3,14 @@ import { Camera, CameraOff, RefreshCw, RotateCcw, Sparkles } from 'lucide-react'
 import { servicesApi } from '../services/api.js'
 
 const FILTER_RECIPES = {
-  Wedding: { filter: 'brightness(1.08) contrast(.96) saturate(.78) sepia(.14)', accent: '#ead6bd', note: 'Soft ivory' },
-  Engagement: { filter: 'brightness(1.05) contrast(1.12) saturate(1.05) sepia(.06)', accent: '#f2cb05', note: 'Warm film' },
-  Birthday: { filter: 'brightness(1.08) contrast(1.04) saturate(1.42)', accent: '#e58a62', note: 'Bright color' },
-  Christening: { filter: 'brightness(1.14) contrast(.9) saturate(.68) hue-rotate(8deg)', accent: '#d7e7e4', note: 'Airy pastel' },
-  Debut: { filter: 'brightness(1.02) contrast(1.18) saturate(.92) sepia(.16)', accent: '#bca2c8', note: 'Editorial plum' },
-  Burial: { filter: 'grayscale(1) contrast(1.18) brightness(.88)', accent: '#b9b7ae', note: 'Monochrome' },
-  Portrait: { filter: 'contrast(1.12) saturate(.72) sepia(.18)', accent: '#cab08a', note: 'Classic portrait' },
-  Event: { filter: 'brightness(1.04) contrast(1.15) saturate(1.18)', accent: '#a7c7d9', note: 'Clean documentary' },
+  Wedding: { filter: 'brightness(1.12) contrast(.9) saturate(.68) sepia(.25)', accent: '#ead6bd', note: 'Soft ivory' },
+  Engagement: { filter: 'brightness(1.07) contrast(1.16) saturate(1.12) sepia(.2)', accent: '#f2cb05', note: 'Warm film' },
+  Birthday: { filter: 'brightness(1.1) contrast(1.08) saturate(1.72)', accent: '#e58a62', note: 'Bright color' },
+  Christening: { filter: 'brightness(1.2) contrast(.82) saturate(.58) sepia(.1) hue-rotate(12deg)', accent: '#d7e7e4', note: 'Airy pastel' },
+  Debut: { filter: 'brightness(1.02) contrast(1.26) saturate(.82) sepia(.22) hue-rotate(318deg)', accent: '#bca2c8', note: 'Editorial plum' },
+  Burial: { filter: 'grayscale(1) contrast(1.32) brightness(.8)', accent: '#b9b7ae', note: 'Monochrome' },
+  Portrait: { filter: 'contrast(1.22) saturate(.62) sepia(.3)', accent: '#cab08a', note: 'Classic portrait' },
+  Event: { filter: 'brightness(1.05) contrast(1.2) saturate(1.38)', accent: '#a7c7d9', note: 'Clean documentary' },
   Other: { filter: 'none', accent: '#f5f4ef', note: 'Natural color' }
 }
 
@@ -38,6 +38,7 @@ export default function Photobooth() {
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
   const streamRef = useRef(null)
+  const rawFrameRef = useRef(null)
   const [filters, setFilters] = useState(FALLBACK_FILTERS)
   const [selected, setSelected] = useState(FALLBACK_FILTERS[0])
   const [cameraState, setCameraState] = useState('idle')
@@ -51,15 +52,22 @@ export default function Photobooth() {
 
   const recipe = useMemo(() => FILTER_RECIPES[selected] || FILTER_RECIPES.Other, [selected])
 
-  const stopCamera = () => {
+  const releaseCamera = () => {
     streamRef.current?.getTracks().forEach((track) => track.stop())
     streamRef.current = null
     if (videoRef.current) videoRef.current.srcObject = null
+  }
+
+  const stopCamera = () => {
+    releaseCamera()
+    rawFrameRef.current = null
+    setCaptured(false)
     setCameraState('idle')
+    setMessage('Camera closed. Nothing from this session was saved.')
   }
 
   const startCamera = async (mode = facingMode) => {
-    stopCamera()
+    releaseCamera()
     setCaptured(false)
     setCameraState('loading')
     setMessage('Waiting for camera permission…')
@@ -88,29 +96,50 @@ export default function Photobooth() {
     startCamera(next)
   }
 
+  const renderCapturedFrame = (filterName, source = rawFrameRef.current) => {
+    const canvas = canvasRef.current
+    if (!source || !canvas) return
+    const activeRecipe = FILTER_RECIPES[filterName] || FILTER_RECIPES.Other
+    canvas.width = source.width
+    canvas.height = source.height
+    const context = canvas.getContext('2d')
+    context.clearRect(0, 0, canvas.width, canvas.height)
+    context.filter = activeRecipe.filter
+    context.drawImage(source, 0, 0)
+    context.filter = 'none'
+    context.strokeStyle = activeRecipe.accent
+    context.lineWidth = Math.max(8, canvas.width * 0.012)
+    context.strokeRect(0, 0, canvas.width, canvas.height)
+    const captionHeight = Math.max(70, canvas.height * .095)
+    context.fillStyle = 'rgba(10,10,9,.78)'
+    context.fillRect(0, canvas.height - captionHeight, canvas.width, captionHeight)
+    context.fillStyle = '#fff'
+    context.font = `600 ${Math.max(24, canvas.width * .027)}px Inter, sans-serif`
+    context.fillText(`${filterName} · Jonathan Photography`, Math.max(22, canvas.width * .025), canvas.height - Math.max(25, canvas.height * .032))
+  }
+
+  const chooseFilter = (name) => {
+    setSelected(name)
+    if (captured) renderCapturedFrame(name)
+  }
+
   const capture = () => {
     const video = videoRef.current
     const canvas = canvasRef.current
     if (!video?.videoWidth || !canvas) return
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    const context = canvas.getContext('2d')
+    const source = document.createElement('canvas')
+    source.width = video.videoWidth
+    source.height = video.videoHeight
+    const context = source.getContext('2d')
     context.save()
-    context.filter = recipe.filter
     if (facingMode === 'user') {
-      context.translate(canvas.width, 0)
+      context.translate(source.width, 0)
       context.scale(-1, 1)
     }
-    context.drawImage(video, 0, 0, canvas.width, canvas.height)
+    context.drawImage(video, 0, 0, source.width, source.height)
     context.restore()
-    context.strokeStyle = recipe.accent
-    context.lineWidth = Math.max(8, canvas.width * 0.012)
-    context.strokeRect(0, 0, canvas.width, canvas.height)
-    context.fillStyle = 'rgba(10,10,9,.74)'
-    context.fillRect(0, canvas.height - Math.max(70, canvas.height * .095), canvas.width, Math.max(70, canvas.height * .095))
-    context.fillStyle = '#fff'
-    context.font = `600 ${Math.max(24, canvas.width * .027)}px Inter, sans-serif`
-    context.fillText(`${selected} · Jonathan Photography`, Math.max(22, canvas.width * .025), canvas.height - Math.max(25, canvas.height * .032))
+    rawFrameRef.current = source
+    renderCapturedFrame(selected, source)
     setCaptured(true)
     setMessage('Moment captured temporarily. Retake it when you are ready; saving is intentionally unavailable.')
   }
@@ -122,7 +151,7 @@ export default function Photobooth() {
     setMessage('Live preview stays on this device and is never uploaded.')
   }
 
-  useEffect(() => () => stopCamera(), [])
+  useEffect(() => () => releaseCamera(), [])
 
   return (
     <section className="photobooth-page">
@@ -149,24 +178,36 @@ export default function Photobooth() {
             )}
             <span className="photobooth-stage__mark">JP / FOUND FRAME</span>
             <span className="photobooth-stage__finish">{selected} / {recipe.note}</span>
+            <div className="photobooth-filter-dock" aria-label="Photobooth filters">
+              <div className="photobooth-filter-dock__track">
+                {filters.map((name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    className={selected === name ? 'is-active' : ''}
+                    onClick={() => chooseFilter(name)}
+                    aria-pressed={selected === name}
+                  >
+                    <i style={{ background: FILTER_RECIPES[name]?.accent || FILTER_RECIPES.Other.accent }} />
+                    <span>{name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           <aside className="photobooth-controls">
             <div className="photobooth-controls__heading">
               <Sparkles size={17} />
-              <span>Occasion finish</span>
-            </div>
-            <div className="photobooth-filters" role="list" aria-label="Photobooth filters">
-              {filters.map((name) => (
-                <button key={name} type="button" className={selected === name ? 'is-active' : ''} onClick={() => setSelected(name)}>
-                  <i style={{ background: FILTER_RECIPES[name]?.accent || FILTER_RECIPES.Other.accent }} />
-                  <span>{name}<small>{FILTER_RECIPES[name]?.note || FILTER_RECIPES.Other.note}</small></span>
-                </button>
-              ))}
+              <span>{selected} · {recipe.note}</span>
             </div>
             <p className="photobooth-privacy">{message}</p>
             <div className="photobooth-actions">
-              {cameraState !== 'ready' && !captured && <button type="button" className="btn btn--primary" onClick={() => startCamera()}>Start camera</button>}
+              {cameraState !== 'ready' && !captured && (
+                <button type="button" className="btn btn--primary" onClick={() => startCamera()} disabled={cameraState === 'loading'}>
+                  {cameraState === 'loading' ? 'Opening camera…' : 'Start camera'}
+                </button>
+              )}
               {cameraState === 'ready' && !captured && <button type="button" className="btn btn--primary" onClick={capture}><Camera size={16} /> Capture</button>}
               {cameraState === 'ready' && !captured && <button type="button" className="btn btn--ghost-dark" onClick={switchCamera}><RefreshCw size={16} /> Flip camera</button>}
               {captured && <button type="button" className="btn btn--primary" onClick={retake}><RotateCcw size={16} /> Retake</button>}
