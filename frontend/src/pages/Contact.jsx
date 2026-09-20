@@ -1,8 +1,10 @@
 import { useEffect } from 'react'
 import ContactFilmStrip from '../components/ContactFilmStrip.jsx'
 import PageHero from '../components/PageHero.jsx'
+import { useSiteContent } from '../context/SiteContentContext.jsx'
 
 export default function Contact() {
+  const { contactPage } = useSiteContent()
   useEffect(() => {
     document.title = 'Jonathan Photography — Contact'
   }, [])
@@ -10,10 +12,10 @@ export default function Contact() {
   return (
     <>
       <PageHero
-        eyebrow="Contact / 05"
-        title="Let’s start a conversation."
-        intro="Tell us what is happening, where it is, and when. Choose the channel that is easiest for you—we check them all."
-        note="Usually replies within 1–2 days"
+        eyebrow={contactPage.eyebrow}
+        title={contactPage.title}
+        intro={contactPage.intro}
+        note={contactPage.note}
       />
       <section className="contact-directory">
         <div className="container">

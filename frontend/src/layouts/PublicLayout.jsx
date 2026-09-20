@@ -5,6 +5,7 @@ import Footer from '../components/Footer.jsx'
 import CameraCursor from '../components/CameraCursor.jsx'
 import PersistentMusicPlayer from '../components/PersistentMusicPlayer.jsx'
 import { MusicPlayerProvider } from '../context/MusicPlayerContext.jsx'
+import { SiteContentProvider } from '../context/SiteContentContext.jsx'
 
 export default function PublicLayout() {
   const location = useLocation()
@@ -21,8 +22,9 @@ export default function PublicLayout() {
   }, [])
 
   return (
-    <MusicPlayerProvider>
-      <div className="public-shell">
+    <SiteContentProvider>
+      <MusicPlayerProvider>
+        <div className="public-shell">
         <CameraCursor />
         <Navbar />
         <main>
@@ -30,7 +32,8 @@ export default function PublicLayout() {
         </main>
         <PersistentMusicPlayer />
         <Footer />
-      </div>
-    </MusicPlayerProvider>
+        </div>
+      </MusicPlayerProvider>
+    </SiteContentProvider>
   )
 }

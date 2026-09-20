@@ -1,4 +1,6 @@
 import { createContext, useContext, useMemo, useState } from 'react'
+import { useEffect } from 'react'
+import { useSiteContent } from './SiteContentContext.jsx'
 
 export const FAVORITE_SONGS = [
   { title: 'I Want It That Way', artist: 'Backstreet Boys', youtubeId: '4fndeDfaWCg' },
@@ -16,19 +18,21 @@ export const FAVORITE_SONGS = [
 const MusicPlayerContext = createContext(null)
 
 export function MusicPlayerProvider({ children }) {
-  const [selectedSong, setSelectedSong] = useState(FAVORITE_SONGS[0])
+  const siteContent = useSiteContent()
+  const songs = siteContent.music?.songs?.length ? siteContent.music.songs : FAVORITE_SONGS
+  const [selectedSong, setSelectedSong] = useState(songs[0])
   const [isOpen, setIsOpen] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
 
   const selectAt = (index) => {
-    const wrappedIndex = (index + FAVORITE_SONGS.length) % FAVORITE_SONGS.length
-    setSelectedSong(FAVORITE_SONGS[wrappedIndex])
+    const wrappedIndex = (index + songs.length) % songs.length
+    setSelectedSong(songs[wrappedIndex])
     setIsOpen(true)
     setIsPlaying(true)
   }
 
   const value = useMemo(() => ({
-    songs: FAVORITE_SONGS,
+    songs,
     selectedSong,
     isOpen,
     isPlaying,
@@ -49,12 +53,16 @@ export function MusicPlayerProvider({ children }) {
       setIsPlaying(false)
     },
     nextSong() {
-      selectAt(FAVORITE_SONGS.findIndex((song) => song.youtubeId === selectedSong.youtubeId) + 1)
+      selectAt(songs.findIndex((song) => song.youtubeId === selectedSong.youtubeId) + 1)
     },
     previousSong() {
-      selectAt(FAVORITE_SONGS.findIndex((song) => song.youtubeId === selectedSong.youtubeId) - 1)
+      selectAt(songs.findIndex((song) => song.youtubeId === selectedSong.youtubeId) - 1)
     }
-  }), [selectedSong, isOpen, isPlaying])
+  }), [selectedSong, isOpen, isPlaying, songs])
+
+  useEffect(() => {
+    if (!songs.some((song) => song.youtubeId === selectedSong?.youtubeId)) setSelectedSong(songs[0])
+  }, [songs, selectedSong])
 
   return <MusicPlayerContext.Provider value={value}>{children}</MusicPlayerContext.Provider>
 }

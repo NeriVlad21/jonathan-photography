@@ -3,12 +3,14 @@ import { Link } from 'react-router-dom'
 import { Camera } from 'lucide-react'
 import { contactsApi } from '../services/api.js'
 import EditorialDoodles from './EditorialDoodles.jsx'
+import { useSiteContent } from '../context/SiteContentContext.jsx'
 
 const CONTACT_FALLBACK = [
   { id: 'contact-page', label: 'Contact details', link: '/contact', internal: true }
 ]
 
 export default function Footer() {
+  const { brand, footer, navigation } = useSiteContent()
   const [platforms, setPlatforms] = useState(CONTACT_FALLBACK)
 
   useEffect(() => {
@@ -21,21 +23,21 @@ export default function Footer() {
     <footer className="footer">
       <EditorialDoodles variant="public" />
       <div className="footer__cta">
-        <p>Have something worth remembering?</p>
-        <Link to="/booking">Let’s photograph it. <span>↗</span></Link>
+        <p>{footer.ctaTitle}</p>
+        <Link to="/booking">{footer.ctaButton} <span>↗</span></Link>
       </div>
       <div className="footer__top">
-        <div className="footer__brand">jonathan <span>photography</span></div>
+        <div className="footer__brand">{brand.name} <span>{brand.accent}</span></div>
         <div className="footer__cols">
           <div className="footer__col">
-            <h5>Explore</h5>
-            <Link to="/portfolio">Work</Link>
-            <Link to="/services">Services</Link>
-            <Link to="/#about">About</Link>
-            <Link to="/booking">Book a Session</Link>
+            <h5>{footer.exploreTitle}</h5>
+            <Link to="/portfolio">{navigation.work}</Link>
+            <Link to="/services">{navigation.services}</Link>
+            <Link to="/#about">{navigation.about}</Link>
+            <Link to="/booking">{navigation.booking}</Link>
           </div>
           <div className="footer__col">
-            <h5>Connect</h5>
+            <h5>{footer.connectTitle}</h5>
             {platforms.map((p) => p.internal ? (
               <Link key={p.id} to={p.link}>{p.label}</Link>
             ) : (
@@ -47,15 +49,14 @@ export default function Footer() {
             </Link>
           </div>
           <div className="footer__col">
-            <h5>Studio</h5>
-            <p>0013 Mc Arthur Hi-way,</p>
-            <p>Brgy. Asan Norte, Sison, Pangasinan</p>
+            <h5>{footer.studioTitle}</h5>
+            <p>{brand.address}</p>
           </div>
         </div>
       </div>
       <div className="footer__bottom">
-        <span>© {new Date().getFullYear()} Jonathan Photography. All rights reserved.</span>
-        <span>Pangasinan, Philippines</span>
+        <span>© {new Date().getFullYear()} {footer.copyright}</span>
+        <span>{footer.location}</span>
       </div>
     </footer>
   )

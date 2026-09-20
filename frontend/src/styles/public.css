@@ -487,6 +487,7 @@ html.public-scroll-theme::-webkit-scrollbar-button { display: none; width: 0; he
   animation: fade-up var(--dur-med) var(--ease-editorial) 0.3s forwards;
 }
 .hero__title {
+  overflow-wrap: anywhere;
   font-size: var(--fluid-h1);
   color: var(--c-white);
   margin-block: 14px 8px;
@@ -756,6 +757,7 @@ html.public-scroll-theme::-webkit-scrollbar-button { display: none; width: 0; he
 .home-about__inner { display: grid; grid-template-columns: minmax(145px, 0.3fr) minmax(0, 1fr); gap: 54px clamp(36px, 8vw, 120px); max-width: 1120px; }
 .home-about__label { padding-top: 3px; color: var(--c-black); font-size: clamp(1.25rem, 2.2vw, 1.75rem); font-weight: 800; letter-spacing: -0.04em; text-transform: lowercase; }
 .home-about__copy { max-width: 780px; color: var(--c-black); font-size: clamp(1.08rem, 1.8vw, 1.42rem); line-height: 1.35; letter-spacing: -0.025em; }
+.home-about__copy, .home-about__description, .intro__body, .service-row, .faq__answer, .page-hero__bottom { overflow-wrap: anywhere; }
 .home-about__copy p, .home-about__description p { margin: 0; }
 .home-about__copy p + p { margin-top: 1.15em; }
 .home-about__skills { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
@@ -2225,4 +2227,59 @@ html.public-scroll-theme::-webkit-scrollbar-button { display: none; width: 0; he
   .persistent-player__controls button:first-child { display: none; }
   .photobooth-intro h1 { font-size: clamp(2.35rem, 11.5vw, 3rem); }
   .photobooth-filter-dock button { min-height: 36px; padding-inline: 10px; font-size: .65rem; }
+}
+
+/* ---------- Final responsive spacing guardrails ---------- */
+.public-shell {
+  --public-section-space: clamp(64px, 7vw, 104px);
+  --public-page-space: clamp(48px, 6vw, 84px);
+}
+.public-shell main { min-width: 0; overflow: clip; }
+.public-shell .container { width: 100%; }
+.public-shell .section { padding-block: var(--public-section-space); }
+.public-shell .section--tight { padding-block: clamp(52px, 5.5vw, 78px); }
+.public-shell .page-content { padding-block: var(--public-page-space); }
+.public-shell .home-about { padding-block: var(--public-section-space); }
+.public-shell .section-header { margin-bottom: clamp(34px, 4.5vw, 62px); }
+.public-shell .section-header > *,
+.public-shell .intro > *,
+.public-shell .home-about__inner > *,
+.public-shell .footer__top > *,
+.public-shell .service-row > * { min-width: 0; }
+.public-shell h1,
+.public-shell h2,
+.public-shell h3 { overflow-wrap: anywhere; text-wrap: balance; }
+.public-shell p { overflow-wrap: anywhere; }
+.public-shell .btn { max-width: 100%; white-space: normal; text-align: center; line-height: 1.3; }
+.public-shell .navbar__logo { max-width: min(44vw, 340px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.public-shell .service-list { display: grid; gap: 2px; }
+
+@media (min-width: 701px) and (max-width: 1100px) {
+  .public-shell { --public-section-space: clamp(62px, 8vw, 86px); --public-page-space: 58px; }
+  .public-shell .container { padding-inline: clamp(28px, 5vw, 48px); }
+  .public-shell .home-about__inner { column-gap: 42px; row-gap: 42px; }
+  .public-shell .footer__top { gap: 42px; }
+  .public-shell .footer__cols { gap: 30px; }
+  .public-shell .service-row { padding-inline: clamp(20px, 3vw, 30px); }
+}
+
+@media (max-width: 700px) {
+  .public-shell { --public-section-space: 56px; --public-page-space: 42px; }
+  .public-shell .container { padding-inline: 18px; }
+  .public-shell .section--tight { padding-block: 48px; }
+  .public-shell .section-header { gap: 16px; margin-bottom: 30px; }
+  .public-shell .home-about__inner { gap: 28px; }
+  .public-shell .page-hero { padding: 94px 0 46px; }
+  .public-shell .page-hero h1 { margin-block: 28px; }
+  .public-shell .footer__top { gap: 34px; padding-block: 34px; }
+  .public-shell .preview-strip { margin-inline: -18px; padding-inline: 18px; }
+}
+
+@media (max-width: 390px) {
+  .public-shell { --public-section-space: 50px; --public-page-space: 36px; }
+  .public-shell .container { padding-inline: 15px; }
+  .public-shell .section-header { margin-bottom: 26px; }
+  .public-shell .preview-strip { margin-inline: -15px; padding-inline: 15px; }
+  .public-shell .service-row,
+  .public-shell .service-row--link { padding: 18px 16px; }
 }

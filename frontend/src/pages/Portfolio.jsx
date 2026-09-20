@@ -4,10 +4,12 @@ import LoadingState from '../components/LoadingState.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import { assetUrl, portfolioApi } from '../services/api.js'
 import { temporaryPhotosForCategory } from '../data/temporaryPortfolio.js'
+import { useSiteContent } from '../context/SiteContentContext.jsx'
 
 const SLIDE_DURATION = 4600
 
 export default function Portfolio() {
+  const { portfolioPage } = useSiteContent()
   const [categories, setCategories] = useState(null)
   const [photos, setPhotos] = useState([])
   const [activeSlide, setActiveSlide] = useState(0)
@@ -143,9 +145,9 @@ export default function Portfolio() {
 
           <div className="work-intro__shade" />
           <div className="work-intro__copy">
-            <p className="work-intro__kicker">Selected work</p>
-            <h1>A bit of my photography</h1>
-            <p>Portraits, celebrations, stories, and everything in between.</p>
+            <p className="work-intro__kicker">{portfolioPage.kicker}</p>
+            <h1>{portfolioPage.title}</h1>
+            <p>{portfolioPage.intro}</p>
           </div>
         </div>
 
@@ -199,9 +201,9 @@ export default function Portfolio() {
       {categories && categories.length > 0 && (
         <nav className="work-index" aria-label="Portfolio categories">
           <div className="work-index__heading">
-            <p>Explore by collection</p>
-            <h2>Choose a story.</h2>
-            <span>Browse the work by the kind of moment you want to remember.</span>
+            <p>{portfolioPage.indexEyebrow}</p>
+            <h2>{portfolioPage.indexTitle}</h2>
+            <span>{portfolioPage.indexText}</span>
           </div>
           <div className="work-index__grid">
             {categories.map((category, index) => (

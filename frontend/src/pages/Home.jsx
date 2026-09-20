@@ -8,6 +8,7 @@ import Faq from '../components/Faq.jsx'
 import { portfolioApi, servicesApi } from '../services/api.js'
 import { temporaryPhotosForCategory } from '../data/temporaryPortfolio.js'
 import { useMusicPlayer } from '../context/MusicPlayerContext.jsx'
+import { useSiteContent } from '../context/SiteContentContext.jsx'
 
 const FALLBACK_CATEGORIES = [
   { id: 'fallback-weddings', name: 'Weddings', slug: 'weddings' },
@@ -21,11 +22,16 @@ export default function Home() {
   const [categories, setCategories] = useState(FALLBACK_CATEGORIES)
   const [services, setServices] = useState([])
   const { songs, selectedSong, selectSong, openPlayer } = useMusicPlayer()
+  const content = useSiteContent()
 
   useEffect(() => {
-    portfolioApi.categories().then((c) => setCategories(c.slice(0, 4))).catch(() => {})
+    portfolioApi.categories().then((c) => {
+      const selected = content.selectedWork.categorySlugs || []
+      const ordered = selected.length ? selected.map((slug) => c.find((item) => item.slug === slug)).filter(Boolean) : c
+      setCategories(ordered.slice(0, 4))
+    }).catch(() => {})
     servicesApi.list().then((s) => setServices(s.slice(0, 4))).catch(() => {})
-  }, [])
+  }, [content.selectedWork.categorySlugs])
 
   useEffect(() => {
     const sectionId = location.hash.slice(1)
@@ -41,19 +47,11 @@ export default function Home() {
       <section className="section">
         <div className="container intro">
           <p className="intro__statement">
-            The day moves quickly.<br /><em>The photographs should not.</em>
+            {content.introduction.statement}<br /><em>{content.introduction.emphasis}</em>
           </p>
           <div className="intro__body">
-            <p>
-              A photograph is the part of a day that gets to happen twice—once
-              when it is lived, and again whenever someone returns to it.
-            </p>
-            <p>
-              We photograph weddings, portraits, and everything in between with
-              a calm approach, honest color, and attention to the people who make
-              the moment matter.
-            </p>
-            <Link to="/portfolio" className="text-link">See the Work →</Link>
+            {content.introduction.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+            <Link to="/portfolio" className="text-link">{content.introduction.linkLabel}</Link>
           </div>
         </div>
       </section>
@@ -61,9 +59,9 @@ export default function Home() {
       <section id="about" className="section home-about">
         <div className="container home-about__inner">
           <div className="home-about__music-intro">
-            <span className="eyebrow">Favorite songs</span>
-            <h2 className="display">A soundtrack for the scroll.</h2>
-            <p>Choose a song, press play, and let it accompany you through the rest of the story.</p>
+            <span className="eyebrow">{content.music.eyebrow}</span>
+            <h2 className="display">{content.music.title}</h2>
+            <p>{content.music.description}</p>
           </div>
 
           <div className="about-player">
@@ -74,7 +72,7 @@ export default function Home() {
                 <strong>{selectedSong.title}</strong>
                 <small>{selectedSong.artist} · play soundtrack</small>
               </span>
-              <span className="about-player__count">10 tracks</span>
+              <span className="about-player__count">{songs.length} tracks</span>
             </button>
 
             <ol className="about-player__tracks">
@@ -101,40 +99,22 @@ export default function Home() {
             </ol>
           </div>
 
-          <div className="home-about__label">who I am</div>
+          <div className="home-about__label">{content.about.whoLabel}</div>
           <div className="home-about__copy">
-            <p>
-              I am Jonathan Agbisit, a passionate multimedia enthusiast dedicated
-              to capturing the moments that make life worth remembering. Through
-              photography and videography, I transform meaningful moments into
-              timeless stories that you can look back on for years to come.
-            </p>
-            <p>
-              Whether it is a celebration, milestone, special occasion, or a simple
-              moment worth cherishing, I offer professional photo and video coverage
-              tailored to bring a vision to life. My goal is not just to capture
-              images, but to preserve the emotions, memories, and stories behind
-              every moment—one moment at a time.
-            </p>
+            {content.about.whoParagraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
           </div>
 
-          <div className="home-about__label">what I do</div>
+          <div className="home-about__label">{content.about.skillsLabel}</div>
           <ol className="home-about__skills" aria-label="Creative services">
-            {['Photography', 'Videography', 'Editing', 'Layout Design'].map((item, index) => (
+            {content.about.skills.map((item, index) => (
               <li key={item}><span>{String(index + 1).padStart(2, '0')}</span>{item}</li>
             ))}
           </ol>
 
-          <div className="home-about__label">based in Sison</div>
+          <div className="home-about__label">{content.about.locationLabel}</div>
           <div className="home-about__description">
-            <p>
-              I currently reside in Brgy. Tara-tara, Sison, Pangasinan, where I
-              have dedicated over a decade to photography and multimedia. With
-              years of experience capturing life’s most meaningful moments, I
-              strive to turn every occasion into lasting memories through creative,
-              timeless photographs and videos.
-            </p>
-            <Link to="/portfolio" className="text-link">Explore the stories I have captured →</Link>
+            <p>{content.about.locationText}</p>
+            <Link to="/portfolio" className="text-link">{content.about.linkLabel}</Link>
           </div>
 
         </div>
@@ -144,10 +124,10 @@ export default function Home() {
       <section id="selected-work" className="section section--tight">
         <div className="container">
           <SectionHeader
-            eyebrow="Selected Work"
-            title="Selected work"
-            desc="A few moments from recent celebrations, portraits, and events."
-            action={<Link to="/portfolio" className="text-link">View All →</Link>}
+            eyebrow={content.selectedWork.eyebrow}
+            title={content.selectedWork.title}
+            desc={content.selectedWork.description}
+            action={<Link to="/portfolio" className="text-link">{content.selectedWork.linkLabel}</Link>}
           />
         </div>
         <div className="container">
@@ -170,9 +150,9 @@ export default function Home() {
       <section className="section">
         <div className="container">
           <SectionHeader
-            eyebrow="What we offer"
-            title="Simple coverage, thoughtfully made."
-            action={<Link to="/services" className="text-link">See All Services →</Link>}
+            eyebrow={content.servicesHome.eyebrow}
+            title={content.servicesHome.title}
+            action={<Link to="/services" className="text-link">{content.servicesHome.linkLabel}</Link>}
           />
           <div className="service-list">
             {services.map((s, i) => (
@@ -195,11 +175,9 @@ export default function Home() {
       <section className="home-estimator-cta">
         <div className="container">
           <div className="home-estimator-cta__copy">
-            <span className="eyebrow">Build your package</span>
-            <h2>
-              Get a clear starting price<br />before the conversation.
-            </h2>
-            <Link to="/booking" className="btn btn--dark">Estimate &amp; request a session</Link>
+            <span className="eyebrow">{content.estimatorCta.eyebrow}</span>
+            <h2 style={{ whiteSpace: 'pre-line' }}>{content.estimatorCta.title}</h2>
+            <Link to="/booking" className="btn btn--dark">{content.estimatorCta.buttonLabel}</Link>
           </div>
           <div className="home-estimator-cta__art" aria-hidden="true">
             <img src="/doodles/estimator-camera-doodle.png" alt="" />

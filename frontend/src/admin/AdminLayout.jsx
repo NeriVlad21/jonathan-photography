@@ -21,7 +21,8 @@ import {
   X,
   Archive,
   User,
-  ChevronRight
+  ChevronRight,
+  PanelsTopLeft
 } from 'lucide-react'
 
 import { useAdminAuth } from '../context/AdminAuthContext.jsx'
@@ -57,6 +58,11 @@ const NAV = [
   {
     section: 'Content',
     links: [
+      {
+        to: '/admin/site-content',
+        label: 'Website Content',
+        icon: PanelsTopLeft
+      },
       {
         to: '/admin/portfolio',
         label: 'Portfolio',

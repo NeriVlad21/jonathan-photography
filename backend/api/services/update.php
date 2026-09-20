@@ -24,7 +24,7 @@ $pdo = Database::connect();
 $input = json_input();
 
 $v = new Validator($input);
-$v->required('id')->required('name', 'a service name');
+$v->required('id')->required('name', 'a service name')->maxLength('name', 160)->maxLength('category', 60)->maxLength('description', 1200);
 if ($v->fails()) json_error('Please fix the errors below.', 422, $v->errors());
 
 $stmt = $pdo->prepare(

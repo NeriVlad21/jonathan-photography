@@ -688,6 +688,16 @@ export const contactsApi = {
 }
 
 // ============================================================
+// PUBLIC WEBSITE CONTENT
+// ============================================================
+
+export const siteContentApi = {
+  get: () => get('/site/content.php'),
+  update: (content) => put('/site/content.php', { content }),
+  uploadImage: (formData) => uploadForm('/site/upload.php', formData)
+}
+
+// ============================================================
 // DASHBOARD
 // ============================================================
 

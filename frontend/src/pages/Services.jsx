@@ -5,10 +5,12 @@ import EmptyState from '../components/EmptyState.jsx'
 import PageHero from '../components/PageHero.jsx'
 import { servicesApi } from '../services/api.js'
 import { peso } from '../utils/format.js'
+import { useSiteContent } from '../context/SiteContentContext.jsx'
 
 const CATEGORY_LABELS = { photography: 'Photography', additional: 'Additional Services' }
 
 export default function Services() {
+  const { servicesPage } = useSiteContent()
   const [services, setServices] = useState(null)
 
   useEffect(() => {
@@ -26,10 +28,10 @@ export default function Services() {
   return (
     <>
       <PageHero
-        eyebrow="Services / 02"
-        title="Coverage made for real life."
-        intro="From full-day weddings to portraits and event details. Start with a service, then shape it around the day you are planning."
-        note="Photo + video"
+        eyebrow={servicesPage.eyebrow}
+        title={servicesPage.title}
+        intro={servicesPage.intro}
+        note={servicesPage.note}
       />
 
       <section className="page-content">
@@ -41,7 +43,7 @@ export default function Services() {
         {Object.entries(grouped).map(([cat, items]) => (
           <div key={cat} style={{ marginBottom: 56 }}>
             <h2 className="display" style={{ fontSize: '1.6rem', marginBottom: 8 }}>
-              {CATEGORY_LABELS[cat] || cat}
+              {servicesPage.categories?.find((item) => item.key === cat)?.label || CATEGORY_LABELS[cat] || cat}
             </h2>
             <div className="service-list">
               {items.map((s, i) => (
@@ -62,7 +64,7 @@ export default function Services() {
         ))}
 
         <div className="page-action">
-          <Link to="/booking" className="btn btn--primary">Estimate &amp; Request a Session</Link>
+          <Link to="/booking" className="btn btn--primary">{servicesPage.buttonLabel}</Link>
         </div>
       </div>
       </section>

@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { CalendarPlus, Menu, X } from 'lucide-react'
-
-const LINKS = [
-  { to: '/portfolio', label: 'Work' },
-  { to: '/services', label: 'Services' },
-  { to: '/#about', label: 'About' },
-  { to: '/contact', label: 'Contact' },
-]
+import { useSiteContent } from '../context/SiteContentContext.jsx'
 
 export default function Navbar() {
+  const { brand, navigation } = useSiteContent()
+  const links = [
+    { to: '/portfolio', label: navigation.work },
+    { to: '/services', label: navigation.services },
+    { to: '/#about', label: navigation.about },
+    { to: '/contact', label: navigation.contact },
+  ]
   const location = useLocation()
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
@@ -31,11 +32,11 @@ export default function Navbar() {
     <>
       <header className={`navbar ${isWorkIndex ? 'navbar--work' : ''} ${scrolled ? 'navbar--scrolled' : ''}`}>
         <Link to="/" className="navbar__logo">
-          <strong>jonathan</strong><span>photography</span>
+          <strong>{brand.name}</strong><span>{brand.accent}</span>
         </Link>
 
         <nav className="navbar__links" aria-label="Primary">
-          {LINKS.map((l) => l.to.includes('#') ? (
+          {links.map((l) => l.to.includes('#') ? (
             <Link key={l.to} to={l.to}>{l.label}</Link>
           ) : (
             <NavLink key={l.to} to={l.to} className={({ isActive }) => (isActive ? 'active' : '')}>
@@ -45,7 +46,7 @@ export default function Navbar() {
         </nav>
 
         <div className="navbar__right">
-          <Link to="/booking" className="btn btn--primary btn--sm navbar__book-button">Book a session</Link>
+          <Link to="/booking" className="btn btn--primary btn--sm navbar__book-button">{navigation.booking}</Link>
           <button className="navbar__toggle" onClick={() => setOpen(true)} aria-label="Open menu">
             <Menu size={24} />
           </button>
@@ -57,13 +58,13 @@ export default function Navbar() {
           <button className="navbar__mobile-close" onClick={() => setOpen(false)} aria-label="Close menu">
             <X size={28} />
           </button>
-          {LINKS.map((l) => (
+          {links.map((l) => (
             <Link key={l.to} to={l.to} onClick={() => setOpen(false)}>
               {l.label}
             </Link>
           ))}
           <Link to="/booking" onClick={() => setOpen(false)} className="btn btn--primary navbar__book-button" style={{ marginTop: 20 }}>
-            Book Now
+            {navigation.booking}
           </Link>
         </div>
       )}

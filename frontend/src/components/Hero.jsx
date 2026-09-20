@@ -1,32 +1,31 @@
 import { Link } from 'react-router-dom'
+import { assetUrl } from '../services/api.js'
+import { useSiteContent } from '../context/SiteContentContext.jsx'
 
 export default function Hero() {
+  const { hero } = useSiteContent()
   return (
     <section className="hero">
       <div className="hero__stage">
         <img
           className="hero__image"
-          src="/demo/portfolio/weddings/01.jpg"
-          alt="Newlyweds standing together in a mountain landscape"
+          src={assetUrl(hero.image)}
+          alt={hero.imageAlt}
         />
         <div className="hero__veil" />
         <div className="hero__content">
-          <span className="hero__eyebrow">Digital photo + video coverage</span>
-          <h1 className="hero__title">
-            Stories worth<br />keeping.
-          </h1>
-          <p className="hero__subtitle">
-            Honest photographs of weddings, portraits, and the people at the center of them.
-          </p>
+          <span className="hero__eyebrow">{hero.eyebrow}</span>
+          <h1 className="hero__title" style={{ whiteSpace: 'pre-line' }}>{hero.title}</h1>
+          <p className="hero__subtitle">{hero.subtitle}</p>
           <div className="hero__actions">
-            <Link to="/portfolio" className="btn btn--primary">Explore the work</Link>
-            <Link to="/booking" className="hero__text-link">Start a booking ↗</Link>
+            <Link to="/portfolio" className="btn btn--primary">{hero.primaryLabel}</Link>
+            <Link to="/booking" className="hero__text-link">{hero.secondaryLabel}</Link>
           </div>
         </div>
       </div>
       <div className="hero__footer">
-        <span>Based in Pangasinan</span>
-        <span>Available for stories everywhere</span>
+        <span>{hero.location}</span>
+        <span>{hero.availability}</span>
         <span aria-hidden="true">Scroll ↓</span>
       </div>
     </section>

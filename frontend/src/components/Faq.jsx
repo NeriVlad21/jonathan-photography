@@ -1,4 +1,6 @@
-const FAQS = [
+import { useSiteContent } from '../context/SiteContentContext.jsx'
+
+const FALLBACK_FAQS = [
   {
     question: 'Is the amount from the estimator the final price?',
     answer: 'No. It is a planning estimate based on the occasion, coverage time, and add-ons you select. The final quotation may change after the studio confirms the exact schedule, location, travel requirements, deliverables, special requests, and availability with you. You may use the estimator without continuing to a booking request.',
@@ -26,14 +28,16 @@ const FAQS = [
 ]
 
 export default function Faq() {
+  const { faq } = useSiteContent()
+  const items = faq.items?.length ? faq.items : FALLBACK_FAQS
   return (
     <section className="faq" id="faq" aria-labelledby="faq-title">
       <div className="faq__inner">
-        <span className="faq__eyebrow">FAQs</span>
-        <h2 className="faq__title" id="faq-title">Frequently Asked Questions</h2>
+        <span className="faq__eyebrow">{faq.eyebrow}</span>
+        <h2 className="faq__title" id="faq-title">{faq.title}</h2>
 
         <div className="faq__list">
-          {FAQS.map(({ question, answer }) => (
+          {items.map(({ question, answer }) => (
             <details className="faq__item" key={question}>
               <summary className="faq__question">
                 <span>{question}</span>

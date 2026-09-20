@@ -10,7 +10,8 @@ import {
   ExternalLink
 } from 'lucide-react'
 
-import { servicesApi } from '../services/api.js'
+import { servicesApi, siteContentApi } from '../services/api.js'
+import { DEFAULT_SITE_CONTENT, mergeSiteContent } from '../content/defaultSiteContent.js'
 import { useToast } from '../context/ToastContext.jsx'
 import LoadingState from '../components/LoadingState.jsx'
 import Modal from '../components/Modal.jsx'
@@ -42,6 +43,7 @@ export default function ServicesManager() {
 
   const [togglingId, setTogglingId] =
     useState(null)
+  const [serviceSections, setServiceSections] = useState(DEFAULT_SITE_CONTENT.servicesPage.categories)
 
   /*
   ============================================================
@@ -69,6 +71,7 @@ export default function ServicesManager() {
       'Admin — Services'
 
     load()
+    siteContentApi.get().then((data) => setServiceSections(mergeSiteContent(data?.content).servicesPage.categories)).catch(() => {})
   }, [])
 
   /*
@@ -1122,13 +1125,10 @@ export default function ServicesManager() {
                     }
                   >
 
-                    <option value="photography">
-                      Photography
-                    </option>
-
-                    <option value="additional">
-                      Additional Services
-                    </option>
+                    {!serviceSections.some((section) => section.key === form.category) && (
+                      <option value={form.category}>{form.category}</option>
+                    )}
+                    {serviceSections.map((section) => <option value={section.key} key={section.key}>{section.label}</option>)}
 
                   </select>
 

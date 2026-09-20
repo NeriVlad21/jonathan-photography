@@ -28,6 +28,7 @@ const ContactManager = lazy(() => import('./admin/ContactManager.jsx'))
 const Archive = lazy(() => import('./admin/Archive.jsx'))
 const AdminProfile = lazy(() => import('./admin/AdminProfile.jsx'))
 const AdminBookingCalendar = lazy(() => import('./admin/AdminBookingCalendar.jsx'))
+const SiteContentManager = lazy(() => import('./admin/SiteContentManager.jsx'))
 
 function NotFound() {
   return (
@@ -97,6 +98,7 @@ export default function App() {
               <Route path="calendar" element={<AdminBookingCalendar />} />
               <Route path="leads" element={<Navigate to="/admin/bookings?view=estimates" replace />} />
               <Route path="portfolio" element={<PortfolioManager />} />
+              <Route path="site-content" element={<SiteContentManager />} />
               <Route path="services" element={<ServicesManager />} />
               <Route
                 path="estimator-settings"
