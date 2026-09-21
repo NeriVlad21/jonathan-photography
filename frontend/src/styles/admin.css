@@ -1274,3 +1274,211 @@ body .admin-login-page {
 }
 
 .services-form-help { display: block; margin: -3px 0 8px; color: var(--admin-muted, #686861); font-size: .74rem; line-height: 1.4; }
+
+/* ============================================================
+   FINAL ADMIN EXPERIENCE POLISH
+   One content width, one spacing scale, and fewer nested scroll areas.
+   ============================================================ */
+
+.admin-shell .admin-main { min-height: 100svh; background: #f5f4ef; }
+.admin-shell .admin-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 80;
+  min-height: 78px;
+  background: rgba(255,255,255,.93);
+  border-bottom: 1px solid rgba(17,17,15,.08);
+  box-shadow: 0 8px 28px rgba(17,17,15,.045);
+  backdrop-filter: blur(14px);
+}
+.admin-shell .admin-content,
+.admin-shell .dashboard-page,
+.admin-shell .portfolio-admin,
+.admin-shell .bookings-page,
+.admin-shell .booking-details-page,
+.admin-shell .services-manager-page,
+.admin-shell .estimator-settings-page,
+.admin-shell .estimator-leads-page,
+.admin-shell .contact-manager-page,
+.admin-shell .archive-page {
+  width: 100%;
+  max-width: 1480px;
+  margin-inline: auto;
+  padding: clamp(26px, 3.2vw, 46px);
+}
+.admin-shell .admin-panel,
+.admin-shell .dashboard-panel,
+.admin-shell .bookings-panel,
+.admin-shell .booking-details-panel,
+.admin-shell .services-editor,
+.admin-shell .services-list-panel,
+.admin-shell .estimator-settings-panel,
+.admin-shell .estimator-leads-panel,
+.admin-shell .archive-panel,
+.admin-shell .portfolio-admin__sidebar,
+.admin-shell .portfolio-admin__main,
+.admin-shell .contact-editor,
+.admin-shell .contact-list-panel {
+  border: 1px solid rgba(17,17,15,.07);
+  border-radius: 16px;
+  box-shadow: 0 10px 34px rgba(17,17,15,.06);
+}
+.admin-shell .admin-panel__head,
+.admin-shell .dashboard-panel__header,
+.admin-shell .services-editor__head,
+.admin-shell .services-list-header,
+.admin-shell .estimator-settings-panel__head,
+.admin-shell .portfolio-admin__main-header {
+  min-height: 68px;
+  padding: 18px clamp(18px, 2.2vw, 28px);
+}
+.admin-shell input:not([type="checkbox"]):not([type="radio"]),
+.admin-shell select,
+.admin-shell textarea {
+  border-color: #cbc7bc;
+  border-radius: 9px;
+  background: #fff;
+}
+.admin-shell input:focus,
+.admin-shell select:focus,
+.admin-shell textarea:focus {
+  border-color: #11110f;
+  outline: 3px solid rgba(242,203,5,.28);
+  outline-offset: 1px;
+}
+.admin-shell button,
+.admin-shell .btn,
+.admin-shell a { -webkit-tap-highlight-color: transparent; }
+.admin-shell .data-table tbody tr { transition: background 150ms ease; }
+.admin-shell .data-table tbody tr:hover { background: #faf8f1; }
+
+@media (max-width: 1000px) and (min-width: 761px) {
+  .admin-shell .admin-content,
+  .admin-shell .dashboard-page,
+  .admin-shell .portfolio-admin,
+  .admin-shell .bookings-page,
+  .admin-shell .booking-details-page,
+  .admin-shell .services-manager-page,
+  .admin-shell .estimator-settings-page,
+  .admin-shell .estimator-leads-page,
+  .admin-shell .contact-manager-page,
+  .admin-shell .archive-page { padding: 28px 24px; }
+}
+
+@media (max-width: 760px) {
+  .admin-shell .admin-topbar {
+    min-height: 68px;
+    padding: 10px 14px;
+  }
+  .admin-shell .admin-content,
+  .admin-shell .dashboard-page,
+  .admin-shell .portfolio-admin,
+  .admin-shell .bookings-page,
+  .admin-shell .booking-details-page,
+  .admin-shell .services-manager-page,
+  .admin-shell .estimator-settings-page,
+  .admin-shell .estimator-leads-page,
+  .admin-shell .contact-manager-page,
+  .admin-shell .archive-page { padding: 22px 14px 42px !important; }
+  .admin-shell .admin-panel__body { padding: 18px; }
+  .admin-shell .btn { min-height: 44px; }
+  .admin-shell .data-table th,
+  .admin-shell .data-table td { padding: 12px; }
+}
+
+@media (max-width: 420px) {
+  .admin-shell .admin-content,
+  .admin-shell .dashboard-page,
+  .admin-shell .portfolio-admin,
+  .admin-shell .bookings-page,
+  .admin-shell .booking-details-page,
+  .admin-shell .services-manager-page,
+  .admin-shell .estimator-settings-page,
+  .admin-shell .estimator-leads-page,
+  .admin-shell .contact-manager-page,
+  .admin-shell .archive-page { padding-inline: 12px !important; }
+  .admin-shell .admin-panel,
+  .admin-shell .dashboard-panel,
+  .admin-shell .bookings-panel,
+  .admin-shell .booking-details-panel,
+  .admin-shell .services-editor,
+  .admin-shell .services-list-panel,
+  .admin-shell .estimator-settings-panel,
+  .admin-shell .estimator-leads-panel,
+  .admin-shell .archive-panel,
+  .admin-shell .portfolio-admin__sidebar,
+  .admin-shell .portfolio-admin__main,
+  .admin-shell .contact-editor,
+  .admin-shell .contact-list-panel { border-radius: 12px; }
+}
+
+/* ---------- Admin density correction ----------
+   Page components already contain an .admin-content wrapper. Keep spacing on
+   that wrapper only so page shell + content padding never stack together. */
+.admin-shell .dashboard-page,
+.admin-shell .bookings-page,
+.admin-shell .booking-details-page,
+.admin-shell .services-manager-page,
+.admin-shell .estimator-settings-page,
+.admin-shell .estimator-leads-page,
+.admin-shell .contact-manager-page,
+.admin-shell .archive-page,
+.admin-shell .client-requests-page,
+.admin-shell .admin-booking-calendar-page {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.admin-shell .admin-content {
+  width: 100%;
+  max-width: 1480px;
+  margin-inline: auto;
+  padding: 26px clamp(26px, 3vw, 42px) 42px;
+}
+
+.admin-shell .services-manager-content,
+.admin-shell .estimator-settings-content,
+.admin-shell .contact-manager-content,
+.admin-shell .archive-page > .admin-content {
+  padding-top: 24px;
+}
+
+.admin-shell .client-requests-content { padding-top: 20px; }
+.admin-shell .client-requests-hero { margin-bottom: 18px; }
+.admin-shell .client-requests-tabs { margin-bottom: 14px; }
+.admin-shell .client-requests-view .bookings-page,
+.admin-shell .client-requests-view .estimator-leads-page,
+.admin-shell .client-requests-view .bookings-content,
+.admin-shell .client-requests-view .estimator-leads-content {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0 !important;
+}
+.admin-shell .client-requests-view .bookings-toolbar,
+.admin-shell .client-requests-view .estimator-leads-toolbar { margin-top: 0; }
+
+.admin-shell .archive-page .empty-state,
+.admin-shell .client-requests-view .empty-state {
+  display: grid;
+  min-height: 220px;
+  margin-top: 14px;
+  padding: 42px 24px;
+  place-content: center;
+  border: 1px solid rgba(17,17,15,.07);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 26px rgba(17,17,15,.045);
+}
+
+@media (max-width: 760px) {
+  .admin-shell .admin-content {
+    padding: 20px 14px 38px !important;
+  }
+  .admin-shell .client-requests-content { padding-top: 16px !important; }
+}
+
+@media (max-width: 420px) {
+  .admin-shell .admin-content { padding-inline: 12px !important; }
+}

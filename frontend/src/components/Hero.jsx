@@ -11,6 +11,8 @@ export default function Hero() {
           className="hero__image"
           src={assetUrl(hero.image)}
           alt={hero.imageAlt}
+          fetchPriority="high"
+          decoding="async"
         />
         <div className="hero__veil" />
         <div className="hero__content">

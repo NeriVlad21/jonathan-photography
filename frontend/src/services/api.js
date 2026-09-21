@@ -80,9 +80,13 @@ async function request(
     isForm = false
   } = {}
 ) {
-  const headers = {}
+  const headers = {
+    Accept: 'application/json'
+  }
 
-  if (!isForm) {
+  // A JSON content type on body-less GET requests is unnecessary and can
+  // trigger a CORS preflight when the API is hosted on another origin.
+  if (!isForm && body !== undefined) {
     headers['Content-Type'] = 'application/json'
   }
 
@@ -95,11 +99,15 @@ async function request(
   const maxAttempts = method === 'GET' ? 2 : 1
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const controller = new AbortController()
+    const timeout = window.setTimeout(() => controller.abort(), 12000)
+
     try {
       res = await fetch(`${BASE_URL}${path}`, {
         method,
         headers,
         credentials: 'include',
+        signal: controller.signal,
         body: body
           ? (
               isForm
@@ -109,16 +117,21 @@ async function request(
           : undefined
       })
     } catch (error) {
+      window.clearTimeout(timeout)
       if (attempt < maxAttempts) {
         await new Promise((resolve) => setTimeout(resolve, 250))
         continue
       }
       throw new ApiError(
-        'Unable to connect to the server.',
+        error?.name === 'AbortError'
+          ? 'The server took too long to respond. Please try again.'
+          : 'Unable to connect to the server.',
         0,
         { originalError: error }
       )
     }
+
+    window.clearTimeout(timeout)
 
     try {
       json = await res.json()
@@ -154,33 +167,70 @@ async function request(
 // ============================================================
 
 const inflightGets = new Map()
+const responseCache = new Map()
+const PUBLIC_CACHE_TTL = 30000
+
+const isCacheablePublicRead = (path) => [
+  '/site/content.php',
+  '/services/list.php',
+  '/estimator/config.php',
+  '/contacts/list.php',
+  '/portfolio/categories.php',
+  '/portfolio/shoots.php'
+].some((prefix) => path.startsWith(prefix))
+
+const clearReadCache = () => {
+  responseCache.clear()
+}
 
 const get = (path) => {
+  const cached = responseCache.get(path)
+
+  if (cached && Date.now() - cached.savedAt < PUBLIC_CACHE_TTL) {
+    return Promise.resolve(cached.data)
+  }
+
   if (inflightGets.has(path)) {
     return inflightGets.get(path)
   }
 
   const pending = request(path)
+    .then((data) => {
+      if (isCacheablePublicRead(path)) {
+        responseCache.set(path, {
+          data,
+          savedAt: Date.now()
+        })
+      }
+
+      return data
+    })
     .finally(() => inflightGets.delete(path))
 
   inflightGets.set(path, pending)
   return pending
 }
 
+const mutate = async (path, options) => {
+  const data = await request(path, options)
+  clearReadCache()
+  return data
+}
+
 const post = (path, body) =>
-  request(path, {
+  mutate(path, {
     method: 'POST',
     body
   })
 
 const put = (path, body) =>
-  request(path, {
+  mutate(path, {
     method: 'PUT',
     body
   })
 
 const del = (path) =>
-  request(path, {
+  mutate(path, {
     method: 'DELETE'
   })
 
@@ -188,7 +238,7 @@ const uploadForm = (
   path,
   formData
 ) =>
-  request(path, {
+  mutate(path, {
     method: 'POST',
     body: formData,
     isForm: true

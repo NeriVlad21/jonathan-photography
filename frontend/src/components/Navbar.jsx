@@ -28,6 +28,21 @@ export default function Navbar() {
     return () => { document.body.style.overflow = '' }
   }, [open])
 
+  useEffect(() => {
+    setOpen(false)
+  }, [location.pathname, location.hash])
+
+  useEffect(() => {
+    if (!open) return undefined
+
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [open])
+
   return (
     <>
       <header className={`navbar ${isWorkIndex ? 'navbar--work' : ''} ${scrolled ? 'navbar--scrolled' : ''}`}>
@@ -47,15 +62,15 @@ export default function Navbar() {
 
         <div className="navbar__right">
           <Link to="/booking" className="btn btn--primary btn--sm navbar__book-button">{navigation.booking}</Link>
-          <button className="navbar__toggle" onClick={() => setOpen(true)} aria-label="Open menu">
+          <button type="button" className="navbar__toggle" onClick={() => setOpen(true)} aria-label="Open menu" aria-expanded={open} aria-controls="mobile-navigation">
             <Menu size={24} />
           </button>
         </div>
       </header>
 
       {open && (
-        <div className="navbar__mobile-panel" role="dialog" aria-modal="true">
-          <button className="navbar__mobile-close" onClick={() => setOpen(false)} aria-label="Close menu">
+        <div id="mobile-navigation" className="navbar__mobile-panel" role="dialog" aria-modal="true" aria-label="Site navigation">
+          <button type="button" className="navbar__mobile-close" onClick={() => setOpen(false)} aria-label="Close menu">
             <X size={28} />
           </button>
           {links.map((l) => (

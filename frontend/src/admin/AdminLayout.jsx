@@ -116,6 +116,14 @@ export default function AdminLayout() {
 
   const searchRef = useRef(null)
 
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'auto'
+    })
+  }, [location.pathname, location.search])
+
   /*
   ============================================================
   SEARCH VISIBILITY

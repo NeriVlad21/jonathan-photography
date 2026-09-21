@@ -25,9 +25,10 @@ export default function PublicLayout() {
     <SiteContentProvider>
       <MusicPlayerProvider>
         <div className="public-shell">
+        <a className="skip-link" href="#main-content">Skip to main content</a>
         <CameraCursor />
         <Navbar />
-        <main>
+        <main id="main-content" tabIndex="-1">
           <Outlet />
         </main>
         <PersistentMusicPlayer />

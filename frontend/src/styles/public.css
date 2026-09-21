@@ -2283,3 +2283,147 @@ html.public-scroll-theme::-webkit-scrollbar-button { display: none; width: 0; he
   .public-shell .service-row,
   .public-shell .service-row--link { padding: 18px 16px; }
 }
+
+/* ============================================================
+   FINAL PUBLIC EXPERIENCE POLISH
+   Shared rhythm, resilient mobile hero, and clearer navigation.
+   ============================================================ */
+
+html { scrollbar-gutter: stable; }
+
+.skip-link {
+  position: fixed;
+  top: 10px;
+  left: 12px;
+  z-index: 1000;
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: var(--c-yellow);
+  color: var(--c-black);
+  font-size: .82rem;
+  font-weight: 800;
+  transform: translateY(-150%);
+  transition: transform 160ms ease;
+}
+.skip-link:focus { transform: translateY(0); }
+.public-shell main:focus { outline: 0; }
+
+.public-shell .navbar {
+  min-height: 82px;
+  padding-inline: clamp(24px, 4vw, 58px);
+}
+.public-shell .navbar__logo {
+  font-size: clamp(1.05rem, .94rem + .35vw, 1.35rem);
+  letter-spacing: -.035em;
+}
+.public-shell .navbar__links { gap: clamp(26px, 3vw, 46px); }
+.public-shell .navbar__links a { min-height: 38px; display: inline-flex; align-items: center; }
+
+.public-shell .section-header { align-items: flex-end; }
+.public-shell .section-header__desc { max-width: 48ch; line-height: 1.65; }
+.public-shell .service-row--link,
+.public-shell .faq__item,
+.public-shell .option-card {
+  border: 1px solid rgba(17, 17, 15, .08);
+  box-shadow: 0 8px 28px rgba(17, 17, 15, .045);
+}
+.public-shell .service-row--link { min-height: 104px; }
+.public-shell .footer__col a { width: fit-content; padding-block: 3px; }
+
+@media (max-width: 760px) {
+  .public-shell .navbar,
+  .public-shell .navbar--scrolled {
+    min-height: 70px;
+    padding: 11px 16px;
+  }
+  .public-shell .navbar__logo {
+    max-width: calc(100vw - 92px);
+    font-size: clamp(.92rem, 4vw, 1.08rem);
+  }
+  .public-shell .navbar__right { gap: 8px; }
+  .public-shell .navbar__book-button:not(.navbar__mobile-panel .navbar__book-button) { display: none; }
+  .public-shell .navbar__mobile-panel {
+    align-items: flex-start;
+    padding: 96px 28px 38px;
+  }
+  .public-shell .navbar__mobile-panel a:not(.btn) {
+    width: 100%;
+    padding-block: 7px;
+    border-bottom: 1px solid rgba(255,255,255,.14);
+    font-size: clamp(1.8rem, 9vw, 2.7rem);
+    font-weight: 750;
+  }
+
+  .public-shell .hero {
+    min-height: auto;
+    gap: 14px;
+    padding: 70px 0 22px;
+  }
+  .public-shell .hero__stage {
+    width: 100%;
+    min-height: min(76svh, 640px);
+    aspect-ratio: auto;
+  }
+  .public-shell .hero__image { object-position: 52% center; }
+  .public-shell .hero__veil {
+    background: linear-gradient(0deg, rgba(0,0,0,.82) 0%, rgba(0,0,0,.38) 53%, rgba(0,0,0,.08) 100%);
+  }
+  .public-shell .hero__content {
+    justify-content: flex-end;
+    padding: clamp(22px, 6vw, 30px) 20px;
+  }
+  .public-shell .hero__eyebrow,
+  .public-shell .hero__title,
+  .public-shell .hero__subtitle,
+  .public-shell .hero__actions {
+    opacity: 1;
+    animation: none;
+  }
+  .public-shell .hero__title {
+    max-width: 9ch;
+    font-size: clamp(2.75rem, 13.2vw, 4.35rem);
+    line-height: .9;
+  }
+  .public-shell .hero__subtitle {
+    max-width: 32ch;
+    margin: 17px 0 21px;
+    font-size: clamp(.94rem, 3.8vw, 1.04rem);
+  }
+  .public-shell .hero__actions {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .public-shell .hero__actions .btn { width: min(100%, 330px); }
+  .public-shell .hero__footer { padding-inline: 18px; font-size: .67rem; }
+
+  .public-shell .section-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .public-shell .section-header .text-link { align-self: flex-start; }
+  .public-shell .home-about__inner { grid-template-columns: 1fr; }
+  .public-shell .home-about__music-intro,
+  .public-shell .about-player { grid-column: 1; }
+  .public-shell .home-about__label {
+    margin-bottom: -10px;
+    padding-top: 6px;
+    border-top: 1px solid var(--c-hairline);
+    font-size: 1.12rem;
+  }
+  .public-shell .home-about__skills { grid-template-columns: 1fr 1fr; }
+  .public-shell .home-about__skills li { min-height: 54px; padding: 12px 14px; }
+  .public-shell .faq__question { gap: 14px; padding: 20px 0; }
+  .public-shell .footer__top { grid-template-columns: 1fr; }
+  .public-shell .footer__cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .public-shell .footer__col:last-child { grid-column: 1 / -1; }
+}
+
+@media (max-width: 430px) {
+  .public-shell .hero__stage { min-height: min(74svh, 610px); }
+  .public-shell .hero__content { padding-inline: 18px; }
+  .public-shell .hero__title { font-size: clamp(2.55rem, 13vw, 3.55rem); }
+  .public-shell .home-about__skills { grid-template-columns: 1fr; }
+  .public-shell .footer__cols { grid-template-columns: 1fr; gap: 24px; }
+  .public-shell .footer__col:last-child { grid-column: auto; }
+}
