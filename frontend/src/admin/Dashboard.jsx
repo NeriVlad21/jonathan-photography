@@ -700,6 +700,8 @@ export default function Dashboard() {
 
       <section className="dashboard-page">
 
+        <div className="admin-content dashboard-content">
+
         {/* ======================================================
             HEADER
         ====================================================== */}
@@ -783,8 +785,6 @@ export default function Dashboard() {
           </div>
 
         </header>
-
-        <div className="admin-content">
 
           {/* ====================================================
               PDF EXPORT AREA

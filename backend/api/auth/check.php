@@ -18,6 +18,18 @@ if (empty($_SESSION['admin_id'])) {
     json_success(['authenticated' => false]);
 }
 
+$config = require __DIR__ . '/../../config/config.php';
+$now = time();
+$lastActivity = (int) ($_SESSION['_last_activity'] ?? $now);
+$absoluteStart = (int) ($_SESSION['_absolute_started_at'] ?? $now);
+if (
+    $now - $lastActivity > $config['session']['idle_seconds'] ||
+    $now - $absoluteStart > $config['session']['lifetime_seconds']
+) {
+    clear_admin_session();
+    json_success(['authenticated' => false, 'expired' => true]);
+}
+
 json_success([
     'authenticated' => true,
     'admin' => ['id' => $_SESSION['admin_id'], 'username' => $_SESSION['admin_username'] ?? ''],

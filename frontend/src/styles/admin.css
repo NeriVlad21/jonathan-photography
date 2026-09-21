@@ -1482,3 +1482,90 @@ body .admin-login-page {
 @media (max-width: 420px) {
   .admin-shell .admin-content { padding-inline: 12px !important; }
 }
+
+/* Dashboard header belongs to the same content column as its cards. */
+.admin-shell .dashboard-content {
+  padding-top: 22px;
+}
+
+.admin-shell .dashboard-content .dashboard-header {
+  align-items: center;
+  gap: 18px;
+  margin: 0 0 18px;
+  padding: 0 0 18px;
+  border-bottom: 1px solid rgba(17, 17, 15, 0.08);
+}
+
+.admin-shell .dashboard-header__subtitle {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.admin-shell .dashboard-header__actions {
+  gap: 10px;
+}
+
+.admin-shell .dashboard-filter {
+  min-height: 40px;
+  overflow: hidden;
+  border-color: #cbc7bc;
+  border-radius: 9px;
+  background: #fff;
+}
+
+.admin-shell .dashboard-filter__label {
+  padding: 0 9px 0 12px;
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.admin-shell .dashboard-filter select {
+  width: 154px;
+  min-height: 38px;
+  padding-left: 6px;
+  border: 0;
+  border-radius: 0;
+  outline: 0;
+  box-shadow: none;
+}
+
+.admin-shell .dashboard-export {
+  min-height: 40px;
+  padding-inline: 16px;
+  white-space: nowrap;
+}
+
+@media (max-width: 850px) {
+  .admin-shell .dashboard-content .dashboard-header {
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .admin-shell .dashboard-header__actions {
+    justify-content: flex-start;
+  }
+
+  .admin-shell .dashboard-filter {
+    flex: 0 1 260px;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-shell .dashboard-content {
+    padding-top: 18px !important;
+  }
+
+  .admin-shell .dashboard-header__actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .admin-shell .dashboard-filter,
+  .admin-shell .dashboard-filter select,
+  .admin-shell .dashboard-export {
+    width: 100%;
+  }
+}

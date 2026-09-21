@@ -28,6 +28,40 @@ export function AdminAuthProvider({ children }) {
     refresh()
   }, [refresh])
 
+  useEffect(() => {
+    const verifyVisibleSession = async () => {
+      if (document.visibilityState !== 'visible') return
+
+      try {
+        const data = await authApi.check()
+        if (data.authenticated) {
+          setCsrfToken(data.csrf_token)
+          setAdmin(data.admin)
+        } else {
+          setCsrfToken(null)
+          setAdmin(null)
+        }
+      } catch {
+        setCsrfToken(null)
+        setAdmin(null)
+      }
+    }
+
+    document.addEventListener('visibilitychange', verifyVisibleSession)
+    return () => document.removeEventListener('visibilitychange', verifyVisibleSession)
+  }, [])
+
+  useEffect(() => {
+    const handleInvalidSession = () => {
+      setCsrfToken(null)
+      setAdmin(null)
+      setLoading(false)
+    }
+
+    window.addEventListener('admin-session-invalid', handleInvalidSession)
+    return () => window.removeEventListener('admin-session-invalid', handleInvalidSession)
+  }, [])
+
   const login = async (username, password) => {
     const data = await authApi.login(username, password)
     setCsrfToken(data.csrf_token)

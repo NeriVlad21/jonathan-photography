@@ -151,6 +151,15 @@ async function request(
   }
 
   if (!res.ok || !json.success) {
+    if (res.status === 401) {
+      setCsrfToken(null)
+      window.dispatchEvent(new CustomEvent('admin-session-invalid', {
+        detail: {
+          message: json.message || 'Your admin session ended. Please sign in again.'
+        }
+      }))
+    }
+
     throw new ApiError(
       json.message ||
         `Request failed with status ${res.status}.`,

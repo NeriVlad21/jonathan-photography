@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ImageUp, Plus, Save, Trash2 } from 'lucide-react'
 import { assetUrl, portfolioApi, siteContentApi } from '../services/api.js'
 import { DEFAULT_SITE_CONTENT, mergeSiteContent } from '../content/defaultSiteContent.js'
@@ -29,10 +29,21 @@ export default function SiteContentManager() {
   const [activeTab, setActiveTab] = useState('home')
   const [homePanel, setHomePanel] = useState('hero')
   const [pagePanel, setPagePanel] = useState('portfolio')
+  const [loaded, setLoaded] = useState(false)
+  const savedContentRef = useRef(JSON.stringify(mergeSiteContent(DEFAULT_SITE_CONTENT)))
+
+  const serializedContent = useMemo(() => JSON.stringify(content), [content])
+  const hasChanges = loaded && serializedContent !== savedContentRef.current
 
   useEffect(() => {
     Promise.all([siteContentApi.get(), portfolioApi.categories(true)])
-      .then(([data, rows]) => { setContent(mergeSiteContent(data?.content)); setCategories(rows || []) })
+      .then(([data, rows]) => {
+        const nextContent = mergeSiteContent(data?.content)
+        savedContentRef.current = JSON.stringify(nextContent)
+        setContent(nextContent)
+        setCategories(rows || [])
+        setLoaded(true)
+      })
       .catch(() => showToast('Some website content could not be loaded.', 'error'))
   }, [showToast])
 
@@ -46,10 +57,13 @@ export default function SiteContentManager() {
   })
 
   const save = async () => {
+    if (!hasChanges || saving) return
     setSaving(true)
     try {
       const result = await siteContentApi.update(content)
-      setContent(mergeSiteContent(result.content))
+      const savedContent = mergeSiteContent(result.content)
+      savedContentRef.current = JSON.stringify(savedContent)
+      setContent(savedContent)
       showToast('Public website content updated.')
     } catch (error) { showToast(error.message || 'Content could not be saved.', 'error') }
     finally { setSaving(false) }
@@ -78,7 +92,7 @@ export default function SiteContentManager() {
     <nav className="cms-tabs" aria-label="Website content sections">
       <span className="cms-tabs__title">Choose a section</span>
       {CONTENT_TABS.map((tab) => <button key={tab.id} type="button" className={activeTab === tab.id ? 'is-active' : ''} onClick={() => setActiveTab(tab.id)} aria-current={activeTab === tab.id ? 'page' : undefined}><strong>{tab.label}</strong><small>{tab.description}</small></button>)}
-      <button type="button" className="cms-tabs__save" onClick={save} disabled={saving}><Save size={15} /> {saving ? 'Saving…' : 'Save changes'}</button>
+      <button type="button" className="cms-tabs__save" onClick={save} disabled={!hasChanges || saving} title={!hasChanges ? 'No unsaved changes' : 'Publish changes to the public website'}><Save size={15} /> {saving ? 'Saving…' : hasChanges ? 'Save changes' : 'Saved'}</button>
     </nav>
 
     <style>{`
@@ -90,6 +104,7 @@ export default function SiteContentManager() {
       .cms-tabs button:hover{background:#ebe8df;color:#111}
       .cms-tabs button.is-active{background:#111;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.14)}
       .cms-tabs .cms-tabs__save{display:inline-flex;align-items:center;justify-content:center;gap:7px;margin-top:8px;background:#f5cf00;color:#111;text-align:center;font-weight:800}
+      .cms-tabs .cms-tabs__save:disabled{cursor:not-allowed;background:#e8e4da;color:#8b867d;box-shadow:none;opacity:1}
       .cms-card{display:none}
       .cms-card.is-active{display:block}
       .cms-subtabs{display:flex;gap:6px;padding:6px;background:#e9e6dd;border-radius:14px}.cms-subtabs button{flex:1;border:0;border-radius:10px;background:transparent;padding:10px 12px;font:inherit;font-weight:750;color:#706b62;cursor:pointer}.cms-subtabs button.is-active{background:#fff;color:#111;box-shadow:0 3px 10px rgba(30,27,20,.08)}
