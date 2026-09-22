@@ -32,26 +32,32 @@ class Database
         );
 
         $lastError = null;
-        // XAMPP/MariaDB can briefly refuse connections while it is waking up or
-        // recycling. Retry a few short times so public reads do not fail during
-        // that small window, while still returning a bounded 503 for real outages.
-        $maxAttempts = 3;
+        // The browser API client already retries safe GET requests once. Keep
+        // the server-side connection attempt singular so an offline local
+        // MariaDB instance produces a useful response quickly instead of
+        // making every page wait through stacked retry loops.
+        $maxAttempts = 1;
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
             try {
-                self::$connection = new PDO($dsn, $db['user'], $db['password'], [
+                $connection = new PDO($dsn, $db['user'], $db['password'], [
                     PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                     PDO::ATTR_EMULATE_PREPARES   => false,
-                    PDO::ATTR_TIMEOUT            => 2,
+                    PDO::ATTR_TIMEOUT            => 1,
                     PDO::ATTR_PERSISTENT         => false,
                     PDO::MYSQL_ATTR_INIT_COMMAND => "SET SESSION sql_mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'",
                 ]);
+
+                // A database restart can occasionally accept the TCP connection
+                // and close it before the endpoint's first real query. Validate
+                // the connection here so that condition is retried centrally
+                // instead of surfacing as an uncaught "server has gone away".
+                $connection->query('SELECT 1');
+                self::$connection = $connection;
                 break;
             } catch (PDOException $e) {
+                self::$connection = null;
                 $lastError = $e;
-                if ($attempt < $maxAttempts) {
-                    usleep($attempt === 1 ? 100000 : 250000);
-                }
             }
         }
 

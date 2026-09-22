@@ -5,6 +5,7 @@ export function useEstimator() {
   const [config, setConfig] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [retryKey, setRetryKey] = useState(0)
 
   const [serviceType, setServiceType] = useState('')
   const [hourId, setHourId] = useState(null)
@@ -19,6 +20,9 @@ export function useEstimator() {
 
   useEffect(() => {
     let alive = true
+
+    setLoading(true)
+    setError(null)
 
     estimatorApi
       .config()
@@ -53,7 +57,7 @@ export function useEstimator() {
     return () => {
       alive = false
     }
-  }, [])
+  }, [retryKey])
 
   // ============================================================
   // TOGGLE ADD-ON
@@ -165,6 +169,7 @@ export function useEstimator() {
     config,
     loading,
     error,
+    retry: () => setRetryKey((key) => key + 1),
 
     serviceType,
     setServiceType,

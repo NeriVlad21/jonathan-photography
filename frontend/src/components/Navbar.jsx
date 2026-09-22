@@ -15,6 +15,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
   const isWorkIndex = location.pathname === '/portfolio'
+  const showMobileBookingShortcut = !['/booking', '/photobooth'].includes(location.pathname)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -84,9 +85,11 @@ export default function Navbar() {
         </div>
       )}
 
-      <Link to="/booking" className="navbar__mobile-book" aria-label="Book a session">
-        <CalendarPlus size={24} aria-hidden="true" />
-      </Link>
+      {showMobileBookingShortcut && (
+        <Link to="/booking" className="navbar__mobile-book" aria-label="Book a session">
+          <CalendarPlus size={24} aria-hidden="true" />
+        </Link>
+      )}
     </>
   )
 }

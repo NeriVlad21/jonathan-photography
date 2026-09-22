@@ -1540,6 +1540,20 @@ html.public-scroll-theme::-webkit-scrollbar-button { display: none; width: 0; he
 .public-shell { overflow-x: clip; }
 .navbar__mobile-book { display: none; }
 
+.public-load-error {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  padding: clamp(24px, 4vw, 38px);
+  border: 1px solid rgba(17, 17, 15, 0.14);
+  border-left: 4px solid var(--c-yellow);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.public-load-error strong { font-size: 1.12rem; }
+.public-load-error p { margin: 0 0 6px; color: var(--c-gray); }
+
 @media (max-width: 860px) {
   .hero__title { font-size: clamp(3rem, 11vw, 5.4rem); line-height: 0.9; }
   .intro__statement { font-size: clamp(2.35rem, 8vw, 4.5rem); }

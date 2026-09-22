@@ -23,6 +23,8 @@ export default function Estimator({ estimator }) {
   const {
     config,
     loading,
+    error,
+    retry,
     serviceType,
     setServiceType,
     hourId,
@@ -48,6 +50,13 @@ export default function Estimator({ estimator }) {
   }, [])
 
   if (loading) return <LoadingState label="Loading the estimator…" />
+  if (error) return (
+    <div className="public-load-error" role="alert">
+      <strong>The estimator could not be loaded.</strong>
+      <p>{error}</p>
+      <button type="button" className="btn btn--primary" onClick={retry}>Try again</button>
+    </div>
+  )
   if (!config) return null
 
   // ============================================================

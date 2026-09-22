@@ -59,3 +59,16 @@ function log_server_error(string $context, Throwable $e): void
 {
     error_log(sprintf('[%s] %s in %s:%d', $context, $e->getMessage(), $e->getFile(), $e->getLine()));
 }
+
+// Keep every API failure inside the documented JSON envelope. In particular,
+// a database process that restarts between connect() and the first query must
+// not leak a PHP fatal-error page to the React client.
+set_exception_handler(static function (Throwable $e): void {
+    log_server_error('UNHANDLED_API_EXCEPTION', $e);
+
+    if ($e instanceof PDOException) {
+        json_error('The database is temporarily unavailable. Please retry in a moment.', 503);
+    }
+
+    json_error('The server could not complete that request. Please try again.', 500);
+});
