@@ -80,6 +80,19 @@ foreach ($workflowSteps as $step) {
     }
 }
 
+$portfolioVideos = $content['portfolioPage']['videos'] ?? [];
+if (!is_array($portfolioVideos) || count($portfolioVideos) > 6) {
+    json_error('The portfolio can contain up to six videos.', 422);
+}
+foreach ($portfolioVideos as $video) {
+    $url = trim((string) ($video['url'] ?? ''));
+    $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+    $host = preg_replace('/^www\./', '', $host);
+    if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL) || !in_array($host, ['youtube.com', 'm.youtube.com', 'youtu.be', 'vimeo.com'], true)) {
+        json_error('Every portfolio video needs a valid YouTube or Vimeo link.', 422);
+    }
+}
+
 $clean = clean_content_value($content);
 $json = json_encode($clean, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 if ($json === false || strlen($json) > 60000) json_error('The website content is too large to save.', 422);

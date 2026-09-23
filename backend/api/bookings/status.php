@@ -115,7 +115,7 @@ try {
     }
 
     $source = $pdo->prepare(
-        'SELECT reference_code, name, email, phone, shoot_type, preferred_date, location, message
+        'SELECT reference_code, name, email, phone, shoot_type, preferred_date, preferred_time, location, message
          FROM bookings WHERE id = :id LIMIT 1'
     );
     $source->execute(['id' => $bookingId]);
@@ -124,11 +124,11 @@ try {
 
     $calendar = $pdo->prepare(
         'INSERT INTO calendar_events
-         (booking_id, reference_code, name, email, phone, shoot_type, event_date, location, notes, status)
-         VALUES (:booking_id, :reference_code, :name, :email, :phone, :shoot_type, :event_date, :location, :notes, :status)
+         (booking_id, reference_code, name, email, phone, shoot_type, event_date, event_time, location, notes, status)
+         VALUES (:booking_id, :reference_code, :name, :email, :phone, :shoot_type, :event_date, :event_time, :location, :notes, :status)
          ON DUPLICATE KEY UPDATE
            name = VALUES(name), email = VALUES(email), phone = VALUES(phone),
-           shoot_type = VALUES(shoot_type), event_date = VALUES(event_date),
+           shoot_type = VALUES(shoot_type), event_date = VALUES(event_date), event_time = VALUES(event_time),
            location = VALUES(location), notes = VALUES(notes), status = VALUES(status)'
     );
     $calendar->execute([
@@ -139,6 +139,7 @@ try {
         'phone' => $bookingSource['phone'],
         'shoot_type' => $bookingSource['shoot_type'],
         'event_date' => $bookingSource['preferred_date'],
+        'event_time' => $bookingSource['preferred_time'],
         'location' => $bookingSource['location'],
         'notes' => $bookingSource['message'],
         'status' => $calendarStatus,

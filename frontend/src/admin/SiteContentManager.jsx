@@ -185,14 +185,17 @@ export default function SiteContentManager() {
       <Field label="Footer location" value={content.footer.location} maxLength={80} onChange={(v) => set('footer.location', v)} />
     </div></section>
 
-    <section className={`cms-card ${activeTab === 'pages' && pagePanel === 'portfolio' ? 'is-active' : ''}`}><h2>Portfolio page copy</h2><div className="cms-grid">
+    <section className={`cms-card ${activeTab === 'pages' && pagePanel === 'portfolio' ? 'is-active' : ''}`}><div className="cms-card__head"><div><h2>Portfolio page & videos</h2><p>Add up to six YouTube or Vimeo links. Videos appear after the photo collections.</p></div><button type="button" className="btn btn--outline" disabled={content.portfolioPage.videos.length >= 6} onClick={() => set('portfolioPage.videos', [...content.portfolioPage.videos, { title: '', description: '', url: '' }])}><Plus size={16} /> Add video</button></div><div className="cms-grid">
       <Field label="Portfolio kicker" value={content.portfolioPage.kicker} maxLength={50} onChange={(v) => set('portfolioPage.kicker', v)} />
       <Field label="Portfolio title" value={content.portfolioPage.title} maxLength={100} onChange={(v) => set('portfolioPage.title', v)} />
       <Field label="Portfolio introduction" value={content.portfolioPage.intro} maxLength={240} multiline onChange={(v) => set('portfolioPage.intro', v)} />
       <Field label="Collection eyebrow" value={content.portfolioPage.indexEyebrow} maxLength={50} onChange={(v) => set('portfolioPage.indexEyebrow', v)} />
       <Field label="Collection heading" value={content.portfolioPage.indexTitle} maxLength={80} onChange={(v) => set('portfolioPage.indexTitle', v)} />
       <Field label="Collection description" value={content.portfolioPage.indexText} maxLength={240} multiline onChange={(v) => set('portfolioPage.indexText', v)} />
-    </div></section>
+      <Field label="Video eyebrow" value={content.portfolioPage.videoEyebrow} maxLength={50} onChange={(v) => set('portfolioPage.videoEyebrow', v)} />
+      <Field label="Video heading" value={content.portfolioPage.videoTitle} maxLength={90} onChange={(v) => set('portfolioPage.videoTitle', v)} />
+      <Field label="Video introduction" value={content.portfolioPage.videoIntro} maxLength={240} multiline onChange={(v) => set('portfolioPage.videoIntro', v)} />
+    </div><div className="cms-repeat">{content.portfolioPage.videos.map((video, index) => <div className="cms-repeat__row" key={index}><Field label="Video title" value={video.title} maxLength={100} onChange={(v) => updateArrayItem('portfolioPage.videos', index, 'title', v)} /><Field label="YouTube or Vimeo URL" value={video.url} maxLength={300} onChange={(v) => updateArrayItem('portfolioPage.videos', index, 'url', v)} /><Field label="Short description" value={video.description} maxLength={220} onChange={(v) => updateArrayItem('portfolioPage.videos', index, 'description', v)} /><button type="button" aria-label="Remove video" onClick={() => removeItem('portfolioPage.videos', index)}><Trash2 size={18} /></button></div>)}</div></section>
 
     <section className={`cms-card ${activeTab === 'pages' && pagePanel === 'booking' ? 'is-active' : ''}`}><h2>Booking page copy</h2><div className="cms-grid">
       <Field label="Booking eyebrow" value={content.bookingPage.eyebrow} maxLength={60} onChange={(v) => set('bookingPage.eyebrow', v)} />

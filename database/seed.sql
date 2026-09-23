@@ -161,7 +161,8 @@ INSERT INTO estimator_addons (label, description, price, active, sort_order) VAL
 ('Printed Photo Album', 'A 20-page hardbound album of your favorite shots.', 2500, 1, 4),
 ('Photo Booth', 'An on-site photo booth with instant prints.', 4000, 1, 5),
 ('Additional Hour', 'One extra hour of coverage.', 1500, 1, 6),
-('Tarpaulin', 'A printed tarpaulin for your event.', 500, 1, 7);
+('Tarpaulin', 'A printed tarpaulin for your event.', 500, 1, 7),
+('Equipment Upgrade', 'Additional lighting, lenses, or specialty equipment based on the shoot requirements.', 0, 0, 8);
 
 -- ------------------------------------------------------------
 -- Contact platforms

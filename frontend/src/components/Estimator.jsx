@@ -316,7 +316,8 @@ export default function Estimator({ estimator }) {
         </p>
 
         <div className="estimate-summary__actions">
-          <button className="btn btn--primary btn--block" onClick={handleBookEstimate} disabled={dynamicTotal <= 0}>Book This Estimate</button>
+          <button className="btn btn--primary btn--block" onClick={handleBookEstimate} disabled={dynamicTotal <= 0}>Continue to Booking Request</button>
+          <p className="estimator-next-step">Next, you will add the event date, start time, and contact details. Nothing is confirmed until the studio contacts you.</p>
           <button className="btn btn--ghost-dark btn--block" onClick={() => setEmailModalOpen(true)} disabled={dynamicTotal <= 0}>
             <Mail size={15} /> Email Me This Estimate
           </button>

@@ -490,6 +490,11 @@ export const servicesApi = {
       data
     ),
 
+  requestStatus: (token) =>
+    get(
+      `/bookings/request-status.php?token=${encodeURIComponent(token)}`
+    ),
+
   update: (
     data
   ) =>

@@ -45,6 +45,7 @@ if ($method === 'GET') {
                 ce.phone,
                 ce.shoot_type,
                 ce.event_date AS preferred_date,
+                ce.event_time AS preferred_time,
                 ce.location,
                 ce.notes AS message,
                 b.estimate_total,
@@ -66,6 +67,7 @@ $input = json_input();
 if ($method === 'POST') {
     $bookingId = !empty($input['booking_id']) ? (int) $input['booking_id'] : null;
     $eventDate = trim((string) ($input['event_date'] ?? ''));
+    $eventTime = trim((string) ($input['event_time'] ?? ''));
     $name = trim((string) ($input['name'] ?? ''));
     $shootType = trim((string) ($input['shoot_type'] ?? ''));
     $email = trim((string) ($input['email'] ?? ''));
@@ -76,6 +78,9 @@ if ($method === 'POST') {
     if (!valid_calendar_date($eventDate)) {
         json_error('Please choose a valid event date.', 422, ['event_date' => 'A valid event date is required.']);
     }
+    if ($eventTime !== '' && !preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $eventTime)) {
+        json_error('Please choose a valid event time.', 422, ['event_time' => 'Use a valid start time.']);
+    }
 
     try {
         $pdo->beginTransaction();
@@ -83,7 +88,7 @@ if ($method === 'POST') {
 
         if ($bookingId) {
             $bookingStmt = $pdo->prepare(
-                'SELECT id, reference_code, name, email, phone, shoot_type, location, message, status
+                'SELECT id, reference_code, name, email, phone, shoot_type, preferred_time, location, message, status
                  FROM bookings WHERE id = :id LIMIT 1 FOR UPDATE'
             );
             $bookingStmt->execute(['id' => $bookingId]);
@@ -102,6 +107,7 @@ if ($method === 'POST') {
             $email = $email ?: trim((string) $booking['email']);
             $phone = $phone ?: trim((string) $booking['phone']);
             $shootType = $shootType ?: trim((string) $booking['shoot_type']);
+            $eventTime = $eventTime ?: substr((string) ($booking['preferred_time'] ?? ''), 0, 5);
             $location = $location ?: trim((string) $booking['location']);
             $notes = $notes ?: trim((string) $booking['message']);
         }
@@ -136,7 +142,7 @@ if ($method === 'POST') {
                 $updateEvent = $pdo->prepare(
                     'UPDATE calendar_events
                      SET name = :name, email = :email, phone = :phone,
-                         shoot_type = :shoot_type, event_date = :event_date,
+                         shoot_type = :shoot_type, event_date = :event_date, event_time = :event_time,
                          location = :location, notes = :notes, status = \'BOOKED\'
                      WHERE id = :id'
                 );
@@ -146,12 +152,13 @@ if ($method === 'POST') {
                     'phone' => $phone !== '' ? $phone : null,
                     'shoot_type' => $shootType,
                     'event_date' => $eventDate,
+                    'event_time' => $eventTime !== '' ? $eventTime . ':00' : null,
                     'location' => $location !== '' ? $location : null,
                     'notes' => $notes !== '' ? $notes : null,
                     'id' => $existingEventId,
                 ]);
-                $pdo->prepare('UPDATE bookings SET status = \'CONFIRMED\', preferred_date = :event_date WHERE id = :id')
-                    ->execute(['event_date' => $eventDate, 'id' => $bookingId]);
+                $pdo->prepare('UPDATE bookings SET status = \'CONFIRMED\', preferred_date = :event_date, preferred_time = :event_time WHERE id = :id')
+                    ->execute(['event_date' => $eventDate, 'event_time' => $eventTime !== '' ? $eventTime . ':00' : null, 'id' => $bookingId]);
                 $pdo->commit();
                 json_success([
                     'id' => $existingEventId,
@@ -164,8 +171,8 @@ if ($method === 'POST') {
         $reference = 'CAL-' . strtoupper(bin2hex(random_bytes(4)));
         $insert = $pdo->prepare(
             'INSERT INTO calendar_events
-             (booking_id, reference_code, name, email, phone, shoot_type, event_date, location, notes, status)
-             VALUES (:booking_id, :reference_code, :name, :email, :phone, :shoot_type, :event_date, :location, :notes, \'BOOKED\')'
+             (booking_id, reference_code, name, email, phone, shoot_type, event_date, event_time, location, notes, status)
+             VALUES (:booking_id, :reference_code, :name, :email, :phone, :shoot_type, :event_date, :event_time, :location, :notes, \'BOOKED\')'
         );
         $insert->execute([
             'booking_id' => $bookingId,
@@ -175,15 +182,16 @@ if ($method === 'POST') {
             'phone' => $phone !== '' ? $phone : null,
             'shoot_type' => $shootType,
             'event_date' => $eventDate,
+            'event_time' => $eventTime !== '' ? $eventTime . ':00' : null,
             'location' => $location !== '' ? $location : null,
             'notes' => $notes !== '' ? $notes : null
         ]);
 
         if ($bookingId && strtoupper((string) $booking['status']) === 'NEW') {
             $update = $pdo->prepare(
-                'UPDATE bookings SET status = \'CONFIRMED\', preferred_date = :event_date WHERE id = :id AND status = \'NEW\''
+                'UPDATE bookings SET status = \'CONFIRMED\', preferred_date = :event_date, preferred_time = :event_time WHERE id = :id AND status = \'NEW\''
             );
-            $update->execute(['event_date' => $eventDate, 'id' => $bookingId]);
+            $update->execute(['event_date' => $eventDate, 'event_time' => $eventTime !== '' ? $eventTime . ':00' : null, 'id' => $bookingId]);
         }
 
         $eventId = (int) $pdo->lastInsertId();

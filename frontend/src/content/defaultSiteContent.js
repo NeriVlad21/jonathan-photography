@@ -57,7 +57,11 @@ export const DEFAULT_SITE_CONTENT = {
     eyebrow: 'Services / 02', title: 'Coverage made for real life.', intro: 'From full-day weddings to portraits and event details. Start with a service, then shape it around the day you are planning.', note: 'Photo + video', buttonLabel: 'Estimate & Request a Session',
     categories: [{ key: 'photography', label: 'Photography' }, { key: 'additional', label: 'Additional Services' }]
   },
-  portfolioPage: { kicker: 'Selected work', title: 'A bit of my photography', intro: 'Portraits, celebrations, stories, and everything in between.', indexEyebrow: 'Explore by collection', indexTitle: 'Choose a story.', indexText: 'Browse the work by the kind of moment you want to remember.' },
+  portfolioPage: {
+    kicker: 'Selected work', title: 'A bit of my photography', intro: 'Portraits, celebrations, stories, and everything in between.',
+    indexEyebrow: 'Explore by collection', indexTitle: 'Choose a story.', indexText: 'Browse the work by the kind of moment you want to remember.',
+    videoEyebrow: 'Motion stories', videoTitle: 'See the moments in motion.', videoIntro: 'A selection of films from celebrations and sessions.', videos: []
+  },
   bookingPage: {
     eyebrow: 'Estimate + Booking / 04', estimateTitle: 'Build your package, then request a date.', requestTitle: 'Tell us what you are planning.', estimateIntro: 'Choose your service, coverage, and extras. Continue only if you want to request a session—the estimate remains yours with no obligation to book.', requestIntro: 'Your estimate is ready. Add your contact and event details so the studio can review the complete request.', workflowEyebrow: 'Before you begin', workflowTitle: 'From estimate to a confirmed session.', workflowIntro: 'This page helps you plan a package and send the studio the information needed to discuss your event. It does not instantly reserve a date or create a final agreement.',
     steps: [

@@ -8,7 +8,7 @@ import { clearBookingEstimate } from '../utils/bookingEstimate.js'
 
 const initialState = {
   name: '', email: '', phone: '', facebook: '',
-  shoot_type: '', preferred_date: '', location: '', guest_count: '', message: '',
+  shoot_type: '', preferred_date: '', preferred_time: '', location: '', guest_count: '', message: '',
   privacy_agreed: false,
   website: '' // honeypot
 }
@@ -23,6 +23,10 @@ export default function BookingForm({ estimate, onChangeEstimate }) {
   })
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
+  const [submissionNote, setSubmissionNote] = useState('')
+  const submissionToken = useRef(
+    globalThis.crypto?.randomUUID?.() || `${Date.now().toString(16)}${Array.from(globalThis.crypto?.getRandomValues?.(new Uint32Array(4)) || [1, 2, 3, 4], (value) => value.toString(16)).join('')}`
+  )
   
   // Privacy Scroll State
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(false)
@@ -51,6 +55,7 @@ export default function BookingForm({ estimate, onChangeEstimate }) {
     if (!form.facebook.trim()) errs.facebook = 'Please provide your Facebook profile link.'
     if (!form.shoot_type) errs.shoot_type = 'Please select a shoot type.'
     if (!form.preferred_date) errs.preferred_date = 'Please choose an available preferred date.'
+    if (!form.preferred_time) errs.preferred_time = 'Please choose your preferred start time.'
     if (!form.message.trim()) errs.message = 'Please tell us a little about what you need.'
     if (!form.privacy_agreed) errs.privacy_agreed = 'Please agree to the data privacy notice before continuing.'
     return errs
@@ -63,9 +68,11 @@ export default function BookingForm({ estimate, onChangeEstimate }) {
     if (Object.keys(errs).length > 0) return
 
     setSubmitting(true)
+    setSubmissionNote('Saving your request… Please keep this page open.')
     try {
       const payload = {
         ...form,
+        submission_token: submissionToken.current,
         estimate_total: estimate?.total || null,
         estimate_breakdown: estimate || null
       }
@@ -73,6 +80,26 @@ export default function BookingForm({ estimate, onChangeEstimate }) {
       clearBookingEstimate()
       navigate('/booking/success', { state: { name: form.name, reference: data.reference } })
     } catch (err) {
+      // The database may have saved the request even when a slow mail server
+      // delays the original response. Recover by the one-time request token.
+      let recovered = null
+      if (err.status === 0) {
+        setSubmissionNote('Checking whether your request was saved…')
+        for (let attempt = 0; attempt < 3 && !recovered?.saved; attempt += 1) {
+          if (attempt > 0) await new Promise((resolve) => window.setTimeout(resolve, 900))
+          try {
+            recovered = await bookingsApi.requestStatus(submissionToken.current)
+          } catch { /* keep the original error */ }
+        }
+      }
+
+      if (recovered?.saved) {
+        clearBookingEstimate()
+        navigate('/booking/success', { state: { name: form.name, reference: recovered.reference } })
+        return
+      }
+
+      setSubmissionNote('')
       showToast(err.message, 'error')
       if (err.errors) setErrors((e2) => ({ ...e2, ...err.errors }))
     } finally {
@@ -149,6 +176,12 @@ export default function BookingForm({ estimate, onChangeEstimate }) {
         </div>
         <div className="grid-2">
           <div className="field">
+            <label htmlFor="preferred_time">Preferred Start Time</label>
+            <input id="preferred_time" type="time" className={errors.preferred_time ? 'has-error' : ''} value={form.preferred_time} onChange={update('preferred_time')} />
+            <small>The studio will confirm the exact schedule with you.</small>
+            {errors.preferred_time && <span className="field-error">{errors.preferred_time}</span>}
+          </div>
+          <div className="field">
             <label htmlFor="location">Location</label>
             <input id="location" value={form.location} onChange={update('location')} placeholder="Venue or city" />
           </div>
@@ -221,8 +254,9 @@ export default function BookingForm({ estimate, onChangeEstimate }) {
         </div>
 
         <button type="submit" className="btn btn--primary" disabled={submitting}>
-          {submitting ? 'Sending Request…' : 'Send Booking Request'}
+          {submitting ? 'Saving Request…' : 'Send Booking Request'}
         </button>
+        {submissionNote && <p className="booking-submit-note" role="status" aria-live="polite">{submissionNote}</p>}
       </form>
 
       <aside className="booking-summary-card">

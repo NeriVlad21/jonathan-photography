@@ -8,6 +8,23 @@ import { useSiteContent } from '../context/SiteContentContext.jsx'
 
 const SLIDE_DURATION = 4600
 
+const videoEmbedUrl = (value) => {
+  try {
+    const url = new URL(value)
+    const host = url.hostname.replace(/^www\./, '')
+    if (host === 'youtu.be') return `https://www.youtube-nocookie.com/embed/${url.pathname.slice(1)}`
+    if (host === 'youtube.com' || host === 'm.youtube.com') {
+      const id = url.searchParams.get('v') || url.pathname.split('/').filter(Boolean).at(-1)
+      return id ? `https://www.youtube-nocookie.com/embed/${id}` : ''
+    }
+    if (host === 'vimeo.com') {
+      const id = url.pathname.split('/').filter(Boolean).at(-1)
+      return /^\d+$/.test(id || '') ? `https://player.vimeo.com/video/${id}` : ''
+    }
+  } catch { return '' }
+  return ''
+}
+
 export default function Portfolio() {
   const { portfolioPage } = useSiteContent()
   const [categories, setCategories] = useState(null)
@@ -221,6 +238,28 @@ export default function Portfolio() {
             ))}
           </div>
         </nav>
+      )}
+
+      {portfolioPage.videos?.some((video) => videoEmbedUrl(video.url)) && (
+        <section className="work-videos" aria-labelledby="work-videos-title">
+          <header className="work-videos__heading">
+            <p>{portfolioPage.videoEyebrow}</p>
+            <h2 id="work-videos-title">{portfolioPage.videoTitle}</h2>
+            <span>{portfolioPage.videoIntro}</span>
+          </header>
+          <div className="work-videos__grid">
+            {portfolioPage.videos.map((video, index) => {
+              const embedUrl = videoEmbedUrl(video.url)
+              if (!embedUrl) return null
+              return <article className="work-video" key={`${video.url}-${index}`}>
+                <div className="work-video__frame">
+                  <iframe src={embedUrl} title={video.title || `Jonathan Photography film ${index + 1}`} loading="lazy" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+                </div>
+                {(video.title || video.description) && <div className="work-video__copy"><h3>{video.title}</h3>{video.description && <p>{video.description}</p>}</div>}
+              </article>
+            })}
+          </div>
+        </section>
       )}
     </section>
   )

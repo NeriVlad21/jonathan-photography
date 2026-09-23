@@ -57,7 +57,7 @@ if (!empty($_GET['timeframe']) && $_GET['timeframe'] !== 'all') {
     }
 }
 
-$sql = 'SELECT id, reference_code, name, email, phone, shoot_type, preferred_date, location, estimate_total, status, created_at
+$sql = 'SELECT id, reference_code, name, email, phone, shoot_type, preferred_date, preferred_time, location, estimate_total, status, created_at
         FROM bookings';
 
 if ($where) {

@@ -88,6 +88,8 @@ CREATE TABLE `bookings` (
   `facebook` varchar(255) DEFAULT NULL,
   `shoot_type` varchar(120) NOT NULL,
   `preferred_date` date DEFAULT NULL,
+  `preferred_time` time DEFAULT NULL,
+  `submission_token` varchar(64) DEFAULT NULL,
   `location` varchar(200) DEFAULT NULL,
   `guest_count` varchar(40) DEFAULT NULL,
   `message` text DEFAULT NULL,
@@ -100,6 +102,7 @@ CREATE TABLE `bookings` (
   `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `reference_code` (`reference_code`),
+  UNIQUE KEY `uq_bookings_submission_token` (`submission_token`),
   KEY `idx_bookings_email` (`email`),
   KEY `idx_bookings_status` (`status`),
   KEY `idx_bookings_preferred_date` (`preferred_date`)
@@ -112,7 +115,7 @@ CREATE TABLE `bookings` (
 
 LOCK TABLES `bookings` WRITE;
 /*!40000 ALTER TABLE `bookings` DISABLE KEYS */;
-INSERT INTO `bookings` VALUES (1,'JP-C94947','Vlad Neri','mereziko@gmail.com','090777777777','facebook/vladneri','Portrait','2026-08-31','rabot','67','67 uwu',NULL,NULL,1,'2026-08-26 18:46:48','CANCELLED','2026-08-26 18:46:48','2026-08-28 21:41:45'),(2,'JP-A35A36','hAYXHSXH','email@gmail.com','0999999999','facebook.usernameyohooo','Christening','2026-08-30','wer','90','21212sadasd',NULL,NULL,1,'2026-08-28 21:41:22','CONFIRMED','2026-08-28 21:41:22','2026-09-02 16:11:06');
+INSERT INTO `bookings` VALUES (1,'JP-C94947','Vlad Neri','mereziko@gmail.com','090777777777','facebook/vladneri','Portrait','2026-08-31',NULL,NULL,'rabot','67','67 uwu',NULL,NULL,1,'2026-08-26 18:46:48','CANCELLED','2026-08-26 18:46:48','2026-08-28 21:41:45'),(2,'JP-A35A36','hAYXHSXH','email@gmail.com','0999999999','facebook.usernameyohooo','Christening','2026-08-30',NULL,NULL,'wer','90','21212sadasd',NULL,NULL,1,'2026-08-28 21:41:22','CONFIRMED','2026-08-28 21:41:22','2026-09-02 16:11:06');
 /*!40000 ALTER TABLE `bookings` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -130,6 +133,7 @@ CREATE TABLE `calendar_events` (
   `phone` varchar(40) DEFAULT NULL,
   `shoot_type` varchar(120) NOT NULL,
   `event_date` date NOT NULL,
+  `event_time` time DEFAULT NULL,
   `location` varchar(200) DEFAULT NULL,
   `notes` text DEFAULT NULL,
   `status` enum('REQUESTED','BOOKED','CANCELLED') NOT NULL DEFAULT 'BOOKED',
@@ -142,8 +146,8 @@ CREATE TABLE `calendar_events` (
   CONSTRAINT `fk_calendar_event_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-INSERT INTO `calendar_events` (`booking_id`,`reference_code`,`name`,`email`,`phone`,`shoot_type`,`event_date`,`location`,`notes`,`status`,`created_at`,`updated_at`)
-SELECT `id`, CONCAT('CAL-', `reference_code`), `name`, `email`, `phone`, `shoot_type`, `preferred_date`, `location`, `message`,
+INSERT INTO `calendar_events` (`booking_id`,`reference_code`,`name`,`email`,`phone`,`shoot_type`,`event_date`,`event_time`,`location`,`notes`,`status`,`created_at`,`updated_at`)
+SELECT `id`, CONCAT('CAL-', `reference_code`), `name`, `email`, `phone`, `shoot_type`, `preferred_date`, `preferred_time`, `location`, `message`,
        CASE WHEN `status` = 'CANCELLED' THEN 'CANCELLED' ELSE 'BOOKED' END, `created_at`, `updated_at`
 FROM `bookings`
 WHERE `status` IN ('CONFIRMED','CANCELLED') AND `preferred_date` IS NOT NULL;
@@ -207,7 +211,7 @@ CREATE TABLE `estimator_addons` (
 
 LOCK TABLES `estimator_addons` WRITE;
 /*!40000 ALTER TABLE `estimator_addons` DISABLE KEYS */;
-INSERT INTO `estimator_addons` VALUES (1,'Second Photographer','An additional shooter for a second angle on every moment.',3000.00,1,1,'2026-09-02 18:21:53','2026-09-02 18:21:53',0),(2,'Videographer','Full video coverage alongside your photographer.',8000.00,1,2,'2026-09-02 18:21:53','2026-09-02 18:21:53',0),(3,'Rush Delivery','Edited gallery delivered within 72 hours.',1500.00,1,3,'2026-09-02 18:21:53','2026-09-02 18:21:53',0),(4,'Printed Photo Album','A 20-page hardbound album of your favorite shots.',2500.00,1,4,'2026-09-02 18:21:53','2026-09-02 18:21:53',0),(5,'Photo Booth','An on-site photo booth with instant prints.',4000.00,1,5,'2026-09-02 18:21:53','2026-09-02 18:21:53',0),(6,'Additional Hour','One extra hour of coverage, billed per hour selected.',1500.00,1,6,'2026-09-02 18:21:53','2026-09-02 18:21:53',1),(7,'Tarpaulin','A printed tarpaulin for your event.',500.00,1,7,'2026-09-02 18:21:53','2026-09-02 18:21:53',0);
+INSERT INTO `estimator_addons` VALUES (1,'Second Photographer','An additional shooter for a second angle on every moment.',3000.00,1,1,'2026-09-02 18:21:53','2026-09-02 18:21:53',0),(2,'Videographer','Full video coverage alongside your photographer.',8000.00,1,2,'2026-09-02 18:21:53','2026-09-02 18:21:53',0),(3,'Rush Delivery','Edited gallery delivered within 72 hours.',1500.00,1,3,'2026-09-02 18:21:53','2026-09-02 18:21:53',0),(4,'Printed Photo Album','A 20-page hardbound album of your favorite shots.',2500.00,1,4,'2026-09-02 18:21:53','2026-09-02 18:21:53',0),(5,'Photo Booth','An on-site photo booth with instant prints.',4000.00,1,5,'2026-09-02 18:21:53','2026-09-02 18:21:53',0),(6,'Additional Hour','One extra hour of coverage, billed per hour selected.',1500.00,1,6,'2026-09-02 18:21:53','2026-09-02 18:21:53',1),(7,'Tarpaulin','A printed tarpaulin for your event.',500.00,1,7,'2026-09-02 18:21:53','2026-09-02 18:21:53',0),(8,'Equipment Upgrade','Additional lighting, lenses, or specialty equipment based on the shoot requirements.',0.00,0,8,'2026-09-23 00:00:00','2026-09-23 00:00:00',0);
 /*!40000 ALTER TABLE `estimator_addons` ENABLE KEYS */;
 UNLOCK TABLES;
 

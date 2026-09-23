@@ -61,6 +61,7 @@ function CalendarEventDialog({ date, events, onClose, onEventUpdated }) {
                 </div>
                 <dl>
                   <div><dt>Service</dt><dd>{event.shoot_type || '—'}</dd></div>
+                  <div><dt>Start time</dt><dd>{event.preferred_time ? new Date(`2000-01-01T${event.preferred_time}`).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'To be confirmed'}</dd></div>
                   <div><dt><MapPin size={13} /> Location</dt><dd>{event.location || 'To be confirmed'}</dd></div>
                   <div><dt><Mail size={13} /> Email</dt><dd>{event.email ? <a href={`mailto:${event.email}`}>{event.email}</a> : '—'}</dd></div>
                   <div><dt><Phone size={13} /> Phone</dt><dd>{event.phone ? <a href={`tel:${event.phone}`}>{event.phone}</a> : '—'}</dd></div>
@@ -95,7 +96,7 @@ function CalendarEventDialog({ date, events, onClose, onEventUpdated }) {
 }
 
 const emptySchedule = (date = '') => ({
-  booking_id: '', event_date: date, name: '', email: '', phone: '',
+  booking_id: '', event_date: date, event_time: '', name: '', email: '', phone: '',
   shoot_type: '', location: '', notes: ''
 })
 
@@ -111,6 +112,7 @@ function AddScheduleDialog({ initialDate, requests, onClose, onSaved }) {
     setForm(request ? {
       booking_id: bookingId,
       event_date: request.preferred_date || form.event_date,
+      event_time: request.preferred_time?.slice(0, 5) || '',
       name: request.name || '',
       email: request.email || '',
       phone: request.phone || '',
@@ -152,6 +154,7 @@ function AddScheduleDialog({ initialDate, requests, onClose, onSaved }) {
 
         <div className="calendar-schedule-grid">
           <label className="calendar-schedule-field"><span>Event date</span><input type="date" required value={form.event_date} onChange={update('event_date')} /></label>
+          <label className="calendar-schedule-field"><span>Start time</span><input type="time" value={form.event_time} onChange={update('event_time')} /></label>
           <label className="calendar-schedule-field"><span>Client name</span><input required value={form.name} onChange={update('name')} /></label>
           <label className="calendar-schedule-field"><span>Service / shoot</span><input required value={form.shoot_type} onChange={update('shoot_type')} /></label>
           <label className="calendar-schedule-field"><span>Location</span><input value={form.location} onChange={update('location')} /></label>
@@ -199,7 +202,7 @@ function SchedulePrint({ bounds, events, label }) {
               {(eventMap[key] || []).map((event) => (
                 <div className="booking-calendar-print__event" key={event.id}>
                   <b>{event.name}</b>
-                  <span>{event.shoot_type} · {eventProgress(event)}</span>
+                  <span>{event.shoot_type} · {event.preferred_time ? new Date(`2000-01-01T${event.preferred_time}`).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'Time pending'} · {eventProgress(event)}</span>
                   <small>{event.location || 'Location pending'}</small>
                 </div>
               ))}

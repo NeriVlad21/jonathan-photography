@@ -39,6 +39,8 @@ function make_mailer(): ?PHPMailer
     $mail->Host = $smtp['host'];
     $mail->Port = $smtp['port'];
     $mail->SMTPAuth = true;
+    $mail->Timeout = 5;
+    $mail->Timelimit = 5;
     $mail->Username = $smtp['username'];
     $mail->Password = $smtp['password'];
     $mail->SMTPSecure = $smtp['port'] === 465 ? PHPMailer::ENCRYPTION_SMTPS : PHPMailer::ENCRYPTION_STARTTLS;
@@ -111,6 +113,9 @@ function send_booking_emails(array $booking): void
     $shootType = htmlspecialchars($booking['shoot_type']);
     $name = htmlspecialchars($booking['name']);
     $date = $booking['preferred_date'] ? date('F j, Y', strtotime($booking['preferred_date'])) : 'To be discussed';
+    if (!empty($booking['preferred_time'])) {
+        $date .= ' at ' . date('g:i A', strtotime((string) $booking['preferred_time']));
+    }
     $location = htmlspecialchars($booking['location'] ?: 'To be discussed');
     $estimate = $booking['estimate_total'] ? peso((float) $booking['estimate_total']) : 'To be discussed';
     $reference = htmlspecialchars($booking['reference_code']);
@@ -210,7 +215,7 @@ function admin_email_body(array $b): string
       <h3>Client</h3>
       <p>{$safe($b['name'] ?? null)}<br/>{$safe($b['email'] ?? null)}<br/>{$safe($b['phone'] ?? null)}<br/>{$safe($b['facebook'] ?? null)}</p>
       <h3>Shoot</h3>
-      <p>Type: {$safe($b['shoot_type'] ?? null)}<br/>Date: {$safe($b['preferred_date'] ?? null)}<br/>Location: {$safe($b['location'] ?? null)}<br/>Guests: {$safe($b['guest_count'] ?? null)}</p>
+      <p>Type: {$safe($b['shoot_type'] ?? null)}<br/>Date: {$safe($b['preferred_date'] ?? null)}<br/>Preferred start time: {$safe($b['preferred_time'] ?? null)}<br/>Location: {$safe($b['location'] ?? null)}<br/>Guests: {$safe($b['guest_count'] ?? null)}</p>
       <h3>Estimate</h3>
       <table style="width:100%;border-collapse:collapse;font-size:14px;">
         {$estimateRows}

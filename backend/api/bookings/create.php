@@ -36,6 +36,8 @@ $v->required('name', 'your full name')->maxLength('name', 160)
   ->required('facebook', 'your Facebook profile link')->maxLength('facebook', 255)
   ->required('shoot_type', 'a shoot type')
   ->required('preferred_date', 'a preferred date')
+  ->required('preferred_time', 'a preferred start time')
+  ->required('submission_token', 'a request token')
   ->required('message', 'a short message');
 
 $v->boolTrue('privacy_agreed', 'Please agree to the data privacy notice before continuing.');
@@ -45,6 +47,8 @@ if ($v->fails()) {
 }
 
 $preferredDate = (string) $input['preferred_date'];
+$preferredTime = trim((string) $input['preferred_time']);
+$submissionToken = trim((string) $input['submission_token']);
 $parsedDate = DateTime::createFromFormat('Y-m-d', $preferredDate);
 if (!$parsedDate || $parsedDate->format('Y-m-d') !== $preferredDate || $preferredDate < date('Y-m-d')) {
     json_error('Please choose an available date from today onward.', 422, [
@@ -52,7 +56,35 @@ if (!$parsedDate || $parsedDate->format('Y-m-d') !== $preferredDate || $preferre
     ]);
 }
 
+if (!preg_match('/^(?:[a-f0-9]{32,64}|[a-f0-9-]{36})$/i', $submissionToken)) {
+    json_error('Please refresh the booking form and try again.', 422, [
+        'submission_token' => 'The booking form session is invalid.'
+    ]);
+}
+
+$parsedTime = DateTime::createFromFormat('H:i', $preferredTime);
+if (!$parsedTime || $parsedTime->format('H:i') !== $preferredTime) {
+    json_error('Please choose a valid preferred start time.', 422, [
+        'preferred_time' => 'Choose the time you would like the coverage to begin.'
+    ]);
+}
+
 $pdo = Database::connect();
+
+// If a browser retries after a slow or interrupted response, return the first
+// saved request instead of creating a duplicate booking and calendar entry.
+$existingRequest = $pdo->prepare(
+    'SELECT id, reference_code FROM bookings WHERE submission_token = :token LIMIT 1'
+);
+$existingRequest->execute(['token' => $submissionToken]);
+$existingRequest = $existingRequest->fetch(PDO::FETCH_ASSOC);
+if ($existingRequest) {
+    json_success([
+        'reference' => $existingRequest['reference_code'],
+        'id' => (int) $existingRequest['id'],
+        'recovered' => true,
+    ]);
+}
 
 // A booking request must originate from the estimator. Rebuild the estimate
 // from active database prices so a caller cannot omit or alter the amount.
@@ -174,11 +206,11 @@ try {
 
     $stmt = $pdo->prepare(
         'INSERT INTO bookings
-            (reference_code, name, email, phone, facebook, shoot_type, preferred_date,
+            (reference_code, name, email, phone, facebook, shoot_type, preferred_date, preferred_time, submission_token,
              location, guest_count, message, estimate_total, estimate_breakdown,
              privacy_agreed, privacy_agreed_at, status)
          VALUES
-            (:ref, :name, :email, :phone, :fb, :shoot, :date,
+            (:ref, :name, :email, :phone, :fb, :shoot, :date, :time, :token,
              :loc, :guests, :msg, :total, :breakdown,
              1, NOW(), \'NEW\')'
     );
@@ -191,6 +223,8 @@ try {
         'fb'        => clean_string($input['facebook'] ?? ''),
         'shoot'     => $shootType,
         'date'      => $preferredDate,
+        'time'      => $preferredTime . ':00',
+        'token'     => $submissionToken,
         'loc'       => clean_string($input['location'] ?? ''),
         'guests'    => clean_string($input['guest_count'] ?? ''),
         'msg'       => clean_string($input['message']),
@@ -202,8 +236,8 @@ try {
 
     $requestEvent = $pdo->prepare(
         'INSERT INTO calendar_events
-         (booking_id, reference_code, name, email, phone, shoot_type, event_date, location, notes, status)
-         VALUES (:booking_id, :reference_code, :name, :email, :phone, :shoot_type, :event_date, :location, :notes, \'REQUESTED\')'
+         (booking_id, reference_code, name, email, phone, shoot_type, event_date, event_time, location, notes, status)
+         VALUES (:booking_id, :reference_code, :name, :email, :phone, :shoot_type, :event_date, :event_time, :location, :notes, \'REQUESTED\')'
     );
     $requestEvent->execute([
         'booking_id' => $bookingId,
@@ -213,6 +247,7 @@ try {
         'phone' => clean_string($input['phone']),
         'shoot_type' => $shootType,
         'event_date' => $preferredDate,
+        'event_time' => $preferredTime . ':00',
         'location' => clean_string($input['location'] ?? ''),
         'notes' => clean_string($input['message']),
     ]);
@@ -264,6 +299,7 @@ $booking = [
     'facebook'        => clean_string($input['facebook'] ?? ''),
     'shoot_type'      => $shootType,
     'preferred_date'  => $preferredDate,
+    'preferred_time'  => $preferredTime,
     'location'        => clean_string($input['location'] ?? ''),
     'guest_count'     => clean_string($input['guest_count'] ?? ''),
     'message'         => clean_string($input['message']),
@@ -271,7 +307,33 @@ $booking = [
     'estimate_breakdown' => $breakdown,
 ];
 
-// This now happens safely in the background WITHOUT hogging a MySQL connection
-send_booking_emails($booking);
+// A booking is complete once the transaction commits. Release the JSON
+// response before SMTP work so a slow mail server cannot leave the client on
+// the form. The one-time submission token remains a recovery path if a web
+// server buffers the response despite the explicit length/flush below.
+$responseBody = json_encode([
+    'success' => true,
+    'data' => ['reference' => $reference, 'id' => $bookingId],
+], JSON_UNESCAPED_SLASHES);
 
-json_success(['reference' => $reference, 'id' => $bookingId], 201);
+http_response_code(201);
+json_response_headers();
+header('Content-Length: ' . strlen((string) $responseBody));
+header('Connection: close');
+echo $responseBody;
+
+if (session_status() === PHP_SESSION_ACTIVE) {
+    session_write_close();
+}
+ignore_user_abort(true);
+if (function_exists('fastcgi_finish_request')) {
+    fastcgi_finish_request();
+} else {
+    while (ob_get_level() > 0) {
+        ob_end_flush();
+    }
+    flush();
+}
+
+send_booking_emails($booking);
+exit;

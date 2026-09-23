@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { BadgeCheck, Calculator, MessageCircleMore, Send } from 'lucide-react'
+import { ArrowLeft, BadgeCheck, Calculator, MessageCircleMore, Send } from 'lucide-react'
 import BookingFormComponent from '../components/BookingForm.jsx'
 import EstimatorComponent from '../components/Estimator.jsx'
 import PageHero from '../components/PageHero.jsx'
@@ -16,17 +16,35 @@ export default function Booking() {
   const navigate = useNavigate()
   const estimator = useEstimator()
   const routeEstimate = location.state?.estimate
-  const [estimate, setEstimate] = useState(() => isBookingEstimate(routeEstimate)
-    ? routeEstimate
-    : readBookingEstimate())
+  const [estimate, setEstimate] = useState(() => {
+    const storedEstimate = readBookingEstimate()
+    return isBookingEstimate(routeEstimate) && isBookingEstimate(storedEstimate)
+      ? routeEstimate
+      : null
+  })
 
   useEffect(() => {
-    if (isBookingEstimate(routeEstimate)) setEstimate(routeEstimate)
+    if (isBookingEstimate(routeEstimate) && isBookingEstimate(readBookingEstimate())) {
+      setEstimate(routeEstimate)
+    }
   }, [routeEstimate])
+
+  // The package is intentionally temporary. Once the visitor leaves this
+  // page, returning through a nav link or browser history starts at Step 1.
+  useEffect(() => () => clearBookingEstimate(), [])
 
   useEffect(() => {
     document.title = 'Jonathan Photography — Booking Request'
   }, [])
+
+  const returnToStepOne = () => {
+    clearBookingEstimate()
+    setEstimate(null)
+    navigate('/booking', { replace: true, state: null })
+    window.requestAnimationFrame(() => {
+      document.getElementById('estimator')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
 
   return (
     <>
@@ -66,14 +84,13 @@ export default function Booking() {
           </section>
 
           {estimate ? (
-            <BookingFormComponent
-              estimate={estimate}
-              onChangeEstimate={() => {
-                clearBookingEstimate()
-                setEstimate(null)
-                navigate('/booking', { replace: true, state: null })
-              }}
-            />
+            <div className="booking-request-step">
+              <button type="button" className="booking-back-button" onClick={returnToStepOne}>
+                <ArrowLeft size={18} aria-hidden="true" />
+                Back to Step 1 — Change Package
+              </button>
+              <BookingFormComponent estimate={estimate} onChangeEstimate={returnToStepOne} />
+            </div>
           ) : (
             <div className="combined-booking-estimator">
               <div className="combined-booking-estimator__note">

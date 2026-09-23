@@ -1289,6 +1289,7 @@ export default function BookingDetails() {
                             booking.preferred_date
                           )
                         : 'Not specified'}
+                      {booking.preferred_time && ` · ${new Date(`2000-01-01T${booking.preferred_time}`).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`}
                     </p>
 
                   </div>
