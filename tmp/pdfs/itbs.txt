@@ -1,0 +1,278 @@
+PHINMA Ed
+Chiefs Powwow | April 13, 2023
+
+=== PAGE ===
+
+Design Thinking
+
+=== PAGE ===
+
+What is Design Thinking?
+Design Thinking is a problem-solving approach that focuses on understanding people's needs,
+identifying the real problem, creating possible solutions, testing those solutions, and improving
+them based on feedback
+
+=== PAGE ===
+
+Instead of asking?
+we first ask:
+“What system
+can we build?”
+“What problem
+does the user
+actually have?”
+
+=== PAGE ===
+
+Importance of Design Thinking
+Software developers sometimes make the mistake of focusing too much on
+technology and not enough on people.
+The Problem? Instead of:
+Developers Focus on: “What does the user
+actually needs?”
+“What technology can
+we build”
+
+=== PAGE ===
+
+Five Stages of Design Thinking
+A commonly used Design Thinking process consist of five stages:
+Empathize , Define , Ideate , Prototype , Test.
+
+=== PAGE ===
+
+Stage 1 - Empathize
+Understand the user’s: Developers can:
+● Interview users
+● Needs
+How can ● Conduct surveys
+● Problems
+we ● Observe users
+● Experiences Empathize
+● Conduct focus groups
+?
+● Feelings ● Study existing
+● Behaviors processes
+● Ask Questions
+● Expectation
+● Experience the
+process themselves
+
+=== PAGE ===
+
+Stage 2 - Define
+After gathering information, we
+need to identify the real problem.
+“The Goal is to create a clear problem statement”
+Problem statement formula:
+[User] needs [need] because [reason/insight]
+
+=== PAGE ===
+
+Stage 3 : Ideate
+The goal is to produce many
+ideas, not immediately
+choose one.
+Ex.
+Students need a faster way to
+check their enrollment status.
+Possible ideas:
+Mobile app, Web Dashboard, SMS and
+Email Notifications, Student portal.
+
+=== PAGE ===
+
+Stage 4: Prototype
+A prototype is a simplified
+representation of a proposed solution.
+It allows us to explore an idea without fully
+developing the final product.
+Prototypes can be:
+● Paper sketches
+● Wireframes
+● Storyboards
+● Flowcharts
+● Mockups
+● Clickable UI Design
+● Simple application
+● Physical models
+
+=== PAGE ===
+
+Stage 5: Test
+Test is the final stage.
+We give the prototype to actual users and observe how they interact
+with it.
+We ask:
+“Testing isn’t simple
+● Can they use it?
+● Do they understand it? asking, we also need to
+● What confuses them?
+observe the user to get
+● What do they like?
+useful information.”
+● What doe the dislike?
+● Does it solve the
+problem?
+
+=== PAGE ===
+
+Activity : “Design Solution”
+Design Challenge:
+“How might we improve the experience of students in our
+school?
+
+=== PAGE ===
+
+ITBS Project
+Guidelines.
+
+=== PAGE ===
+
+Start with the problem
+● User your user interviews, observation, and empathy
+map from module 2.
+● Identify recurring patterns; not isolated complaints.
+● Separate symptoms, root causes, and context.
+● Your problem must affect users and have a
+meaningful impact on time, cost, errors, productivity,
+service quality, satisfaction, or adoption.
+
+=== PAGE ===
+
+Write a strong problem statement
+● Clearly identify WHO the user is.
+● State WHAT the user is struggling with.
+● Explain WHEN/WHERE the problem occurs.
+● Show WHY it matters through a measurable or
+meaningful impact.
+● Do NOTE include your proposed system or solution in
+the problem statement.
+
+=== PAGE ===
+
+Required Problem Statement
+● Use the template:
+“[User] needs [user’s need] because [insight/root cause]”
+● Problem statement must produce result in terms of:
+○ Impact on time
+○ Cost
+○ Errors
+○ Adoption
+○ Service
+● Support the statement with at least one actual interview
+quote or clear observation.
+● Final problem becomes the foundation of your project.
+
+=== PAGE ===
+
+Generate Solution Ideas
+● Convert your problem into a How Might We (HMW)
+question.
+“How might we make the process clearer and less
+stressful for users?”
+● Generate multiple ideas before choosing one.
+● Keep ideas focused on the identified user need. Do
+not force the problem to fit in.
+
+=== PAGE ===
+
+Select and Justify the Best Idea
+● Choose your Top 3 solution ideas.
+● Score each from 1-5 using the following criteria:
+○ User impact - “How strongly does it solve the problem”
+○ Feasibility- “Can the Group realistically build it?”
+○ Business Value - “Does it improve the organization/process”
+● Compute for the Total = User impact + Feasibility +
+Business Value.
+● Highest total becomes the initial Top 1 idea; use User
+impact to break ties.
+
+=== PAGE ===
+
+Check Feasibility - TELOS
+● Technical - Do we have the skills and tools?
+● Economic - Is the effort/cost reasonable compared to
+benefit?
+● Legal/Policy - Are there privacy or policy concerns?
+● Operational - Can users/offices adopt it smoothly?
+● Schedule - Can the MVP be delivered within the
+available time?
+● Explain the main risk and how your group will address
+it
+
+=== PAGE ===
+
+Define the MVP scope
+● Build only what is needed to test the core user
+problem.
+● Identify about 3-6 essential MBP features
+● Prioritize high impact + low/medium effort feature.
+● Extra, advanced, or “nice-to-have” features should be
+excluded from the initial MVP.
+● Every proposed feature must connect to the validated
+problem and user goal.
+
+=== PAGE ===
+
+Sample MVP
+Problem: Teachers currently record attendance manually using paper or
+spreadsheets. This takes time and makes it difficult to track attendance
+history.
+Proposed Solution: A web-based Student Attendance Management System
+that allows teachers to record and view student attendance.
+MVP Version: ● View attendance records
+● Admin/Teacher Login ● Generate a basic attendance
+● Add/edit/Delete Students
+● Create Class/ Section
+● Record Attendance
+
+=== PAGE ===
+
+Wireframe & Prototype Requirement
+● Create low-fidelity wireframes for the key MVP
+screens
+● Each wireframes should show: screen name, main
+information, primary action, and feedback.
+● Focus on structure not colors, icons, or visual styling.
+● Connect screens using arrows and action labels.
+● The combined wireframes must represents one clear,
+navigable MVP user journey.
+
+=== PAGE ===
+
+Required Project OUTPUTS
+1. Validated user-centered problem statement
+2. Evidence supporting the problem
+3. HWM question + multiple solution ideas
+4. Top 3 ideas with scoring and justification
+5. Final Solution + TELOS feasibility analysis
+6. MVP feature list and scope
+7. Main user flow map
+8. Low-fidelity wireframes / clickable or simulated
+prototype.
+
+=== PAGE ===
+
+Project Consistency Check
+● Your project should tell ONE clear story:
+USER -> PROBLEM -> EVIDENCE -> HMW -> SOLUTION
+-> MVP -> USER FLOW -> PROTOTYPE
+● If a feature does not solve the defined problem,
+question whether it belong in the MVP.
+● Do not add features simply because they are
+technically interesting.
+
+=== PAGE ===
+
+Project Rules & Expectations
+1. Use evidence from your actual user research.
+2. Keep documentation concise, clear, and
+user-centered.
+3. All members should understand the complete project.
+Not only their assigned feature.
+4. Be ready to explain why tour problem is important
+and why your chosen solution is feasible.
+5. The prototype is NOT required to be a complete
+production system; it must clearly demonstrate the
+defined MVP.

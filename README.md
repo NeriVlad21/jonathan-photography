@@ -1,85 +1,127 @@
-# Jonathan Photography — Full-Stack Booking & Portfolio Website
+# Jonathan Photography
 
-A production-ready photography business website: an editorial public site
-(portfolio, services, live estimator, booking requests) backed by a real
-PHP + MySQL API, plus an Admin Dashboard that drives every piece of content.
+A full-stack portfolio, service estimator, and booking-request management system for Jonathan Photography. The application provides a responsive public website for prospective clients and a protected administration dashboard for managing bookings, schedules, portfolio content, services, pricing, contact information, and website copy.
 
+> A submitted booking is a request for review, not an automatically confirmed reservation. Final pricing, availability, and event arrangements are completed through direct communication with the studio.
+
+## Features
+
+### Public website
+
+- Responsive photography portfolio organized by category and shoot
+- Photo and video presentation
+- Editable service catalogue with starting prices
+- Preliminary package estimator with coverage hours and add-ons
+- Date-availability checking and structured booking requests
+- Event date, start time, location, contact, and privacy-consent collection
+- Booking reference and submission confirmation
+- Contact links, frequently asked questions, and editable website content
+- Persistent music controls and a browser-based photobooth Easter egg
+
+### Administration dashboard
+
+- Secure administrator authentication and profile management
+- Dashboard summaries and downloadable reports
+- Unified booking-request and saved-estimate management
+- Requested, confirmed, cancelled, and manually entered calendar events
+- Portfolio category, shoot, image, and video management
+- Service and estimator pricing management from shared data
+- Coverage-hour and add-on configuration
+- Public website content and contact-link management
+- Archived records and activity views
+
+## Technology Stack
+
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 18, React Router, Vite |
+| Interface | CSS, Lucide React, Recharts |
+| Backend | PHP 8, REST-style JSON endpoints |
+| Database | MySQL or MariaDB using PDO |
+| Email | PHPMailer with SMTP |
+| Local environment | XAMPP with Apache and MySQL |
+
+## Project Structure
+
+```text
+jonathan-photography/
+├── backend/
+│   ├── api/                 # Authentication and resource endpoints
+│   ├── config/              # Environment and database configuration
+│   ├── email/               # Booking notification email handling
+│   ├── helpers/             # Validation, responses, and upload utilities
+│   ├── middleware/          # CORS and administrator authorization
+│   └── uploads/portfolio/   # Uploaded portfolio media
+├── database/
+│   ├── migrations/          # Updates for existing installations
+│   ├── schema.sql           # Database structure
+│   └── seed.sql             # Development and demonstration data
+├── frontend/
+│   ├── src/admin/           # Administration pages
+│   ├── src/components/      # Reusable interface components
+│   ├── src/context/         # Authentication, content, music, and toast state
+│   ├── src/pages/           # Public pages
+│   └── src/services/        # API client
+└── README.md
 ```
-React (Vite)  →  PHP REST API (PDO)  →  MySQL
-```
 
-Nothing on the public site is hardcoded — categories, shoots, photos,
-services, estimator pricing, and contact links are all stored in the
-database and managed from `/admin`.
+## Requirements
 
----
+- PHP 8.0 or later
+- MySQL 8.0+ or MariaDB 10.4+
+- Composer
+- Node.js 18 or later
+- npm
+- Apache through XAMPP or another PHP-compatible web server
+- SMTP account for production email delivery
 
-## 0. Quick start (XAMPP on Windows) — the whole thing, in order
+## Local Installation
 
-This is the exact sequence to go from a fresh clone to a working site on
-XAMPP. Do the steps **in order** — most setup problems come from skipping
-ahead (starting the frontend before `.env` is filled in, opening the site
-before Apache/MySQL are running, etc).
+### 1. Clone the repository
 
-**You'll end up running three things at once:** XAMPP (Apache + MySQL),
-the PHP backend (served by Apache, not `php -S`), and the Vite frontend.
-
-### Step 1 — Start XAMPP
-
-Open the XAMPP Control Panel and click **Start** next to both:
-
-- **Apache**
-- **MySQL**
-
-Both rows should turn green. Leave the Control Panel open.
-
-### Step 2 — Put the project where Apache can see it
-
-Clone or copy the project into your `htdocs` folder, so the path looks
-like:
-
-```
-C:\xampp1\htdocs\jonathan-photography\
-```
-
-(If your XAMPP is installed elsewhere, use that install's `htdocs`
-instead — the folder name `jonathan-photography` is what matters, since
-it becomes part of the URL in the next steps.)
-
-### Step 3 — Create the database
-
-Open phpMyAdmin (`http://localhost/phpmyadmin`) or a terminal:
+Place the project inside the XAMPP `htdocs` directory:
 
 ```bash
-mysql -u root -p -e "CREATE DATABASE jonathan_photography"
-mysql -u root -p jonathan_photography < database/schema.sql
+git clone <repository-url> jonathan-photography
+cd jonathan-photography
+```
+
+Example Windows location:
+
+```text
+C:\xampp\htdocs\jonathan-photography
+```
+
+### 2. Start local services
+
+Open the XAMPP Control Panel and start **Apache** and **MySQL**.
+
+### 3. Create the database
+
+Import the schema followed by the optional development seed data:
+
+```bash
+mysql -u root -p < database/schema.sql
 mysql -u root -p jonathan_photography < database/seed.sql
 ```
 
-(On a stock XAMPP install, the root MySQL user usually has **no
-password** — just press Enter at the password prompt, or omit `-p`
-entirely.)
+The seed file resets the application tables and must not be imported into a database containing production records.
 
-This creates one admin account:
+For an existing installation, review and execute the applicable files in `database/migrations/` instead of recreating the database.
 
-```
-username: admin
-password: admin123
-```
-
-Change this password as soon as you're able to log in (see Step 8).
-
-### Step 4 — Configure the backend
+### 4. Configure the backend
 
 ```bash
-cd C:\xampp1\htdocs\jonathan-photography\backend
+cd backend
 copy .env.example .env
-notepad .env
+composer install
 ```
 
-For a stock local XAMPP setup, these values are usually correct as-is:
+On macOS or Linux, use `cp .env.example .env`.
 
-```
+Update `backend/.env` with the local database, application, and SMTP settings:
+
+```dotenv
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_NAME=jonathan_photography
@@ -89,376 +131,150 @@ DB_PASSWORD=
 APP_URL=http://localhost/jonathan-photography/backend
 FRONTEND_URL=http://localhost:5173
 APP_ENV=development
+APP_SECRET=replace-with-a-long-random-secret
 
-APP_SECRET=change-this-to-a-long-random-string
-```
-
-The temporary Gmail sender is already set to `mereziko@gmail.com`.
-Leave `SMTP_PASSWORD` blank until you create an app password for that
-account — bookings still save, while email delivery is safely skipped
-and logged. Come back and fill it in once everything else works — see
-Step 9.
-
-**Note on `APP_URL`:** earlier drafts of this README suggested running
-the backend with `php -S localhost:8000`. That works, but since the
-project already lives inside `htdocs`, it's simpler to let **Apache**
-serve it directly and skip the second PHP process entirely. That's what
-the rest of these steps assume.
-
-### Step 5 — Install backend dependencies
-
-```bash
-composer install
-```
-
-This pulls in PHPMailer and generates `vendor/`.
-
-### Step 6 — Confirm the backend is reachable
-
-With Apache running, open:
-
-```
-http://localhost/jonathan-photography/backend/api/portfolio/categories.php
-```
-
-You should see JSON like `{"success":true,"data":[...]}`. If you get a
-404 or a blank page, Apache isn't serving the folder — double-check the
-project actually sits inside `htdocs` and the folder name matches the URL.
-
-Visiting `http://localhost/jonathan-photography/backend/` itself (no
-`/api/...`) will 404 — that's expected, there's no landing page there,
-only individual endpoint files under `api/`.
-
-### Step 7 — Configure and start the frontend
-
-```bash
-cd C:\xampp1\htdocs\jonathan-photography\frontend
-copy .env.example .env
-notepad .env
-```
-
-Set:
-
-```
-VITE_BACKEND_URL=http://localhost/jonathan-photography/backend
-```
-
-This tells the frontend where to load **uploaded images** from. It's
-separate from the API calls below on purpose — API requests go through
-Vite's dev proxy (see `vite.config.js`), but images are loaded directly
-from the backend's own address, and the proxy alone isn't enough to
-resolve those.
-
-Then:
-
-```bash
-npm install
-npm run dev
-```
-
-Open the URL it prints — normally `http://localhost:5173`.
-
-### Step 8 — Log in and change the default password
-
-Go to `http://localhost:5173/admin/login` and sign in with
-`admin` / `admin123`. Change the password immediately from the admin
-settings screen (or generate a new hash yourself and update the
-`admins` table directly):
-
-```bash
-php -r "echo password_hash('your-new-password', PASSWORD_DEFAULT);"
-```
-
-### Step 9 — (Optional, for real emails) Configure SMTP
-
-In `backend/.env`, fill in:
-
-```
-SMTP_HOST=smtp.gmail.com
+SMTP_HOST=smtp.example.com
 SMTP_PORT=587
-SMTP_USERNAME=mereziko@gmail.com
-SMTP_PASSWORD=your-16-character-app-password
-SMTP_FROM_EMAIL=mereziko@gmail.com
+SMTP_USERNAME=your-smtp-username
+SMTP_PASSWORD=your-smtp-password
+SMTP_FROM_EMAIL=studio@example.com
 SMTP_FROM_NAME="Jonathan Photography"
-SMTP_ADMIN_EMAIL=mereziko@gmail.com
+SMTP_ADMIN_EMAIL=owner@example.com
 ```
 
-Gmail requires an **app password** (not your normal login password) —
-generate one from your Google Account's Security settings once
-2-Step Verification is turned on. No backend restart is needed since
-Apache reads `.env` fresh on every request; just try submitting a
-booking again.
+Keep `.env` private. Never commit passwords, application secrets, or production database credentials.
 
-The temporary sender identity is `mereziko@gmail.com`. Keep
-`SMTP_FROM_EMAIL` aligned with `SMTP_USERNAME`; Gmail may reject or
-rewrite messages when they do not match. Until `SMTP_PASSWORD` contains
-that account's app password, the application safely skips delivery while
-still saving booking requests and estimator leads.
-
-### Everyday startup (once the above is done once)
-
-Every time you come back to work on this:
-
-1. Open XAMPP Control Panel → start **Apache** and **MySQL**.
-2. `cd frontend && npm run dev`
-3. Visit `http://localhost:5173`
-
-That's it — the backend doesn't need a separate "start" step once it's
-sitting inside `htdocs`; Apache serves it automatically whenever it's
-running.
-
----
-
-## 1. Project structure
-
-```
-jonathan-photography/
-├── frontend/            React + Vite public site and admin dashboard
-│   └── src/
-│       ├── admin/        Admin screens (login, dashboard, managers)
-│       ├── components/   Shared public-site components
-│       ├── context/       Toast + admin-auth React contexts
-│       ├── hooks/         useEstimator (live pricing logic)
-│       ├── layouts/       PublicLayout (navbar + footer wrapper)
-│       ├── pages/         Public routes (Home, Portfolio, Booking, …)
-│       ├── services/api.js  Central fetch client for the PHP API
-│       ├── utils/format.js  peso/date formatting + imageUrl() helper
-│       └── styles/        Design tokens + public/admin stylesheets
-│
-├── backend/              PHP 8 REST API
-│   ├── api/               One folder per resource (auth, portfolio, …)
-│   ├── config/             .env loader, app config, PDO connection
-│   ├── middleware/         CORS, session/auth/CSRF guards
-│   ├── helpers/             JSON responses, validation, secure uploads
-│   ├── email/mailer.php     PHPMailer wrapper + email templates
-│   ├── uploads/portfolio/  Where uploaded images are stored
-│   └── .env.example
-│
-└── database/
-    ├── schema.sql          Full normalized schema
-    └── seed.sql             Demo admin + sample content
-```
-
----
-
-## 2. Prerequisites
-
-- PHP 8.0+
-- MySQL 8+ (or MariaDB 10.4+) — XAMPP bundles both
-- Composer
-- Node.js 18+
-- An SMTP account (Gmail app password, SendGrid, Mailgun, etc.) — optional
-  for local dev, required for real emails.
-
----
-
-## 3. Database setup
-
-See Step 3 above for the XAMPP-specific version. In general:
+### 5. Configure the frontend
 
 ```bash
-mysql -u root -p -e "CREATE DATABASE jonathan_photography"
-mysql -u root -p jonathan_photography < database/schema.sql
-mysql -u root -p jonathan_photography < database/seed.sql
-```
-
-`seed.sql` is safe to re-run any time — it fully clears and re-inserts
-its own demo data in dependency-safe order, so it never produces
-duplicates and never needs to disable foreign key checks.
-
----
-
-## 4. Backend setup
-
-```bash
-cd backend
-cp .env.example .env
-# edit .env with your real DB + SMTP credentials
-composer install
-```
-
-**Recommended (matches the Quick Start above): let Apache serve it.**
-Put the project inside `htdocs` and the backend is reachable at
-`http://localhost/jonathan-photography/backend/api/...` as soon as
-Apache is running — no extra command needed.
-
-**Alternative: PHP's built-in server.**
-
-```bash
-php -S localhost:8000
-```
-
-This also works, but two things change if you use it instead of Apache:
-
-- The API is now at `http://localhost:8000/api/...` — update `APP_URL`
-  in `backend/.env` and `VITE_BACKEND_URL` in `frontend/.env` to match.
-- `GET /` (no path) will still 404 either way — there's no root
-  route, only files under `api/`. That's expected, not a sign
-  anything is broken.
-
-**Uploads:** `backend/uploads/portfolio/` must be writable by the web
-server (`chmod 755` is usually enough; XAMPP on Windows doesn't need
-this). The included `.htaccess` blocks any script execution inside it —
-keep that file if you deploy on Apache; on nginx, add the equivalent
-`location` block noted inside that file.
-
-**Email:** if `SMTP_HOST` / `SMTP_USERNAME` are left blank in `.env`, the
-app still works end-to-end — bookings are still saved — but email sending
-is skipped and logged instead of failing the request.
-
-### Deploying on Apache / Nginx instead of `php -S`
-
-Point your web server's document root at `backend/`, make sure `.php`
-files are executed normally, and that `backend/uploads/` still has PHP
-execution disabled (see the `.htaccess` there). Update `APP_URL` and
-`FRONTEND_URL` in `.env` to your real domains.
-
----
-
-## 5. Frontend setup
-
-```bash
-cd frontend
-cp .env.example .env
-# set VITE_BACKEND_URL to wherever the backend is actually served from
+cd ../frontend
+copy .env.example .env
 npm install
 npm run dev
 ```
 
-Visit `http://localhost:5173`. In development, Vite proxies `/api/*`
-straight to the backend (see `vite.config.js`), so API calls don't hit
-CORS issues. `VITE_BACKEND_URL` is separate from that proxy and is used
-specifically for building `<img>` URLs for uploaded photos — see
-`src/utils/format.js`'s `imageUrl()` function. If uploaded images show a
-broken-image icon, this is the first thing to check: confirm
-`VITE_BACKEND_URL` is set and that you restarted `npm run dev` after
-changing `.env` (Vite only reads it on startup).
+The development server runs at [http://localhost:5173](http://localhost:5173). Vite proxies `/api` requests to the Apache-hosted backend configured in `frontend/vite.config.js`.
 
-For a production build:
+If the frontend and backend are deployed separately, configure the production API address:
+
+```dotenv
+VITE_API_URL=https://example.com/backend/api
+```
+
+Restart the Vite server after changing frontend environment variables.
+
+## Application URLs
+
+| Area | Local URL |
+| --- | --- |
+| Public website | `http://localhost:5173/` |
+| Booking and estimator | `http://localhost:5173/booking` |
+| Admin login | `http://localhost:5173/admin/login` |
+| API example | `http://localhost/jonathan-photography/backend/api/services/list.php` |
+
+Development seed credentials are documented inside `database/seed.sql`. Change the seeded administrator password immediately and do not use it in production.
+
+## Available Frontend Scripts
+
+Run these commands from `frontend/`:
 
 ```bash
-npm run build
+npm run dev       # Start the Vite development server
+npm run build     # Create a production build in frontend/dist
+npm run preview   # Preview the production build locally
 ```
 
-This outputs static files to `frontend/dist/` — deploy them to any static
-host or the same server as the backend. If the frontend and backend are on
-different domains in production, set `VITE_API_URL` to the backend's full
-`/api` URL, and set `FRONTEND_URL` in the backend's `.env` to match your
-frontend's origin (required for CORS + cookies).
+## Core Workflow
 
----
-
-## 6. Using the app
-
-- Public site: `/`, `/portfolio`, `/services`, `/estimator`, `/booking`, `/contact`
-- Admin dashboard: `/admin/login` → `/admin/dashboard`
-
-From the Admin Dashboard you can:
-
-- Manage portfolio categories, shoots, and upload unlimited photos per shoot
-- Add/edit/delete services and toggle their visibility
-- Edit estimator coverage-hour options and add-ons (prices, active state)
-- Review and finalize booking requests (New → Confirmed or Cancelled)
-- See estimator leads and whether they've since booked
-- Manage which contact platforms appear on the public Contact page
-
-Every one of those changes reflects on the public site immediately — there
-is no separate hardcoded content anywhere in the React app.
-
----
-
-## 7. Security notes
-
-- All queries use PDO prepared statements — no string-built SQL anywhere.
-  (Watch out for reusing the same named placeholder twice in one query,
-  e.g. `WHERE username = :u OR email = :u` — PDO can throw
-  `SQLSTATE[HY093]: Invalid parameter number` on that pattern depending
-  on driver settings. Use two distinct placeholders bound to the same
-  value instead.)
-- Passwords are hashed with `password_hash()` / verified with `password_verify()`.
-- Admin sessions use PHP's native session handling with `httponly`,
-  `samesite=Lax`, and (in production, behind HTTPS) `secure` cookies.
-- Every state-changing admin request must include a CSRF token issued by
-  `/api/auth/check.php` after login.
-- Uploaded images are validated by real MIME sniffing (`finfo`) and
-  `getimagesize()`, never by file extension or the client's declared
-  Content-Type, and are saved under randomized filenames — the original
-  filename is discarded.
-- The uploads folder disables script execution via `.htaccess`.
-- Public form endpoints (`bookings/create.php`, `estimator/leads.php`) use
-  a lightweight file-based rate limiter plus a honeypot field to blunt
-  naive spam/bots.
-- Server errors are logged with `error_log()` and never leaked to the
-  client — the client always gets a friendly, generic message.
-
-For real production use, also put the app behind HTTPS, and consider
-swapping the file-based rate limiter for Redis if you expect real traffic.
-
----
-
-## 8. Troubleshooting
-
-**`GET /` on the backend returns 404.**
-Expected — there's no root route, only files under `backend/api/`. Test
-a real endpoint instead, e.g. `.../api/portfolio/categories.php`.
-
-**Admin login fails with a blank/500 response, and the PHP terminal shows
-`SQLSTATE[HY093]: Invalid parameter number`.**
-A prepared statement is reusing one named placeholder twice (see the
-note in Security notes above). Give each occurrence its own placeholder
-name, bound to the same PHP value.
-
-**Uploaded photos show a broken-image icon in the admin panel, even
-though the file exists on disk and opens fine when you paste the file's
-direct backend URL into the browser.**
-The React code is building the wrong `<img src>` — usually because
-`VITE_BACKEND_URL` isn't set, or the frontend wasn't restarted after
-setting it. Check `frontend/src/utils/format.js`'s `imageUrl()` function
-and confirm `frontend/.env` has `VITE_BACKEND_URL` pointing at the
-backend's real address (e.g.
-`http://localhost/jonathan-photography/backend`), then fully stop and
-restart `npm run dev`.
-
-**Login/API calls fail with a CORS error in the browser console.**
-Confirm `FRONTEND_URL` in `backend/.env` exactly matches the URL your
-frontend is actually running on (protocol, host, and port), and that
-`backend/middleware/cors.php` is reading it correctly.
-
-**"The server returned an unexpected response" in the frontend.**
-This means the API didn't return valid JSON — usually a raw PHP fatal
-error/HTML page instead. Open the Network tab, find the failing request,
-and read its raw Response body (not just the frontend's generic error)
-to see the actual PHP error underneath.
-
----
-
-## 9. Notes on a few implementation choices
-
-- **Estimator admin endpoints**: the spec's API list mentions
-  `/api/estimator/config.php` and `/api/estimator/leads.php`. Managing
-  coverage-hour and add-on options needed real CRUD, so two small sibling
-  endpoints were added: `/api/estimator/hours.php` and
-  `/api/estimator/addons.php` (both admin-only). `config.php` remains the
-  single public read endpoint the estimator page actually calls.
-- **`create_lead.php`**: folded into `POST /api/estimator/leads.php`
-  instead of a separate file, since `leads.php` already handles both the
-  admin `GET` (list) and the public `POST` (create) — keeping the two
-  together avoids duplicating validation logic.
-- **`booked` status on estimator leads**: computed live via a `SELECT
-  EXISTS(...)` join against `bookings.email` (shown as `booked_live` in
-  the API response), rather than trusting only the stored `booked` column,
-  so it's always accurate even if a booking was placed independently. The
-  column is still updated at booking time for fast filtering if you build
-  on this later.
-
----
-
-## 10. What's intentionally not included (per spec)
-
-Client accounts, payment/deposit handling, e-signatures, proofing
-galleries, and multi-stage production tracking are out of scope for this
-version. The workflow stops at:
-
+```text
+Browse portfolio and services
+        ↓
+Build a preliminary estimate
+        ↓
+Select an available date and start time
+        ↓
+Submit a booking request and receive a reference code
+        ↓
+Administrator reviews the request and contacts the client
+        ↓
+Request is confirmed or cancelled and reflected in the calendar
 ```
-Discover → Portfolio → Estimate → Booking Request → Admin Review
+
+Service prices shown publicly and used by the estimator come from the same database records. The backend recalculates submitted estimates from active database prices before saving a request, preventing client-provided totals from becoming authoritative.
+
+## Database
+
+The primary database areas are:
+
+- `admins` for administrator authentication
+- `portfolio_categories`, `portfolio_shoots`, and `portfolio_images` for portfolio content
+- `services`, `estimator_hours`, and `estimator_addons` for service configuration and estimates
+- `estimator_leads` for saved or emailed estimates
+- `bookings`, `booking_addons`, and `calendar_events` for booking and schedule management
+- `contact_platforms` and `site_settings` for editable public content
+
+The current schema is available in [`database/schema.sql`](database/schema.sql), while changes for previously initialized databases are stored in [`database/migrations`](database/migrations).
+
+## Security
+
+The application includes the following protections:
+
+- PDO prepared statements for database queries
+- Password hashing and verification through PHP password APIs
+- Protected administrator routes and server-side session checks
+- CSRF validation for state-changing administrator operations
+- Secure, HTTP-only, same-site session cookies
+- Server-side validation and output-safe JSON responses
+- MIME and image-dimension validation for uploaded files
+- Randomized upload filenames and blocked script execution in upload directories
+- Rate limiting and honeypot fields on public submission endpoints
+- One-time booking submission tokens to prevent duplicate requests
+- Server-side estimate reconstruction using database prices
+- Data-privacy consent recording for booking submissions
+- Generic client-facing errors with detailed failures kept in server logs
+
+Production deployments should use HTTPS, unique administrator credentials, a strong `APP_SECRET`, restricted database permissions, protected environment files, regular backups, and a properly configured SMTP account.
+
+## Scope and Limitations
+
+This version supports portfolio presentation, preliminary estimation, booking requests, calendar management, and owner-managed website content. It does not provide automatic booking approval, online payment processing, electronic contracts, customer accounts, accounting, or final photo-delivery galleries.
+
+## Troubleshooting
+
+### The API returns 404
+
+Confirm that Apache is running and that the repository is inside the configured `htdocs` directory. Test a complete endpoint such as:
+
+```text
+http://localhost/jonathan-photography/backend/api/services/list.php
 ```
+
+The backend does not provide a landing page at `/backend/`.
+
+### The frontend reports an unexpected server response
+
+Inspect the failed request in the browser Network panel. A PHP error page or incorrect backend path can return HTML instead of the JSON expected by the frontend.
+
+### Authentication expires or an authorized save is rejected
+
+Verify that frontend and backend URLs match the configured origins, browser cookies are enabled, and both requests use the same hostname. Mixing `localhost` and `127.0.0.1` can create separate cookie scopes.
+
+### Booking email is not delivered
+
+Booking data is committed before email delivery is attempted. Confirm the SMTP values, sender identity, provider port, and application password in `backend/.env`, then review the PHP error log.
+
+## Data Privacy
+
+Do not commit database exports containing client names, email addresses, phone numbers, private messages, submission tokens, password hashes, or SMTP credentials. Use anonymized records for demonstrations, testing, screenshots, and academic documentation.
+
+## Contributing
+
+1. Create a feature branch from the current development branch.
+2. Keep changes limited to one concern.
+3. Test the affected public and administrator workflows.
+4. Do not commit generated builds, dependencies, uploaded client files, or environment files.
+5. Open a pull request describing the change and how it was verified.
+
+## License
+
+No open-source license has been declared. Unless a license is added by the repository owner, the source code remains all rights reserved and may not be reused or redistributed without permission.
