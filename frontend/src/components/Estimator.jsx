@@ -1,12 +1,17 @@
-import { useState, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, Mail, Plus, Minus } from 'lucide-react'
+import { Check, Mail, Plus, Minus, Info } from 'lucide-react'
 import { peso } from '../utils/format.js'
 import { estimatorApi } from '../services/api.js'
 import { useToast } from '../context/ToastContext.jsx'
 import LoadingState from './LoadingState.jsx'
 import PrivacyModal from './PrivacyModal.jsx'
 import { saveBookingEstimate } from '../utils/bookingEstimate.js'
+import ServiceDetailsDialog from './ServiceDetailsDialog.jsx'
+import { useSiteContent } from '../context/SiteContentContext.jsx'
+
+// Matches the per-add-on quantity cap enforced by the booking/lead endpoints.
+const MAX_ADDON_QUANTITY = 24
 
 export default function Estimator({ estimator }) {
   const navigate = useNavigate()
@@ -18,7 +23,11 @@ export default function Estimator({ estimator }) {
   const [leadEmail, setLeadEmail] = useState('')
   const [privacyAgreed, setPrivacyAgreed] = useState(false)
   const [sendingLead, setSendingLead] = useState(false)
-  const [margin, setMargin] = useState(15)
+  // Only the id is kept, so opening/closing details never touches the
+  // estimator selections held in useEstimator().
+  const [detailsServiceId, setDetailsServiceId] = useState(null)
+  const closeDetails = useCallback(() => setDetailsServiceId(null), [])
+  const { servicesPage } = useSiteContent()
 
   const {
     config,
@@ -34,20 +43,6 @@ export default function Estimator({ estimator }) {
     addonQuantities = {},
     setAddonQuantity = () => {}
   } = estimator
-
-  // ============================================================
-  // LOAD ESTIMATOR RANGE MARGIN
-  // ============================================================
-
-  useEffect(() => {
-    const savedMargin = localStorage.getItem('estimator_margin')
-    if (savedMargin !== null) {
-      const parsed = parseFloat(savedMargin)
-      if (!Number.isNaN(parsed)) {
-        setMargin(parsed)
-      }
-    }
-  }, [])
 
   if (loading) return <LoadingState label="Loading the estimator…" />
   if (error) return (
@@ -65,6 +60,11 @@ export default function Estimator({ estimator }) {
 
   const services = Array.isArray(config.services) ? config.services : []
   const selectedService = services.find((s) => s.name === serviceType) || null
+  const detailsService = services.find((s) => Number(s.id) === Number(detailsServiceId)) || null
+  // Range margin is configured by the studio and served with the estimator config.
+  const configuredMargin = Number(config.range_margin)
+  const margin = Number.isFinite(configuredMargin) && configuredMargin >= 0 ? Math.min(configuredMargin, 100) : 15
+  const categoryLabel = (key) => servicesPage?.categories?.find((item) => item.key === key)?.label || ''
 
   const selectedHour = Array.isArray(config.hours)
     ? config.hours.find((h) => Number(h.id) === Number(hourId))
@@ -176,16 +176,31 @@ export default function Estimator({ estimator }) {
             {services.length === 0 ? (
               <div style={{ color: '#6b7280', fontSize: '0.9rem' }}>No services are currently available.</div>
             ) : (
-              services.map((service) => (
-                <button
-                  key={service.id} type="button"
-                  className={`option-card ${serviceType === service.name ? 'option-card--selected' : ''}`}
-                  onClick={() => setServiceType(service.name)}
-                >
-                  <strong>{service.name}</strong>
-                  <span>{peso(Number(service.starting_price || 0))}</span>
-                </button>
-              ))
+              services.map((service) => {
+                const selected = serviceType === service.name
+                return (
+                  <div key={service.id} className={`option-card-wrap ${selected ? 'option-card-wrap--selected' : ''}`}>
+                    <button
+                      type="button"
+                      className={`option-card option-card--has-info ${selected ? 'option-card--selected' : ''}`}
+                      aria-pressed={selected}
+                      onClick={() => setServiceType(service.name)}
+                    >
+                      <strong>{service.name}</strong>
+                      <span>{peso(Number(service.starting_price || 0))}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="option-card__info"
+                      onClick={() => setDetailsServiceId(service.id)}
+                      aria-label={`View details for ${service.name}`}
+                      title="View package details"
+                    >
+                      <Info size={16} aria-hidden="true" />
+                    </button>
+                  </div>
+                )
+              })
             )}
           </div>
         </div>
@@ -249,6 +264,7 @@ export default function Estimator({ estimator }) {
                         <button 
                           type="button" 
                           onClick={() => setAddonQuantity(a.id, Math.max(1, qty - 1))}
+                          aria-label={`Decrease ${a.label} quantity`}
                           style={{ padding: '6px 8px', background: 'none', border: 'none', cursor: 'pointer', color: '#4b5563', display: 'flex', alignItems: 'center' }}
                         >
                           <Minus size={14} />
@@ -256,7 +272,9 @@ export default function Estimator({ estimator }) {
                         <span style={{ fontSize: '0.9rem', fontWeight: 'bold', minWidth: '24px', textAlign: 'center' }}>{qty}</span>
                         <button 
                           type="button" 
-                          onClick={() => setAddonQuantity(a.id, qty + 1)}
+                          onClick={() => setAddonQuantity(a.id, Math.min(MAX_ADDON_QUANTITY, qty + 1))}
+                          disabled={qty >= MAX_ADDON_QUANTITY}
+                          aria-label={`Increase ${a.label} quantity`}
                           style={{ padding: '6px 8px', background: 'none', border: 'none', cursor: 'pointer', color: '#4b5563', display: 'flex', alignItems: 'center' }}
                         >
                           <Plus size={14} />
@@ -353,6 +371,30 @@ export default function Estimator({ estimator }) {
             </form>
           </div>
         </div>
+      )}
+
+      {detailsService && (
+        <ServiceDetailsDialog
+          service={detailsService}
+          categoryLabel={categoryLabel(detailsService.category)}
+          addons={config.addons}
+          onClose={closeDetails}
+        >
+          <button type="button" className="btn btn--ghost-light btn--sm" onClick={closeDetails}>Close</button>
+          {serviceType === detailsService.name ? (
+            <button type="button" className="btn btn--primary btn--sm" onClick={closeDetails}>
+              <Check size={14} /> Selected
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="btn btn--primary btn--sm"
+              onClick={() => { setServiceType(detailsService.name); closeDetails() }}
+            >
+              Choose this occasion
+            </button>
+          )}
+        </ServiceDetailsDialog>
       )}
 
       <PrivacyModal

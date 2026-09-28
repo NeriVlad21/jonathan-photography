@@ -182,4 +182,5 @@ INSERT INTO site_settings (setting_key, setting_value) VALUES
 ('business_address', '0013 Mc Arthur Hi-way, Brgy. Asan Norte, Sison, Pangasinan'),
 ('business_phone', '0963-332-7847'),
 ('business_phone_alt', '0927-776-3101'),
-('business_email', 'mereziko@gmail.com');
+('business_email', 'mereziko@gmail.com'),
+('estimator_range_margin', '15');

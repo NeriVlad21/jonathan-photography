@@ -529,6 +529,15 @@ export const estimatorApi = {
       }`
     ),
 
+  // Admin: shared estimator settings (e.g. public range margin)
+  updateSettings: (
+    data
+  ) =>
+    put(
+      '/estimator/settings.php',
+      data
+    ),
+
   // ----------------------------------------------------------
   // HOURS
   // ----------------------------------------------------------

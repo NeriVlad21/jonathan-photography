@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../middleware/cors.php';
 require_once __DIR__ . '/../../helpers/response.php';
+require_once __DIR__ . '/../../helpers/services.php';
 require_once __DIR__ . '/../../middleware/auth.php';
 require_once __DIR__ . '/../../config/database.php';
 
@@ -15,9 +16,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
 require_admin();
 require_csrf();
 
-$id = (int) ($_GET['id'] ?? 0);
+$id = positive_id($_GET['id'] ?? null);
 if (!$id) json_error('Missing service id.', 422);
 
 $pdo = Database::connect();
-$pdo->prepare('DELETE FROM services WHERE id = :id')->execute(['id' => $id]);
+$stmt = $pdo->prepare('DELETE FROM services WHERE id = :id');
+$stmt->execute(['id' => $id]);
+if ($stmt->rowCount() < 1) json_error('Service not found.', 404);
 json_success(['deleted' => true]);
