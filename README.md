@@ -10,7 +10,8 @@ A full-stack portfolio, service estimator, and booking-request management system
 
 - Responsive photography portfolio organized by category and shoot
 - Photo and video presentation
-- Editable service catalogue with starting prices
+- Editable service catalogue with starting prices and package details (included items, coverage, deliverables, options, notes)
+- Package-detail panels on the Services page and on every estimator occasion
 - Preliminary package estimator with coverage hours and add-ons
 - Date-availability checking and structured booking requests
 - Event date, start time, location, contact, and privacy-consent collection
@@ -108,6 +109,8 @@ mysql -u root -p jonathan_photography < database/seed.sql
 The seed file resets the application tables and must not be imported into a database containing production records.
 
 For an existing installation, review and execute the applicable files in `database/migrations/` instead of recreating the database.
+
+Existing installations must run `database/migrations/2026_09_28_service_package_details.sql` before using this version; it adds the service package-detail columns and moves the estimator range margin into `site_settings`. Existing services keep working and simply show no extra detail sections until they are filled in from **Admin → Services**.
 
 ### 4. Configure the backend
 

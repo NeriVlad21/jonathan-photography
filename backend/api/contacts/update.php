@@ -24,8 +24,13 @@ $pdo = Database::connect();
 $input = json_input();
 
 $v = new Validator($input);
-$v->required('id')->required('label')->required('link');
+$v->required('id')->required('label')->required('link')
+  ->maxLength('label', 80)->maxLength('tagline', 180)->maxLength('handle', 160)
+  ->maxLength('link', 255)->maxLength('icon', 60);
 if ($v->fails()) json_error('Please fix the errors below.', 422, $v->errors());
+if (!is_safe_link(clean_string($input['link']))) {
+    json_error('Use a web address, email (mailto:), or phone (tel:) link.', 422, ['link' => 'This link type is not allowed.']);
+}
 
 $stmt = $pdo->prepare(
     'UPDATE contact_platforms

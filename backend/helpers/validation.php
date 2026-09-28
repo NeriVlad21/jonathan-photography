@@ -83,6 +83,37 @@ function clean_string($value): string
     return trim(strip_tags($value));
 }
 
+/**
+ * Normalizes a money amount (number or numeric string) to 2 decimals.
+ * Returns null for anything non-numeric, non-finite, negative, or too large.
+ */
+function money_input($value, float $max = 9999999.99): ?float
+{
+    if (!(is_int($value) || is_float($value) || (is_string($value) && is_numeric(trim($value))))) {
+        return null;
+    }
+    $amount = (float) $value;
+    if (!is_finite($amount) || $amount < 0 || $amount > $max) {
+        return null;
+    }
+    return round($amount, 2);
+}
+
+/**
+ * True when a public link is safe to render as an href: either no scheme
+ * (e.g. "facebook.com/studio") or an allow-listed one. Blocks javascript:,
+ * data:, vbscript: and similar, including variants hidden with whitespace or
+ * control characters that browsers ignore.
+ */
+function is_safe_link(string $link): bool
+{
+    $probe = preg_replace('/[\x00-\x20\x7F]+/', '', $link) ?? '';
+    if (preg_match('/^([a-z][a-z0-9+.-]*):/i', $probe, $m)) {
+        return in_array(strtolower($m[1]), ['http', 'https', 'mailto', 'tel', 'sms', 'viber'], true);
+    }
+    return true;
+}
+
 /** Basic honeypot spam check: a hidden field that only bots fill in. */
 function honeypot_tripped(array $input, string $field = 'website'): bool
 {

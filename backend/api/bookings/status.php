@@ -32,6 +32,9 @@ if ($v->fails()) {
     json_error('Please choose a valid status.', 422, $v->errors());
 }
 
+if (!is_scalar($input['id']) || !ctype_digit((string) $input['id']) || (int) $input['id'] < 1) {
+    json_error('Invalid booking id.', 422);
+}
 $bookingId = (int) $input['id'];
 $newStatus = strtoupper(trim((string) $input['status']));
 
@@ -84,7 +87,8 @@ try {
              WHERE event_date = :preferred_date
                AND status IN (\'REQUESTED\', \'BOOKED\')
                AND (booking_id IS NULL OR booking_id <> :booking_id)
-             LIMIT 1'
+             LIMIT 1
+             FOR UPDATE'
         );
         $conflict->execute([
             'preferred_date' => $existing['preferred_date'],
@@ -122,6 +126,12 @@ try {
     $bookingSource = $source->fetch(PDO::FETCH_ASSOC);
     $calendarStatus = $newStatus === 'CONFIRMED' ? 'BOOKED' : 'CANCELLED';
 
+    if (empty($bookingSource['preferred_date'])) {
+        // calendar_events.event_date is NOT NULL; an undated request can only
+        // be cancelled, so just cancel any linked calendar entry.
+        $pdo->prepare('UPDATE calendar_events SET status = \'CANCELLED\' WHERE booking_id = :id')
+            ->execute(['id' => $bookingId]);
+    } else {
     $calendar = $pdo->prepare(
         'INSERT INTO calendar_events
          (booking_id, reference_code, name, email, phone, shoot_type, event_date, event_time, location, notes, status)
@@ -144,6 +154,7 @@ try {
         'notes' => $bookingSource['message'],
         'status' => $calendarStatus,
     ]);
+    }
 
     // Return updated record
     $result = $pdo->prepare(
@@ -176,6 +187,7 @@ try {
         $pdo->rollBack();
     }
 
+    log_server_error('BOOKING_STATUS', $e);
     $pdo = null;
 
     json_error(

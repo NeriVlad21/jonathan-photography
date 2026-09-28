@@ -20,8 +20,25 @@ const emptyForm = {
   name: '',
   category: 'photography',
   description: '',
-  starting_price: ''
+  starting_price: '',
+  sort_order: '',
+  visible: 1,
+  inclusions: '',
+  coverage_details: '',
+  deliverables: '',
+  package_options: '',
+  notes: ''
 }
+
+// Package-detail fields shown in the public Services dialog and the
+// estimator's occasion info panel. One item per line.
+const DETAIL_FIELDS = [
+  { key: 'inclusions', label: 'Included', placeholder: 'One item per line, e.g.\nPre-event consultation\nOne lead photographer' },
+  { key: 'coverage_details', label: 'Coverage', placeholder: 'One item per line, e.g.\nPreparation to reception' },
+  { key: 'deliverables', label: 'Deliverables', placeholder: 'One item per line, e.g.\nEdited digital gallery' },
+  { key: 'package_options', label: 'Options', placeholder: 'One item per line — optional upgrades or variations' },
+  { key: 'notes', label: 'Notes', placeholder: 'One item per line — travel, scheduling, or other notes' }
+]
 
 export default function ServicesManager() {
   const { showToast } = useToast()
@@ -101,7 +118,16 @@ export default function ServicesManager() {
       description:
         service.description || '',
       starting_price:
-        service.starting_price ?? ''
+        service.starting_price ?? '',
+      sort_order:
+        service.sort_order ?? '',
+      visible:
+        service.visible ? 1 : 0,
+      inclusions: service.inclusions || '',
+      coverage_details: service.coverage_details || '',
+      deliverables: service.deliverables || '',
+      package_options: service.package_options || '',
+      notes: service.notes || ''
     })
 
     window.scrollTo({
@@ -128,24 +154,21 @@ export default function ServicesManager() {
 
     try {
       if (editingId) {
-        const existing =
-          services?.find(
-            (service) =>
-              service.id === editingId
-          )
-
         await servicesApi.update({
           id: editingId,
-          ...form,
-          visible:
-            existing?.visible ?? 1
+          ...form
         })
 
         showToast(
           'Service updated.'
         )
       } else {
-        await servicesApi.create(form)
+        const { sort_order: sortOrder, ...createForm } = form
+
+        // A blank sort order lets the server append the service at the end.
+        await servicesApi.create(
+          sortOrder === '' ? createForm : form
+        )
 
         showToast(
           'Service added.'
@@ -155,8 +178,14 @@ export default function ServicesManager() {
       resetForm()
       load()
     } catch (error) {
+      // Surface the specific field problem returned by the server.
+      const fieldError = Object.values(error?.errors || {}).find(
+        (value) => typeof value === 'string'
+      )
+
       showToast(
-        error?.message ||
+        fieldError ||
+          error?.message ||
           'Unable to save service.',
         'error'
       )
@@ -177,8 +206,9 @@ export default function ServicesManager() {
     setTogglingId(service.id)
 
     try {
+      // Partial update: only visibility changes, package details are kept.
       await servicesApi.update({
-        ...service,
+        id: service.id,
         visible:
           service.visible ? 0 : 1
       })
@@ -433,6 +463,14 @@ export default function ServicesManager() {
             1 / -1;
         }
 
+        .services-details-heading {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          padding-top: 14px;
+          border-top: 1px solid var(--c-hairline, #e5e5e5);
+        }
+
         .services-form-actions {
           display: flex;
 
@@ -514,7 +552,7 @@ export default function ServicesManager() {
             column;
         }
 
-        .service-row {
+        .svc-admin-row {
           display: grid;
 
           grid-template-columns:
@@ -541,12 +579,12 @@ export default function ServicesManager() {
             background 0.18s ease;
         }
 
-        .service-row:last-child {
+        .svc-admin-row:last-child {
           border-bottom:
             0;
         }
 
-        .service-row:hover {
+        .svc-admin-row:hover {
           background:
             #fafafa;
         }
@@ -557,12 +595,12 @@ export default function ServicesManager() {
         ============================================================
         */
 
-        .service-row__info {
+        .svc-admin-row__info {
           min-width:
             0;
         }
 
-        .service-row__name {
+        .svc-admin-row__name {
           display:
             block;
 
@@ -576,7 +614,7 @@ export default function ServicesManager() {
             nowrap;
         }
 
-        .service-row__description {
+        .svc-admin-row__description {
           margin-top:
             4px;
 
@@ -599,7 +637,7 @@ export default function ServicesManager() {
         ============================================================
         */
 
-        .service-row__category {
+        .svc-admin-row__category {
           color:
             var(--c-gray);
 
@@ -613,12 +651,12 @@ export default function ServicesManager() {
         ============================================================
         */
 
-        .service-row__price {
+        .svc-admin-row__price {
           white-space:
             nowrap;
         }
 
-        .service-row__price-label {
+        .svc-admin-row__price-label {
           display:
             block;
 
@@ -638,7 +676,7 @@ export default function ServicesManager() {
         ============================================================
         */
 
-        .service-row__visibility {
+        .svc-admin-row__visibility {
           display:
             inline-flex;
 
@@ -679,7 +717,7 @@ export default function ServicesManager() {
             color 0.18s ease;
         }
 
-        .service-row__visibility:hover:not(:disabled) {
+        .svc-admin-row__visibility:hover:not(:disabled) {
           background:
             #f2f2f2;
 
@@ -690,12 +728,12 @@ export default function ServicesManager() {
             var(--c-text);
         }
 
-        .service-row__visibility--visible {
+        .svc-admin-row__visibility--visible {
           color:
             #287449;
         }
 
-        .service-row__visibility:disabled {
+        .svc-admin-row__visibility:disabled {
           opacity:
             0.55;
 
@@ -709,7 +747,7 @@ export default function ServicesManager() {
         ============================================================
         */
 
-        .service-row__actions {
+        .svc-admin-row__actions {
           display:
             flex;
 
@@ -723,7 +761,7 @@ export default function ServicesManager() {
             7px;
         }
 
-        .service-row__edit {
+        .svc-admin-row__edit {
           display:
             inline-flex;
 
@@ -743,7 +781,7 @@ export default function ServicesManager() {
             0 10px;
         }
 
-        .service-row__delete {
+        .svc-admin-row__delete {
           display:
             inline-flex;
 
@@ -788,7 +826,7 @@ export default function ServicesManager() {
             border-color 0.18s ease;
         }
 
-        .service-row__delete:hover {
+        .svc-admin-row__delete:hover {
           background:
             rgba(
               179,
@@ -880,7 +918,7 @@ export default function ServicesManager() {
 
         @media (max-width: 900px) {
 
-          .service-row {
+          .svc-admin-row {
             grid-template-columns:
               minmax(170px, 1.3fr)
               minmax(110px, 0.8fr)
@@ -888,7 +926,7 @@ export default function ServicesManager() {
               auto;
           }
 
-          .service-row__actions {
+          .svc-admin-row__actions {
             grid-column:
               1 / -1;
 
@@ -923,7 +961,7 @@ export default function ServicesManager() {
               100%;
           }
 
-          .service-row {
+          .svc-admin-row {
             display:
               flex;
 
@@ -940,20 +978,20 @@ export default function ServicesManager() {
               16px;
           }
 
-          .service-row__info,
-          .service-row__category,
-          .service-row__price,
-          .service-row__actions {
+          .svc-admin-row__info,
+          .svc-admin-row__category,
+          .svc-admin-row__price,
+          .svc-admin-row__actions {
             width:
               100%;
           }
 
-          .service-row__visibility {
+          .svc-admin-row__visibility {
             margin-right:
               auto;
           }
 
-          .service-row__actions {
+          .svc-admin-row__actions {
             display:
               flex;
 
@@ -986,7 +1024,7 @@ export default function ServicesManager() {
               4px;
           }
 
-          .service-row__actions {
+          .svc-admin-row__actions {
             flex-wrap:
               wrap;
           }
@@ -1003,9 +1041,9 @@ export default function ServicesManager() {
           prefers-reduced-motion: reduce
         ) {
 
-          .service-row,
-          .service-row__visibility,
-          .service-row__delete {
+          .svc-admin-row,
+          .svc-admin-row__visibility,
+          .svc-admin-row__delete {
             transition:
               none;
           }
@@ -1184,11 +1222,93 @@ export default function ServicesManager() {
                         event.target.value
                       )
                     }
-                    placeholder="Describe what is included in this service."
+                    placeholder="A short summary shown on the Services page and in the estimator."
                     rows="4"
+                    maxLength={1200}
                   />
 
                 </div>
+
+                {/* SORT ORDER */}
+
+                <div className="field services-form-field">
+
+                  <label htmlFor="svc-sort">
+                    Sort Order
+                  </label>
+
+                  <input
+                    id="svc-sort"
+                    type="number"
+                    step="1"
+                    value={form.sort_order}
+                    onChange={(event) =>
+                      updateField(
+                        'sort_order',
+                        event.target.value
+                      )
+                    }
+                    placeholder="Added last when blank"
+                  />
+
+                </div>
+
+                {/* VISIBILITY */}
+
+                <div className="field services-form-field">
+
+                  <label htmlFor="svc-visible">
+                    Visibility
+                  </label>
+
+                  <select
+                    id="svc-visible"
+                    value={form.visible ? '1' : '0'}
+                    onChange={(event) =>
+                      updateField(
+                        'visible',
+                        event.target.value === '1' ? 1 : 0
+                      )
+                    }
+                  >
+                    <option value="1">Visible on the public site and estimator</option>
+                    <option value="0">Hidden from the public</option>
+                  </select>
+
+                </div>
+
+                {/* PACKAGE DETAILS */}
+
+                <div className="services-form-field services-form-field--full services-details-heading">
+                  <strong>Package details</strong>
+                  <small className="services-form-help">
+                    Shown when visitors open this service on the Services page or tap the info button in the estimator. Write one item per line; empty sections are hidden.
+                  </small>
+                </div>
+
+                {DETAIL_FIELDS.map((detail) => (
+                  <div className="field services-form-field" key={detail.key}>
+
+                    <label htmlFor={`svc-${detail.key}`}>
+                      {detail.label}
+                    </label>
+
+                    <textarea
+                      id={`svc-${detail.key}`}
+                      value={form[detail.key]}
+                      onChange={(event) =>
+                        updateField(
+                          detail.key,
+                          event.target.value
+                        )
+                      }
+                      placeholder={detail.placeholder}
+                      rows="4"
+                      maxLength={2000}
+                    />
+
+                  </div>
+                ))}
 
               </div>
 
@@ -1287,19 +1407,19 @@ export default function ServicesManager() {
                     (service) => (
                       <div
                         key={service.id}
-                        className="service-row"
+                        className="svc-admin-row"
                       >
 
                         {/* INFO */}
 
-                        <div className="service-row__info">
+                        <div className="svc-admin-row__info">
 
-                          <strong className="service-row__name">
+                          <strong className="svc-admin-row__name">
                             {service.name ||
                               'Untitled Service'}
                           </strong>
 
-                          <div className="service-row__description">
+                          <div className="svc-admin-row__description">
                             {service.description ||
                               'No description provided.'}
                           </div>
@@ -1308,16 +1428,16 @@ export default function ServicesManager() {
 
                         {/* CATEGORY */}
 
-                        <div className="service-row__category">
+                        <div className="svc-admin-row__category">
                           {service.category ||
                             'Photography'}
                         </div>
 
                         {/* PRICE */}
 
-                        <div className="service-row__price">
+                        <div className="svc-admin-row__price">
 
-                          <span className="service-row__price-label">
+                          <span className="svc-admin-row__price-label">
                             Starting
                           </span>
 
@@ -1334,10 +1454,10 @@ export default function ServicesManager() {
                         <button
                           type="button"
                           className={`
-                            service-row__visibility
+                            svc-admin-row__visibility
                             ${
                               service.visible
-                                ? 'service-row__visibility--visible'
+                                ? 'svc-admin-row__visibility--visible'
                                 : ''
                             }
                           `}
@@ -1372,7 +1492,7 @@ export default function ServicesManager() {
 
                         {/* ACTIONS */}
 
-                        <div className="service-row__actions">
+                        <div className="svc-admin-row__actions">
 
                           <button
                             type="button"
@@ -1380,7 +1500,7 @@ export default function ServicesManager() {
                               btn
                               btn--ghost-light
                               btn--sm
-                              service-row__edit
+                              svc-admin-row__edit
                             "
                             onClick={() =>
                               startEdit(
@@ -1394,7 +1514,7 @@ export default function ServicesManager() {
 
                           <button
                             type="button"
-                            className="service-row__delete"
+                            className="svc-admin-row__delete"
                             onClick={() =>
                               setConfirmDelete(
                                 service

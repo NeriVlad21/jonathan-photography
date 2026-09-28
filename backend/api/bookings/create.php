@@ -38,12 +38,23 @@ $v->required('name', 'your full name')->maxLength('name', 160)
   ->required('preferred_date', 'a preferred date')
   ->required('preferred_time', 'a preferred start time')
   ->required('submission_token', 'a request token')
-  ->required('message', 'a short message');
+  ->required('message', 'a short message')->maxLength('message', 3000)
+  ->maxLength('email', 160)
+  ->maxLength('location', 200)
+  ->maxLength('guest_count', 40);
 
 $v->boolTrue('privacy_agreed', 'Please agree to the data privacy notice before continuing.');
 
 if ($v->fails()) {
     json_error('Please fix the errors below.', 422, $v->errors());
+}
+
+// Text fields must be plain strings; arrays/objects would otherwise be
+// silently stored as empty values.
+foreach (['name', 'email', 'phone', 'facebook', 'preferred_date', 'preferred_time', 'submission_token', 'message', 'location', 'guest_count'] as $field) {
+    if (isset($input[$field]) && !is_string($input[$field])) {
+        json_error('Please fix the errors below.', 422, [$field => 'Invalid value.']);
+    }
 }
 
 $preferredDate = (string) $input['preferred_date'];
@@ -182,12 +193,45 @@ $breakdown = [
 ];
 $shootType = clean_string($service['name']);
 
+// Serialize requests for the same date so two visitors submitting at the same
+// moment cannot both pass the availability check. The lock is released when
+// the connection closes (Database::disconnect below) or explicitly.
+$dateLockName = 'jp_booking_date_' . $preferredDate;
+$lock = $pdo->prepare('SELECT GET_LOCK(:name, 10)');
+$lock->execute(['name' => $dateLockName]);
+if ((int) $lock->fetchColumn() !== 1) {
+    json_error('The booking system is busy. Please try again in a moment.', 503);
+}
+$releaseDateLock = static function () use ($pdo, $dateLockName): void {
+    try {
+        $pdo->prepare('SELECT RELEASE_LOCK(:name)')->execute(['name' => $dateLockName]);
+    } catch (Throwable $e) {
+        // The lock is released with the connection anyway.
+    }
+};
+
+// A retry of the same submission may have completed while we waited.
+$existingRequest = $pdo->prepare(
+    'SELECT id, reference_code FROM bookings WHERE submission_token = :token LIMIT 1'
+);
+$existingRequest->execute(['token' => $submissionToken]);
+$existingRequest = $existingRequest->fetch(PDO::FETCH_ASSOC);
+if ($existingRequest) {
+    $releaseDateLock();
+    json_success([
+        'reference' => $existingRequest['reference_code'],
+        'id' => (int) $existingRequest['id'],
+        'recovered' => true,
+    ]);
+}
+
 $availability = $pdo->prepare(
     'SELECT COUNT(*) FROM calendar_events
      WHERE event_date = :preferred_date AND status IN (\'REQUESTED\', \'BOOKED\')'
 );
 $availability->execute(['preferred_date' => $preferredDate]);
 if ((int) $availability->fetchColumn() > 0) {
+    $releaseDateLock();
     json_error('That date has just been booked. Please choose another available date.', 409, [
         'preferred_date' => 'This date is no longer available.'
     ]);
@@ -271,9 +315,12 @@ try {
 
     // 2. Commit the transaction to unlock the database tables
     $pdo->commit();
-    
+    $releaseDateLock();
+
     // Release the shared PDO connection before SMTP work, which can take
-    // several seconds on a slow mail server.
+    // several seconds on a slow mail server. The lock closure also holds the
+    // connection, so drop it too.
+    $releaseDateLock = null;
     Database::disconnect();
     $pdo = null;
 
@@ -282,10 +329,30 @@ try {
     if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollBack();
     }
+    if ($releaseDateLock) {
+        $releaseDateLock();
+    }
+
+    // Two retries of the same submission raced past the token check: return
+    // the request that was saved first instead of an error.
+    if ($e instanceof PDOException && $e->getCode() === '23000' && isset($pdo)) {
+        $recovered = $pdo->prepare('SELECT id, reference_code FROM bookings WHERE submission_token = :token LIMIT 1');
+        $recovered->execute(['token' => $submissionToken]);
+        $recovered = $recovered->fetch(PDO::FETCH_ASSOC);
+        if ($recovered) {
+            json_success([
+                'reference' => $recovered['reference_code'],
+                'id' => (int) $recovered['id'],
+                'recovered' => true,
+            ]);
+        }
+    }
+
     // Release connection on fail too
+    $releaseDateLock = null;
     Database::disconnect();
     $pdo = null;
-    
+
     log_server_error('BOOKING_CREATE', $e);
     json_error('Something went wrong while saving your request. Please try again.', 500);
 }

@@ -26,6 +26,9 @@ if ($method === 'GET' && isset($_GET['id'])) {
          LEFT JOIN portfolio_shoots s ON s.id = pi.shoot_id
          LEFT JOIN portfolio_categories c ON c.id = s.category_id
          WHERE pi.id = :id
+           AND pi.visible = 1
+           AND (s.id IS NULL OR s.visible = 1)
+           AND (c.id IS NULL OR c.visible = 1)
          LIMIT 1'
     );
     $stmt->execute(['id' => $id]);
@@ -42,7 +45,7 @@ if ($method === 'GET' && isset($_GET['id'])) {
     if (!empty($image['shoot_id'])) {
         // FIXED: Split :so into :so1 and :so2 to satisfy PDO parameter counting
         $prev = $pdo->prepare(
-            'SELECT id FROM portfolio_images WHERE shoot_id = :sid
+            'SELECT id FROM portfolio_images WHERE shoot_id = :sid AND visible = 1
              AND (sort_order < :so1 OR (sort_order = :so2 AND id < :id))
              ORDER BY sort_order DESC, id DESC LIMIT 1'
         );
@@ -55,7 +58,7 @@ if ($method === 'GET' && isset($_GET['id'])) {
         $prevId = $prev->fetchColumn() ?: null;
 
         $next = $pdo->prepare(
-            'SELECT id FROM portfolio_images WHERE shoot_id = :sid
+            'SELECT id FROM portfolio_images WHERE shoot_id = :sid AND visible = 1
              AND (sort_order > :so1 OR (sort_order = :so2 AND id > :id))
              ORDER BY sort_order ASC, id ASC LIMIT 1'
         );
@@ -114,20 +117,33 @@ if ($method === 'PUT') {
         }
     }
 
-    $stmt = $pdo->prepare(
-        'UPDATE portfolio_images
-         SET title = :title, caption = :caption, visible = :visible,
-             is_cover = :cover, sort_order = COALESCE(:sort, sort_order)
-         WHERE id = :id'
-    );
-    $stmt->execute([
-        'title'   => clean_string($input['title'] ?? ''),
-        'caption' => clean_string($input['caption'] ?? ''),
-        'visible' => array_key_exists('visible', $input) ? (!empty($input['visible']) ? 1 : 0) : 1,
-        'cover'   => !empty($input['is_cover']) ? 1 : 0,
-        'sort'    => isset($input['sort_order']) ? (int) $input['sort_order'] : null,
-        'id'      => $id,
-    ]);
+    // Only update fields that were sent: "Set as cover" sends just
+    // { id, is_cover } and must not wipe the title/caption or unhide the photo.
+    $sets = [];
+    $params = ['id' => $id];
+    if (array_key_exists('title', $input)) {
+        $sets[] = 'title = :title';
+        $params['title'] = mb_substr(clean_string($input['title']), 0, 160);
+    }
+    if (array_key_exists('caption', $input)) {
+        $sets[] = 'caption = :caption';
+        $params['caption'] = mb_substr(clean_string($input['caption']), 0, 2000);
+    }
+    if (array_key_exists('visible', $input)) {
+        $sets[] = 'visible = :visible';
+        $params['visible'] = !empty($input['visible']) ? 1 : 0;
+    }
+    if (array_key_exists('is_cover', $input)) {
+        $sets[] = 'is_cover = :cover';
+        $params['cover'] = !empty($input['is_cover']) ? 1 : 0;
+    }
+    if (isset($input['sort_order']) && is_numeric($input['sort_order'])) {
+        $sets[] = 'sort_order = :sort';
+        $params['sort'] = (int) $input['sort_order'];
+    }
+    if ($sets) {
+        $pdo->prepare('UPDATE portfolio_images SET ' . implode(', ', $sets) . ' WHERE id = :id')->execute($params);
+    }
 
     $row = $pdo->prepare('SELECT * FROM portfolio_images WHERE id = :id');
     $row->execute(['id' => $id]);

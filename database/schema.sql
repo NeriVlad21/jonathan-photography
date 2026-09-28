@@ -91,6 +91,12 @@ CREATE TABLE services (
   slug VARCHAR(180) NOT NULL UNIQUE,
   category VARCHAR(60) NOT NULL DEFAULT 'photography',
   description TEXT NULL,
+  -- Package details: one item per line; empty/NULL sections are not shown.
+  inclusions TEXT NULL,
+  coverage_details TEXT NULL,
+  deliverables TEXT NULL,
+  package_options TEXT NULL,
+  notes TEXT NULL,
   image_path VARCHAR(255) NULL,
   starting_price DECIMAL(10,2) NULL,
   visible TINYINT(1) NOT NULL DEFAULT 1,

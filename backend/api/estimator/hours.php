@@ -22,15 +22,19 @@ if ($method === 'POST') {
     require_csrf();
     $input = json_input();
     $v = new Validator($input);
-    $v->required('label')->required('hours')->required('price');
+    $v->required('label')->required('hours')->required('price')->maxLength('label', 80);
     if ($v->fails()) json_error('Please fill in every field.', 422, $v->errors());
+    $price = money_input($input['price']);
+    $hours = is_numeric($input['hours'] ?? null) ? round((float) $input['hours'], 2) : null;
+    if ($price === null) json_error('Price must be a number from 0 to 9,999,999.99.', 422, ['price' => 'Invalid price.']);
+    if ($hours === null || $hours <= 0 || $hours > 24) json_error('Hours must be greater than 0 and at most 24.', 422, ['hours' => 'Invalid hours.']);
 
     $maxOrder = (int) $pdo->query('SELECT COALESCE(MAX(sort_order),0) FROM estimator_hours')->fetchColumn();
     $stmt = $pdo->prepare('INSERT INTO estimator_hours (label, hours, price, active, sort_order) VALUES (:l, :h, :p, 1, :s)');
     $stmt->execute([
         'l' => clean_string($input['label']),
-        'h' => (float) $input['hours'],
-        'p' => (float) $input['price'],
+        'h' => $hours,
+        'p' => $price,
         's' => $maxOrder + 1,
     ]);
     $id = (int) $pdo->lastInsertId();
@@ -43,16 +47,20 @@ if ($method === 'PUT') {
     require_csrf();
     $input = json_input();
     $v = new Validator($input);
-    $v->required('id')->required('label');
+    $v->required('id')->required('label')->required('hours')->required('price')->maxLength('label', 80);
     if ($v->fails()) json_error('Please fix the errors below.', 422, $v->errors());
+    $price = money_input($input['price']);
+    $hours = is_numeric($input['hours'] ?? null) ? round((float) $input['hours'], 2) : null;
+    if ($price === null) json_error('Price must be a number from 0 to 9,999,999.99.', 422, ['price' => 'Invalid price.']);
+    if ($hours === null || $hours <= 0 || $hours > 24) json_error('Hours must be greater than 0 and at most 24.', 422, ['hours' => 'Invalid hours.']);
 
     $stmt = $pdo->prepare(
         'UPDATE estimator_hours SET label = :l, hours = :h, price = :p, active = :a, sort_order = :s WHERE id = :id'
     );
     $stmt->execute([
         'l' => clean_string($input['label']),
-        'h' => (float) $input['hours'],
-        'p' => (float) $input['price'],
+        'h' => $hours,
+        'p' => $price,
         'a' => !empty($input['active']) ? 1 : 0,
         's' => (int) ($input['sort_order'] ?? 0),
         'id' => (int) $input['id'],
@@ -68,7 +76,9 @@ if ($method === 'DELETE') {
     require_csrf();
     $id = (int) ($_GET['id'] ?? 0);
     if (!$id) json_error('Missing id.', 422);
-    $pdo->prepare('DELETE FROM estimator_hours WHERE id = :id')->execute(['id' => $id]);
+    $stmt = $pdo->prepare('DELETE FROM estimator_hours WHERE id = :id');
+    $stmt->execute(['id' => $id]);
+    if ($stmt->rowCount() < 1) json_error('Coverage option not found.', 404);
     json_success(['deleted' => true]);
 }
 

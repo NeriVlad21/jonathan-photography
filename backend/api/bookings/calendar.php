@@ -65,6 +65,14 @@ require_csrf();
 $input = json_input();
 
 if ($method === 'POST') {
+    foreach (['booking_id', 'event_date', 'event_time', 'name', 'shoot_type', 'email', 'phone', 'location', 'notes'] as $field) {
+        if (isset($input[$field]) && !is_scalar($input[$field])) {
+            json_error('Please fix the errors below.', 422, [$field => 'Invalid value.']);
+        }
+    }
+    if (!empty($input['booking_id']) && !ctype_digit((string) $input['booking_id'])) {
+        json_error('Invalid booking request.', 422, ['booking_id' => 'Invalid booking id.']);
+    }
     $bookingId = !empty($input['booking_id']) ? (int) $input['booking_id'] : null;
     $eventDate = trim((string) ($input['event_date'] ?? ''));
     $eventTime = trim((string) ($input['event_time'] ?? ''));
@@ -74,6 +82,19 @@ if ($method === 'POST') {
     $phone = trim((string) ($input['phone'] ?? ''));
     $location = trim((string) ($input['location'] ?? ''));
     $notes = trim((string) ($input['notes'] ?? ''));
+
+    $lengthLimits = [
+        'name' => [$name, 160], 'shoot_type' => [$shootType, 120], 'email' => [$email, 160],
+        'phone' => [$phone, 40], 'location' => [$location, 200], 'notes' => [$notes, 3000],
+    ];
+    foreach ($lengthLimits as $field => [$value, $max]) {
+        if (mb_strlen($value) > $max) {
+            json_error('Please fix the errors below.', 422, [$field => "Keep this under {$max} characters."]);
+        }
+    }
+    if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        json_error('Please enter a valid email address.', 422, ['email' => 'Invalid email address.']);
+    }
 
     if (!valid_calendar_date($eventDate)) {
         json_error('Please choose a valid event date.', 422, ['event_date' => 'A valid event date is required.']);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Trash2,
   Settings2,
@@ -49,15 +49,38 @@ export default function EstimatorSettings() {
   const [confirmDelete, setConfirmDelete] =
     useState(null)
 
+  // Stored on the server so every visitor sees the configured range.
   const [margin, setMargin] =
-    useState(() =>
-      localStorage.getItem(
-        'estimator_margin'
-      ) || '15'
-    )
+    useState('15')
 
   const [savingMargin, setSavingMargin] =
     useState(false)
+
+  // Inline coverage/add-on edits are saved after typing pauses, so partial
+  // values ("5", "50", …) are never sent and responses cannot arrive out of
+  // order and leave a stale price behind.
+  const pendingSaves = useRef(new Map())
+
+  const scheduleSave = (key, save) => {
+    const pending = pendingSaves.current
+    if (pending.has(key)) window.clearTimeout(pending.get(key).timer)
+    const timer = window.setTimeout(() => {
+      pending.delete(key)
+      save()
+    }, 600)
+    pending.set(key, { timer, save })
+  }
+
+  useEffect(() => () => {
+    // Leaving the page: flush anything still waiting.
+    pendingSaves.current.forEach(({ timer, save }) => {
+      window.clearTimeout(timer)
+      save()
+    })
+    pendingSaves.current.clear()
+  }, [])
+
+  const isBlank = (value) => value === '' || value === null || value === undefined
 
   /*
   ============================================================
@@ -85,6 +108,10 @@ export default function EstimatorSettings() {
               ? data.services
               : []
         })
+
+        if (data?.range_margin !== undefined && data?.range_margin !== null) {
+          setMargin(String(data.range_margin))
+        }
       })
       .catch(() => {
         setConfig({
@@ -107,36 +134,43 @@ export default function EstimatorSettings() {
   ============================================================
   */
 
-  const saveMargin = (event) => {
+  const saveMargin = async (event) => {
     event.preventDefault()
+
+    const value =
+      Number(margin)
+
+    if (
+      margin === '' ||
+      Number.isNaN(value) ||
+      value < 0 ||
+      value > 100
+    ) {
+      showToast(
+        'Margin must be between 0 and 100.',
+        'error'
+      )
+      return
+    }
 
     setSavingMargin(true)
 
     try {
-      const value =
-        Number(margin)
+      const saved =
+        await estimatorApi.updateSettings({
+          range_margin: value
+        })
 
-      if (
-        Number.isNaN(value) ||
-        value < 0 ||
-        value > 100
-      ) {
-        showToast(
-          'Margin must be between 0 and 100.',
-          'error'
-        )
-        return
-      }
-
-      localStorage.setItem(
-        'estimator_margin',
-        String(value)
-      )
-
-      setMargin(String(value))
+      setMargin(String(saved?.range_margin ?? value))
 
       showToast(
         'Estimator range margin updated.'
+      )
+    } catch (error) {
+      showToast(
+        error?.message ||
+          'Unable to update the range margin.',
+        'error'
       )
     } finally {
       setSavingMargin(false)
@@ -175,22 +209,14 @@ export default function EstimatorSettings() {
     }))
 
     try {
+      // Partial update: only the price is sent, so the service's other
+      // fields (including package details) are never overwritten here.
       await servicesApi.update({
         id: service.id,
-        name: service.name,
-        category: service.category,
-        description:
-          service.description || '',
         starting_price:
           value === ''
             ? ''
-            : Number(value),
-        visible:
-          service.visible ? 1 : 0,
-        sort_order:
-          Number(
-            service.sort_order || 0
-          )
+            : Number(value)
       })
 
       showToast(
@@ -243,50 +269,13 @@ export default function EstimatorSettings() {
     }))
 
     try {
+      // Partial update of the single changed field.
       await servicesApi.update({
         id: service.id,
-
-        name:
-          field === 'name'
-            ? value
-            : service.name,
-
-        category:
-          field === 'category'
-            ? value
-            : service.category,
-
-        description:
-          field === 'description'
-            ? value
-            : service.description || '',
-
-        starting_price:
-          field === 'starting_price'
-            ? (
-                value === ''
-                  ? ''
-                  : Number(value)
-              )
-            : Number(
-                service.starting_price || 0
-              ),
-
-        visible:
+        [field]:
           field === 'visible'
             ? (value ? 1 : 0)
-            : (
-                service.visible
-                  ? 1
-                  : 0
-              ),
-
-        sort_order:
-          field === 'sort_order'
-            ? Number(value || 0)
-            : Number(
-                service.sort_order || 0
-              )
+            : value
       })
 
       if (field === 'visible') {
@@ -339,7 +328,7 @@ export default function EstimatorSettings() {
     }
   }
 
-  const updateHourField = async (
+  const updateHourField = (
     hour,
     field,
     value
@@ -360,19 +349,26 @@ export default function EstimatorSettings() {
         )
     }))
 
-    try {
-      await estimatorApi.updateHour(
-        updated
-      )
-    } catch (error) {
-      showToast(
-        error?.message ||
-          'Unable to update coverage option.',
-        'error'
-      )
-
-      load()
+    // Wait for a complete row; the field keeps its draft until then.
+    if (isBlank(updated.label) || isBlank(updated.hours) || isBlank(updated.price)) {
+      return
     }
+
+    scheduleSave(`hour-${hour.id}`, async () => {
+      try {
+        await estimatorApi.updateHour(
+          updated
+        )
+      } catch (error) {
+        showToast(
+          error?.message ||
+            'Unable to update coverage option.',
+          'error'
+        )
+
+        load()
+      }
+    })
   }
 
   /*
@@ -410,7 +406,7 @@ export default function EstimatorSettings() {
     }
   }
 
-  const updateAddonField = async (
+  const updateAddonField = (
     addon,
     field,
     value
@@ -431,19 +427,25 @@ export default function EstimatorSettings() {
         )
     }))
 
-    try {
-      await estimatorApi.updateAddon(
-        updated
-      )
-    } catch (error) {
-      showToast(
-        error?.message ||
-          'Unable to update add-on.',
-        'error'
-      )
-
-      load()
+    if (isBlank(updated.label) || isBlank(updated.price)) {
+      return
     }
+
+    scheduleSave(`addon-${addon.id}`, async () => {
+      try {
+        await estimatorApi.updateAddon(
+          updated
+        )
+      } catch (error) {
+        showToast(
+          error?.message ||
+            'Unable to update add-on.',
+          'error'
+        )
+
+        load()
+      }
+    })
   }
 
   /*
@@ -1738,7 +1740,7 @@ export default function EstimatorSettings() {
                   </h2>
 
                   <p className="estimator-settings-panel__description">
-                    These are the same service prices used in Services. A change here updates both areas.
+                    These are the same service prices used in Services. A change here updates both areas. Descriptions and package details are edited in Services.
                   </p>
 
                 </div>

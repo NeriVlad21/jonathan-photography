@@ -35,8 +35,9 @@ if (!empty($_GET['search'])) {
     if (mb_strlen((string) $_GET['search']) > 100) {
         json_error('Search text is too long.', 422);
     }
-    $where[] = '(name LIKE :search OR email LIKE :search)';
-    $params['search'] = '%' . $_GET['search'] . '%';
+    // Native prepares cannot reuse one named placeholder, so bind it twice.
+    $where[] = '(name LIKE :search_name OR email LIKE :search_email)';
+    $params['search_name'] = $params['search_email'] = '%' . $_GET['search'] . '%';
 }
 
 // Filter by Timeframe (Archive / Date Range)

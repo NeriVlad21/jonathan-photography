@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../middleware/cors.php';
 require_once __DIR__ . '/../../helpers/response.php';
+require_once __DIR__ . '/../../helpers/services.php';
 require_once __DIR__ . '/../../middleware/auth.php';
 require_once __DIR__ . '/../../config/database.php';
 
@@ -19,9 +20,9 @@ $pdo = Database::connect();
 
 if (isset($_GET['all'])) {
     require_admin();
-    $stmt = $pdo->query('SELECT * FROM services ORDER BY category ASC, sort_order ASC, id ASC');
+    $stmt = $pdo->query('SELECT ' . SERVICE_COLUMNS . ' FROM services ORDER BY category ASC, sort_order ASC, id ASC');
 } else {
-    $stmt = $pdo->query('SELECT * FROM services WHERE visible = 1 ORDER BY category ASC, sort_order ASC, id ASC');
+    $stmt = $pdo->query('SELECT ' . SERVICE_COLUMNS . ' FROM services WHERE visible = 1 ORDER BY category ASC, sort_order ASC, id ASC');
 }
 
-json_success($stmt->fetchAll());
+json_success(array_map('present_service', $stmt->fetchAll(PDO::FETCH_ASSOC)));
