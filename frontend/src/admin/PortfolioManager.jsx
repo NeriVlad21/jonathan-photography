@@ -303,7 +303,7 @@ export default function PortfolioManager() {
             new FormData()
 
           formData.append(
-            'image',
+            'original',
             file
           )
 

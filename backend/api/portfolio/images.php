@@ -20,7 +20,9 @@ if ($method === 'GET' && isset($_GET['id'])) {
     
     // Using LEFT JOIN to guarantee the image returns even if the shoot/category linkage is imperfect.
     $stmt = $pdo->prepare(
-        'SELECT pi.*, s.title AS shoot_title, s.slug AS shoot_slug, s.location, s.shoot_date,
+        'SELECT pi.id, pi.shoot_id, pi.image_path, pi.title, pi.caption,
+                pi.sort_order, pi.is_cover, pi.visible, pi.created_at, pi.updated_at,
+                s.title AS shoot_title, s.slug AS shoot_slug, s.location, s.shoot_date,
                 c.name AS category_name, c.slug AS category_slug
          FROM portfolio_images pi
          LEFT JOIN portfolio_shoots s ON s.id = pi.shoot_id
@@ -160,19 +162,29 @@ if ($method === 'DELETE') {
     if (!$id) json_error('Missing image id.', 422);
 
     $config = require __DIR__ . '/../../config/config.php';
-    $row = $pdo->prepare('SELECT image_path FROM portfolio_images WHERE id = :id');
+    $row = $pdo->prepare('SELECT image_path, original_path FROM portfolio_images WHERE id = :id');
     $row->execute(['id' => $id]);
-    $path = $row->fetchColumn();
+    $paths = $row->fetch();
 
     $pdo->prepare('DELETE FROM portfolio_images WHERE id = :id')->execute(['id' => $id]);
 
-    if ($path) {
+    if (!empty($paths['image_path'])) {
+        $path = $paths['image_path'];
         $publicPrefix = $config['uploads']['public_path'];
         if (str_starts_with($path, $publicPrefix)) {
             $diskPath = $config['uploads']['path'] . substr($path, strlen($publicPrefix));
             if (is_file($diskPath)) {
                 @unlink($diskPath);
             }
+        }
+    }
+
+    if (!empty($paths['original_path'])) {
+        $privateRoot = realpath($config['private_uploads']['path']);
+        $privatePath = $config['private_uploads']['path'] . '/' . ltrim(str_replace('\\', '/', $paths['original_path']), '/');
+        $privateDir = realpath(dirname($privatePath));
+        if ($privateRoot && $privateDir && str_starts_with($privateDir, $privateRoot) && is_file($privatePath)) {
+            @unlink($privatePath);
         }
     }
 

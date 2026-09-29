@@ -31,7 +31,10 @@ function slugify_text(string $text): string
 
 function fetch_shoot_images(PDO $pdo, int $shootId, bool $includeHidden = false): array
 {
-    $sql = 'SELECT * FROM portfolio_images WHERE shoot_id = :id' . ($includeHidden ? '' : ' AND visible = 1') . ' ORDER BY sort_order ASC, id ASC';
+    $columns = $includeHidden
+        ? '*'
+        : 'id, shoot_id, image_path, title, caption, sort_order, is_cover, visible, created_at, updated_at';
+    $sql = 'SELECT ' . $columns . ' FROM portfolio_images WHERE shoot_id = :id' . ($includeHidden ? '' : ' AND visible = 1') . ' ORDER BY sort_order ASC, id ASC';
     $stmt = $pdo->prepare($sql);
     $stmt->execute(['id' => $shootId]);
     return $stmt->fetchAll();
@@ -115,7 +118,16 @@ if ($method === 'GET') {
     if (isset($_GET['category']) && isset($_GET['images'])) {
         $stmt = $pdo->prepare(
             'SELECT
-                pi.*,
+                pi.id,
+                pi.shoot_id,
+                pi.image_path,
+                pi.title,
+                pi.caption,
+                pi.sort_order,
+                pi.is_cover,
+                pi.visible,
+                pi.created_at,
+                pi.updated_at,
                 s.title AS shoot_title,
                 s.slug AS shoot_slug,
                 s.location AS shoot_location,

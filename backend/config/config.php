@@ -47,6 +47,34 @@ return [
         ],
     ],
 
+    // Full-resolution portfolio sources are retained for the owner but are
+    // never referenced by public API responses or served as website assets.
+    'private_uploads' => [
+        'path'          => __DIR__ . '/../storage/portfolio-originals',
+        'max_bytes'     => 64 * 1024 * 1024,
+        'max_pixels'    => 80 * 1000 * 1000,
+        'allowed_mimes' => [
+            'image/jpeg' => 'jpg',
+            'image/png'  => 'png',
+            'image/webp' => 'webp',
+        ],
+    ],
+
+    // Central switchboard for server-generated public portfolio previews.
+    // WATERMARK_MODE is a deterrent only when enabled; it is not DRM and
+    // cannot prevent screenshots, screen recording, or photographs of a display.
+    'portfolio_protection' => [
+        'preview_enabled'  => filter_var(env('PUBLIC_PREVIEW_ENABLED', 'true'), FILTER_VALIDATE_BOOLEAN),
+        'max_edge'         => max(600, min(2400, (int) env('PUBLIC_PREVIEW_MAX_EDGE', 1600))),
+        'quality'          => max(45, min(92, (int) env('PUBLIC_PREVIEW_QUALITY', 78))),
+        'watermark_mode'   => in_array(env('WATERMARK_MODE', 'none'), ['none', 'subtle', 'tiled'], true)
+            ? env('WATERMARK_MODE', 'none')
+            : 'none',
+        'creator'          => env('PREVIEW_CREATOR', 'Jonathan Photography'),
+        'copyright'        => env('PREVIEW_COPYRIGHT', 'Copyright Jonathan Photography. All rights reserved.'),
+        'licensing_url'    => env('PREVIEW_LICENSING_URL', env('FRONTEND_URL', 'http://localhost:5173') . '/contact'),
+    ],
+
     'session' => [
         'name'            => 'jp_admin_session',
         'lifetime_seconds' => 60 * 60 * 8, // 8 hours

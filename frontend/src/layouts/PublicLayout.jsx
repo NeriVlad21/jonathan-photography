@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar.jsx'
 import Footer from '../components/Footer.jsx'
 import CameraCursor from '../components/CameraCursor.jsx'
 import PersistentMusicPlayer from '../components/PersistentMusicPlayer.jsx'
+import PublicMediaProtection from '../components/PublicMediaProtection.jsx'
 import { MusicPlayerProvider } from '../context/MusicPlayerContext.jsx'
 import { SiteContentProvider } from '../context/SiteContentContext.jsx'
 
@@ -26,6 +27,7 @@ export default function PublicLayout() {
       <MusicPlayerProvider>
         <div className="public-shell">
         <a className="skip-link" href="#main-content">Skip to main content</a>
+        <PublicMediaProtection />
         <CameraCursor />
         <Navbar />
         <main id="main-content" tabIndex="-1">

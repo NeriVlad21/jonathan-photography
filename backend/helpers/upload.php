@@ -26,6 +26,33 @@ function handle_image_upload(array $file, string $subfolder = ''): array
 {
     $config = (require __DIR__ . '/../config/config.php')['uploads'];
 
+    return store_validated_image($file, $config, $subfolder, true);
+}
+
+/**
+ * Store an owner's full-resolution source outside the public upload tree.
+ * Only the relative path is persisted; public endpoints must never return it.
+ *
+ * @return array{path:string,relative_path:string}
+ */
+function handle_private_image_upload(array $file, string $subfolder = ''): array
+{
+    $config = (require __DIR__ . '/../config/config.php')['private_uploads'];
+    $stored = store_validated_image($file, $config, $subfolder, false);
+
+    return [
+        'path' => $stored['path'],
+        'relative_path' => $stored['relative_path'],
+    ];
+}
+
+/**
+ * @param array<string,mixed> $config
+ * @return array{path:string,relative_path:string,public_url?:string}
+ */
+function store_validated_image(array $file, array $config, string $subfolder, bool $public): array
+{
+
     if (!isset($file['error']) || is_array($file['error'])) {
         throw new UploadException('Malformed upload.');
     }
@@ -69,7 +96,12 @@ function handle_image_upload(array $file, string $subfolder = ''): array
     $extension = $config['allowed_mimes'][$mime];
     $randomName = bin2hex(random_bytes(16)) . '.' . $extension;
 
-    $targetDir = rtrim($config['path'], '/') . ($subfolder ? '/' . trim($subfolder, '/') : '');
+    $cleanSubfolder = trim(str_replace('\\', '/', $subfolder), '/');
+    if ($cleanSubfolder !== '' && !preg_match('/^[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*$/', $cleanSubfolder)) {
+        throw new UploadException('Invalid upload destination.');
+    }
+
+    $targetDir = rtrim($config['path'], '/\\') . ($cleanSubfolder ? '/' . $cleanSubfolder : '');
     if (!is_dir($targetDir)) {
         if (!mkdir($targetDir, 0755, true) && !is_dir($targetDir)) {
             throw new UploadException('Could not prepare the upload directory.');
@@ -84,10 +116,15 @@ function handle_image_upload(array $file, string $subfolder = ''): array
 
     @chmod($destination, 0644);
 
-    $publicUrl = rtrim($config['public_path'], '/') . ($subfolder ? '/' . trim($subfolder, '/') : '') . '/' . $randomName;
-
-    return [
+    $relativePath = ($cleanSubfolder ? $cleanSubfolder . '/' : '') . $randomName;
+    $result = [
         'path'       => $destination,
-        'public_url' => $publicUrl,
+        'relative_path' => $relativePath,
     ];
+
+    if ($public) {
+        $result['public_url'] = rtrim($config['public_path'], '/') . '/' . $relativePath;
+    }
+
+    return $result;
 }

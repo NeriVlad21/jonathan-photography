@@ -68,6 +68,7 @@ CREATE TABLE portfolio_images (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   shoot_id INT UNSIGNED NOT NULL,
   image_path VARCHAR(255) NOT NULL,
+  original_path VARCHAR(255) NULL,
   title VARCHAR(160) NULL,
   caption TEXT NULL,
   sort_order INT NOT NULL DEFAULT 0,

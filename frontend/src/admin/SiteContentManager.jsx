@@ -3,6 +3,7 @@ import { ImageUp, Plus, Save, Trash2 } from 'lucide-react'
 import { assetUrl, portfolioApi, siteContentApi } from '../services/api.js'
 import { DEFAULT_SITE_CONTENT, mergeSiteContent } from '../content/defaultSiteContent.js'
 import { useToast } from '../context/ToastContext.jsx'
+import { preparePublicPreview } from '../utils/publicPreview.js'
 
 const FAQ_MIN = 3
 const FAQ_MAX = 12
@@ -73,7 +74,8 @@ export default function SiteContentManager() {
     if (!file) return
     setUploading(true)
     try {
-      const body = new FormData(); body.append('image', file)
+      const publicPreview = await preparePublicPreview(file)
+      const body = new FormData(); body.append('image', publicPreview)
       const result = await siteContentApi.uploadImage(body)
       set('hero.image', result.path)
       showToast('Hero image uploaded. Save changes to publish it.')

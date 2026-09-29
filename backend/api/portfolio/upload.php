@@ -1,7 +1,8 @@
 <?php
 /**
  * POST /api/portfolio/upload.php  (multipart/form-data)
- * Fields: image (file, required), shoot_id (required), title, caption
+ * Fields: original (source, preferred), image (legacy source fallback),
+ * shoot_id (required), title, caption
  *
  * Admin-only. Uploads the file via the secure upload helper, then
  * creates the matching portfolio_images row in one step so the
@@ -14,6 +15,7 @@ require_once __DIR__ . '/../../middleware/cors.php';
 require_once __DIR__ . '/../../helpers/response.php';
 require_once __DIR__ . '/../../helpers/validation.php';
 require_once __DIR__ . '/../../helpers/upload.php';
+require_once __DIR__ . '/../../helpers/portfolio_preview.php';
 require_once __DIR__ . '/../../middleware/auth.php';
 require_once __DIR__ . '/../../config/database.php';
 
@@ -37,13 +39,23 @@ if (!$shootCheck->fetch()) {
     json_error('That shoot does not exist.', 404);
 }
 
-if (empty($_FILES['image'])) {
+if (empty($_FILES['original']) && empty($_FILES['image'])) {
     json_error('Please attach an image.', 422);
 }
 
+$original = null;
+$uploaded = null;
 try {
-    $uploaded = handle_image_upload($_FILES['image'], 'shoot-' . $shootId);
-} catch (UploadException $e) {
+    $sourceUpload = !empty($_FILES['original']) ? $_FILES['original'] : $_FILES['image'];
+    $original = handle_private_image_upload($sourceUpload, 'shoot-' . $shootId);
+    $uploaded = generate_public_preview($original['path'], 'shoot-' . $shootId);
+} catch (UploadException|PreviewException $e) {
+    if (!empty($uploaded['path']) && is_file($uploaded['path'])) {
+        @unlink($uploaded['path']);
+    }
+    if (!empty($original['path']) && is_file($original['path'])) {
+        @unlink($original['path']);
+    }
     json_error($e->getMessage(), 422);
 }
 
@@ -55,18 +67,26 @@ $countStmt = $pdo->prepare('SELECT COUNT(*) FROM portfolio_images WHERE shoot_id
 $countStmt->execute(['sid' => $shootId]);
 $isFirstImage = (int) $countStmt->fetchColumn() === 0;
 
-$stmt = $pdo->prepare(
-    'INSERT INTO portfolio_images (shoot_id, image_path, title, caption, sort_order, is_cover, visible)
-     VALUES (:sid, :path, :title, :caption, :sort, :cover, 1)'
-);
-$stmt->execute([
-    'sid'     => $shootId,
-    'path'    => $uploaded['public_url'],
-    'title'   => clean_string($_POST['title'] ?? ''),
-    'caption' => clean_string($_POST['caption'] ?? ''),
-    'sort'    => $nextOrder,
-    'cover'   => $isFirstImage ? 1 : 0,
-]);
+try {
+    $stmt = $pdo->prepare(
+        'INSERT INTO portfolio_images
+            (shoot_id, image_path, original_path, title, caption, sort_order, is_cover, visible)
+         VALUES (:sid, :path, :original_path, :title, :caption, :sort, :cover, 1)'
+    );
+    $stmt->execute([
+        'sid'           => $shootId,
+        'path'          => $uploaded['public_url'],
+        'original_path' => $original['relative_path'],
+        'title'         => clean_string($_POST['title'] ?? ''),
+        'caption'       => clean_string($_POST['caption'] ?? ''),
+        'sort'          => $nextOrder,
+        'cover'         => $isFirstImage ? 1 : 0,
+    ]);
+} catch (Throwable $e) {
+    if (is_file($uploaded['path'])) @unlink($uploaded['path']);
+    if (!empty($original['path']) && is_file($original['path'])) @unlink($original['path']);
+    throw $e;
+}
 
 $imageId = (int) $pdo->lastInsertId();
 
@@ -75,6 +95,9 @@ if ($isFirstImage) {
         ->execute(['img' => $imageId, 'sid' => $shootId]);
 }
 
-$row = $pdo->prepare('SELECT * FROM portfolio_images WHERE id = :id');
+$row = $pdo->prepare(
+    'SELECT id, shoot_id, image_path, title, caption, sort_order, is_cover, visible, created_at, updated_at
+     FROM portfolio_images WHERE id = :id'
+);
 $row->execute(['id' => $imageId]);
 json_success($row->fetch(), 201);

@@ -10,6 +10,9 @@ backend/.env
 backend/uploads/portfolio/*
 !backend/uploads/portfolio/.gitkeep
 backend/uploads/portfolio/demo/
+backend/storage/portfolio-originals/*
+!backend/storage/portfolio-originals/.htaccess
+!backend/storage/portfolio-originals/.gitkeep
 
 # --- OS / editor ---
 .DS_Store

@@ -2,6 +2,18 @@
    PUBLIC SITE STYLES
    ============================================================ */
 
+/* ---------- Public portfolio preview protection ----------
+   Public uploads are reduced to web-preview resolution before they reach
+   the server. This layer blocks the browser's basic save/drag shortcuts
+   without placing a visible mark over the owner's work. */
+.public-shell img[data-public-preview="true"],
+.public-shell video[data-public-preview="true"],
+.public-shell canvas[data-public-preview="true"] {
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
 /* ---------- Public film-strip scrollbar ---------- */
 html.public-scroll-theme {
   scroll-behavior: auto;
