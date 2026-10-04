@@ -24,13 +24,20 @@ $pdo = Database::connect();
 $input = json_input();
 
 $v = new Validator($input);
-$v->required('id')->required('label')->required('link')
+$v->required('id')->positiveInteger('id', 'contact platform id')
+  ->required('label')->string('label', 'Platform name')
+  ->required('link')->string('link', 'Link')
+  ->string('tagline', 'Tagline')->string('handle', 'Handle')->string('icon', 'Icon')
+  ->boolean('visible')->integer('sort_order', -100000, 100000)
   ->maxLength('label', 80)->maxLength('tagline', 180)->maxLength('handle', 160)
   ->maxLength('link', 255)->maxLength('icon', 60);
 if ($v->fails()) json_error('Please fix the errors below.', 422, $v->errors());
 if (!is_safe_link(clean_string($input['link']))) {
     json_error('Use a web address, email (mailto:), or phone (tel:) link.', 422, ['link' => 'This link type is not allowed.']);
 }
+$visible = boolean_input($input['visible'] ?? true);
+if ($visible === null) json_error('Please fix the errors below.', 422, ['visible' => 'Invalid visibility value.']);
+$id = positive_integer_input($input['id']);
 
 $stmt = $pdo->prepare(
     'UPDATE contact_platforms
@@ -44,13 +51,13 @@ $stmt->execute([
     'handle'  => clean_string($input['handle'] ?? ''),
     'link'    => clean_string($input['link']),
     'icon'    => clean_string($input['icon'] ?? 'link'),
-    'visible' => !empty($input['visible']) ? 1 : 0,
+    'visible' => $visible,
     'sort'    => (int) ($input['sort_order'] ?? 0),
-    'id'      => (int) $input['id'],
+    'id'      => $id,
 ]);
 
 $row = $pdo->prepare('SELECT * FROM contact_platforms WHERE id = :id');
-$row->execute(['id' => (int) $input['id']]);
+$row->execute(['id' => $id]);
 $platform = $row->fetch();
 if (!$platform) json_error('Contact platform not found.', 404);
 json_success($platform);

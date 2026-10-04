@@ -21,7 +21,7 @@ final class Validator
     {
         $label = $label ?? $field;
         $value = $this->data[$field] ?? null;
-        if ($value === null || (is_string($value) && trim($value) === '')) {
+        if ($value === null || (is_string($value) && trim(strip_tags($value)) === '')) {
             $this->errors[$field] = "Please provide {$label}.";
         }
         return $this;
@@ -41,6 +41,60 @@ final class Validator
         $value = $this->data[$field] ?? null;
         if (is_string($value) && mb_strlen($value) > $max) {
             $this->errors[$field] = ucfirst($field) . " must be under {$max} characters.";
+        }
+        return $this;
+    }
+
+    public function string(string $field, string $label = null): self
+    {
+        $value = $this->data[$field] ?? null;
+        if ($value !== null && !is_string($value)) {
+            $this->errors[$field] = ($label ?? ucfirst($field)) . ' must be text.';
+        }
+        return $this;
+    }
+
+    public function positiveInteger(string $field, string $label = null): self
+    {
+        $value = $this->data[$field] ?? null;
+        $valid = is_int($value) ? $value > 0 : (is_string($value) && ctype_digit($value) && (int) $value > 0);
+        if ($value !== null && $value !== '' && !$valid) {
+            $this->errors[$field] = 'Please provide a valid ' . ($label ?? $field) . '.';
+        }
+        return $this;
+    }
+
+    public function integer(string $field, int $min, int $max): self
+    {
+        $value = $this->data[$field] ?? null;
+        if ($value === null || $value === '') return $this;
+        $valid = is_int($value) || (is_string($value) && preg_match('/^-?\d+$/', $value));
+        if (!$valid || (int) $value < $min || (int) $value > $max) {
+            $this->errors[$field] = ucfirst($field) . " must be a whole number from {$min} to {$max}.";
+        }
+        return $this;
+    }
+
+    public function boolean(string $field): self
+    {
+        $value = $this->data[$field] ?? null;
+        if ($value !== null && !in_array($value, [true, false, 0, 1, '0', '1', 'true', 'false'], true)) {
+            $this->errors[$field] = 'Invalid value for ' . $field . '.';
+        }
+        return $this;
+    }
+
+    public function date(string $field, bool $allowEmpty = true): self
+    {
+        $value = $this->data[$field] ?? null;
+        if (($value === null || $value === '') && $allowEmpty) return $this;
+        if (!is_string($value)) {
+            $this->errors[$field] = 'Please provide a valid date.';
+            return $this;
+        }
+        $parsed = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+        if (!$parsed || $parsed->format('Y-m-d') !== $value) {
+            $this->errors[$field] = 'Please provide a valid date.';
         }
         return $this;
     }
@@ -81,6 +135,20 @@ function clean_string($value): string
         return '';
     }
     return trim(strip_tags($value));
+}
+
+function boolean_input(mixed $value): ?int
+{
+    if (in_array($value, [true, 1, '1', 'true'], true)) return 1;
+    if (in_array($value, [false, 0, '0', 'false'], true)) return 0;
+    return null;
+}
+
+function positive_integer_input(mixed $value): int
+{
+    if (is_int($value)) return $value > 0 ? $value : 0;
+    if (is_string($value) && ctype_digit($value)) return (int) $value > 0 ? (int) $value : 0;
+    return 0;
 }
 
 /**

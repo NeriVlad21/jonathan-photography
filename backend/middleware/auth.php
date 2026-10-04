@@ -20,6 +20,18 @@ function start_secure_session(): void
     $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
         || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
 
+    if ($config['app_env'] === 'production') {
+        $secret = (string) ($config['app_secret'] ?? '');
+        if (strlen($secret) < 32 || $secret === 'change-this-to-a-long-random-string') {
+            error_log('[AUTH] Production APP_SECRET is missing or unsafe.');
+            json_error('Authentication is temporarily unavailable because the server is not configured securely.', 503);
+        }
+        if (!$isHttps) {
+            error_log('[AUTH] Refusing to create a production admin session without HTTPS.');
+            json_error('Secure HTTPS is required for administrator access.', 503);
+        }
+    }
+
     ini_set('session.use_strict_mode', '1');
     ini_set('session.use_only_cookies', '1');
     ini_set('session.cookie_httponly', '1');

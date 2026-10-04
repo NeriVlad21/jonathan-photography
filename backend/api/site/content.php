@@ -15,16 +15,20 @@ function clean_content_value(mixed $value, int $depth = 0): mixed
         if (count($value) > 30) json_error('A content section contains too many items.', 422);
         $clean = [];
         foreach ($value as $key => $item) {
-            if (!is_int($key) && !preg_match('/^[A-Za-z0-9_-]{1,50}$/', (string) $key)) continue;
+            if (!is_int($key) && !preg_match('/^[A-Za-z0-9_-]{1,50}$/', (string) $key)) {
+                json_error('The content contains an invalid field name.', 422);
+            }
             $clean[$key] = clean_content_value($item, $depth + 1);
         }
         return $clean;
     }
     if (is_string($value)) {
         $value = trim(strip_tags($value));
-        return mb_substr($value, 0, 1200);
+        if (mb_strlen($value) > 1200) json_error('A content field exceeds the 1,200 character limit.', 422);
+        return $value;
     }
-    return is_bool($value) || is_numeric($value) || $value === null ? $value : null;
+    if (is_bool($value) || is_int($value) || is_float($value) || $value === null) return $value;
+    json_error('The content contains an unsupported value.', 422);
 }
 
 $pdo = Database::connect();

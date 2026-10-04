@@ -51,6 +51,26 @@ function make_mailer(): ?PHPMailer
 }
 
 /**
+ * One bounded retry for transient SMTP failures. Callers still catch the
+ * final exception so third-party email outages never roll back saved data.
+ */
+function send_mail_with_retry(PHPMailer $mail, string $context): void
+{
+    $lastError = null;
+    for ($attempt = 1; $attempt <= 2; $attempt++) {
+        try {
+            $mail->send();
+            return;
+        } catch (Throwable $e) {
+            $lastError = $e;
+            $mail->smtpClose();
+            if ($attempt < 2) usleep(250000);
+        }
+    }
+    throw new RuntimeException("{$context} failed after a retry.", 0, $lastError);
+}
+
+/**
  * The most recently maintained admin profile is the studio's notification
  * address. Fall back to the environment setting during setup or recovery.
  */
@@ -130,7 +150,7 @@ function send_booking_emails(array $booking): void
             $mail->Subject = "We've got your request, {$booking['name']} — Jonathan Photography";
             $mail->Body = client_email_body($name, $shootType, $date, $location, $estimate, $reference);
             $mail->AltBody = "Hi {$booking['name']},\n\nThank you for reaching out to Jonathan Photography. We've received your booking request (ref. {$reference}) and will review the details shortly.\n\nShoot: {$shootType}\nDate: {$date}\nLocation: {$location}\nEstimated Budget: {$estimate}\n\nWe'll reach out using the information you provided.\n\n— Jonathan Photography";
-            $mail->send();
+            send_mail_with_retry($mail, 'Client booking email');
         }
     } catch (Throwable $e) {
         error_log('[MAILER] Client email failed: ' . $e->getMessage());
@@ -145,7 +165,7 @@ function send_booking_emails(array $booking): void
             $mail->isHTML(true);
             $mail->Subject = "New booking request — {$booking['name']} ({$shootType})";
             $mail->Body = admin_email_body($booking);
-            $mail->send();
+            send_mail_with_retry($mail, 'Studio booking email');
         }
     } catch (Throwable $e) {
         error_log('[MAILER] Admin notification email failed: ' . $e->getMessage());

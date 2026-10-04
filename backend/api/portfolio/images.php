@@ -16,7 +16,8 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 // Handle single public photo fetching
 if ($method === 'GET' && isset($_GET['id'])) {
-    $id = (int) $_GET['id'];
+    $id = positive_integer_input($_GET['id']);
+    if (!$id) json_error('Invalid photo id.', 422);
     
     // Using LEFT JOIN to guarantee the image returns even if the shoot/category linkage is imperfect.
     $stmt = $pdo->prepare(
@@ -82,8 +83,10 @@ if ($method === 'GET' && isset($_GET['id'])) {
 // Handle Admin fetching all images for a shoot
 if ($method === 'GET' && isset($_GET['shoot_id'])) {
     require_admin();
+    $shootId = positive_integer_input($_GET['shoot_id']);
+    if (!$shootId) json_error('Invalid shoot id.', 422);
     $stmt = $pdo->prepare('SELECT * FROM portfolio_images WHERE shoot_id = :sid ORDER BY sort_order ASC, id ASC');
-    $stmt->execute(['sid' => (int) $_GET['shoot_id']]);
+    $stmt->execute(['sid' => $shootId]);
     json_success($stmt->fetchAll());
 }
 
@@ -94,20 +97,34 @@ if ($method === 'PUT') {
     $input = json_input();
 
     if (!empty($input['reorder']) && is_array($input['reorder'])) {
+        if (count($input['reorder']) > 500) json_error('Too many images to reorder at once.', 422);
         $stmt = $pdo->prepare('UPDATE portfolio_images SET sort_order = :so WHERE id = :id');
         $pdo->beginTransaction();
         foreach ($input['reorder'] as $item) {
-            $stmt->execute(['so' => (int) $item['sort_order'], 'id' => (int) $item['id']]);
+            if (!is_array($item)) {
+                $pdo->rollBack();
+                json_error('Invalid reorder entry.', 422);
+            }
+            $itemId = positive_integer_input($item['id'] ?? null);
+            $sort = $item['sort_order'] ?? null;
+            if (!$itemId || !(is_int($sort) || (is_string($sort) && preg_match('/^-?\d+$/', $sort))) || abs((int) $sort) > 100000) {
+                $pdo->rollBack();
+                json_error('Invalid reorder entry.', 422);
+            }
+            $stmt->execute(['so' => (int) $sort, 'id' => $itemId]);
         }
         $pdo->commit();
         json_success(['reordered' => true]);
     }
 
     $v = new Validator($input);
-    $v->required('id');
+    $v->required('id')->positiveInteger('id', 'image id')
+      ->string('title', 'Title')->maxLength('title', 160)
+      ->string('caption', 'Caption')->maxLength('caption', 2000)
+      ->boolean('visible')->boolean('is_cover')->integer('sort_order', -100000, 100000);
     if ($v->fails()) json_error('Missing image id.', 422, $v->errors());
 
-    $id = (int) $input['id'];
+    $id = positive_integer_input($input['id']);
 
     if (!empty($input['is_cover'])) {
         $shootRow = $pdo->prepare('SELECT shoot_id FROM portfolio_images WHERE id = :id');
@@ -133,11 +150,11 @@ if ($method === 'PUT') {
     }
     if (array_key_exists('visible', $input)) {
         $sets[] = 'visible = :visible';
-        $params['visible'] = !empty($input['visible']) ? 1 : 0;
+        $params['visible'] = boolean_input($input['visible']);
     }
     if (array_key_exists('is_cover', $input)) {
         $sets[] = 'is_cover = :cover';
-        $params['cover'] = !empty($input['is_cover']) ? 1 : 0;
+        $params['cover'] = boolean_input($input['is_cover']);
     }
     if (isset($input['sort_order']) && is_numeric($input['sort_order'])) {
         $sets[] = 'sort_order = :sort';
@@ -158,13 +175,14 @@ if ($method === 'PUT') {
 if ($method === 'DELETE') {
     require_admin();
     require_csrf();
-    $id = (int) ($_GET['id'] ?? 0);
+    $id = positive_integer_input($_GET['id'] ?? null);
     if (!$id) json_error('Missing image id.', 422);
 
     $config = require __DIR__ . '/../../config/config.php';
     $row = $pdo->prepare('SELECT image_path, original_path FROM portfolio_images WHERE id = :id');
     $row->execute(['id' => $id]);
     $paths = $row->fetch();
+    if (!$paths) json_error('Image not found.', 404);
 
     $pdo->prepare('DELETE FROM portfolio_images WHERE id = :id')->execute(['id' => $id]);
 

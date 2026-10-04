@@ -36,7 +36,8 @@ CREATE TABLE portfolio_categories (
   sort_order INT NOT NULL DEFAULT 0,
   visible TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_categories_public (visible, sort_order, id)
 ) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------
@@ -57,6 +58,7 @@ CREATE TABLE portfolio_shoots (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uniq_category_slug (category_id, slug),
+  INDEX idx_shoots_category_public (category_id, visible, sort_order, id),
   CONSTRAINT fk_shoot_category FOREIGN KEY (category_id) REFERENCES portfolio_categories(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
@@ -76,6 +78,8 @@ CREATE TABLE portfolio_images (
   visible TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_images_shoot_public (shoot_id, visible, sort_order, id),
+  INDEX idx_images_shoot_cover (shoot_id, is_cover),
   CONSTRAINT fk_image_shoot FOREIGN KEY (shoot_id) REFERENCES portfolio_shoots(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
@@ -103,7 +107,10 @@ CREATE TABLE services (
   visible TINYINT(1) NOT NULL DEFAULT 1,
   sort_order INT NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_services_public (visible, category, sort_order, id),
+  CONSTRAINT chk_services_price CHECK (starting_price IS NULL OR starting_price >= 0),
+  CONSTRAINT chk_services_visible CHECK (visible IN (0, 1))
 ) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------
@@ -118,7 +125,11 @@ CREATE TABLE estimator_hours (
   active TINYINT(1) NOT NULL DEFAULT 1,
   sort_order INT NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_hours_public (active, sort_order, id),
+  CONSTRAINT chk_hours_range CHECK (hours > 0 AND hours <= 24),
+  CONSTRAINT chk_hours_price CHECK (price >= 0),
+  CONSTRAINT chk_hours_active CHECK (active IN (0, 1))
 ) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------
@@ -134,7 +145,10 @@ CREATE TABLE estimator_addons (
   active TINYINT(1) NOT NULL DEFAULT 1,
   sort_order INT NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_addons_public (active, sort_order, id),
+  CONSTRAINT chk_addons_price CHECK (price >= 0),
+  CONSTRAINT chk_addons_flags CHECK (active IN (0, 1) AND is_quantity_based IN (0, 1))
 ) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------
@@ -151,7 +165,8 @@ CREATE TABLE contact_platforms (
   visible TINYINT(1) NOT NULL DEFAULT 1,
   sort_order INT NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_contacts_public (visible, sort_order, id)
 ) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------
@@ -181,7 +196,12 @@ CREATE TABLE bookings (
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_bookings_email (email),
   INDEX idx_bookings_status (status),
-  INDEX idx_bookings_preferred_date (preferred_date)
+  INDEX idx_bookings_preferred_date (preferred_date),
+  INDEX idx_bookings_status_created (status, created_at),
+  INDEX idx_bookings_date_status (preferred_date, status),
+  INDEX idx_bookings_created (created_at),
+  CONSTRAINT chk_bookings_privacy CHECK (privacy_agreed IN (0, 1)),
+  CONSTRAINT chk_bookings_estimate CHECK (estimate_total IS NULL OR estimate_total >= 0)
 ) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------
@@ -234,7 +254,11 @@ CREATE TABLE estimator_leads (
   booked TINYINT(1) NOT NULL DEFAULT 0,
   status ENUM('New','Booked','Lost') NOT NULL DEFAULT 'New',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_leads_email (email)
+  INDEX idx_leads_email (email),
+  INDEX idx_leads_status_created (status, created_at),
+  INDEX idx_leads_created (created_at),
+  CONSTRAINT chk_leads_total CHECK (total >= 0),
+  CONSTRAINT chk_leads_booked CHECK (booked IN (0, 1))
 ) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------

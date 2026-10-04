@@ -78,10 +78,8 @@ DELETE FROM site_settings;
 -- STEP 2 — re-seed, parents before children
 -- ------------------------------------------------------------
 
--- Default admin: username "admin" / password "admin123"
--- CHANGE THIS PASSWORD IMMEDIATELY AFTER FIRST LOGIN.
-INSERT INTO admins (id, username, email, password_hash) VALUES
-(1, 'admin', 'mereziko@gmail.com', '$2b$10$pQilqgGxmNxOSdsUTmAiTOUHHYidu6JvacMg.FUWwkLm8C/IG8wIi');
+-- No known/default administrator password is seeded. After importing this
+-- data, create the first account with backend/scripts/create_admin.php.
 
 -- ------------------------------------------------------------
 -- Portfolio categories

@@ -34,7 +34,7 @@ $v->required('name', 'your full name')->maxLength('name', 160)
   ->required('email', 'your email address')->email('email')
   ->required('phone', 'your phone number')->maxLength('phone', 40)
   ->required('facebook', 'your Facebook profile link')->maxLength('facebook', 255)
-  ->required('shoot_type', 'a shoot type')
+  ->required('shoot_type', 'a shoot type')->string('shoot_type', 'Shoot type')->maxLength('shoot_type', 120)
   ->required('preferred_date', 'a preferred date')
   ->required('preferred_time', 'a preferred start time')
   ->required('submission_token', 'a request token')
@@ -51,10 +51,14 @@ if ($v->fails()) {
 
 // Text fields must be plain strings; arrays/objects would otherwise be
 // silently stored as empty values.
-foreach (['name', 'email', 'phone', 'facebook', 'preferred_date', 'preferred_time', 'submission_token', 'message', 'location', 'guest_count'] as $field) {
+foreach (['name', 'email', 'phone', 'facebook', 'shoot_type', 'preferred_date', 'preferred_time', 'submission_token', 'message', 'location', 'guest_count'] as $field) {
     if (isset($input[$field]) && !is_string($input[$field])) {
         json_error('Please fix the errors below.', 422, [$field => 'Invalid value.']);
     }
+}
+
+if (!is_safe_link(clean_string($input['facebook']))) {
+    json_error('Please fix the errors below.', 422, ['facebook' => 'Use a valid http or https Facebook profile link.']);
 }
 
 $preferredDate = (string) $input['preferred_date'];

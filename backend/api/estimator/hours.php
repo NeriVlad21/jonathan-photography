@@ -22,7 +22,7 @@ if ($method === 'POST') {
     require_csrf();
     $input = json_input();
     $v = new Validator($input);
-    $v->required('label')->required('hours')->required('price')->maxLength('label', 80);
+    $v->required('label')->string('label', 'Label')->required('hours')->required('price')->maxLength('label', 80);
     if ($v->fails()) json_error('Please fill in every field.', 422, $v->errors());
     $price = money_input($input['price']);
     $hours = is_numeric($input['hours'] ?? null) ? round((float) $input['hours'], 2) : null;
@@ -47,7 +47,9 @@ if ($method === 'PUT') {
     require_csrf();
     $input = json_input();
     $v = new Validator($input);
-    $v->required('id')->required('label')->required('hours')->required('price')->maxLength('label', 80);
+    $v->required('id')->positiveInteger('id', 'coverage option id')
+      ->required('label')->string('label', 'Label')->required('hours')->required('price')->maxLength('label', 80)
+      ->boolean('active')->integer('sort_order', -100000, 100000);
     if ($v->fails()) json_error('Please fix the errors below.', 422, $v->errors());
     $price = money_input($input['price']);
     $hours = is_numeric($input['hours'] ?? null) ? round((float) $input['hours'], 2) : null;
@@ -61,12 +63,12 @@ if ($method === 'PUT') {
         'l' => clean_string($input['label']),
         'h' => $hours,
         'p' => $price,
-        'a' => !empty($input['active']) ? 1 : 0,
+        'a' => boolean_input($input['active'] ?? true),
         's' => (int) ($input['sort_order'] ?? 0),
-        'id' => (int) $input['id'],
+        'id' => positive_integer_input($input['id']),
     ]);
     $row = $pdo->prepare('SELECT * FROM estimator_hours WHERE id = :id');
-    $row->execute(['id' => (int) $input['id']]);
+    $row->execute(['id' => positive_integer_input($input['id'])]);
     $option = $row->fetch();
     if (!$option) json_error('Coverage option not found.', 404);
     json_success($option);
@@ -74,7 +76,7 @@ if ($method === 'PUT') {
 
 if ($method === 'DELETE') {
     require_csrf();
-    $id = (int) ($_GET['id'] ?? 0);
+    $id = positive_integer_input($_GET['id'] ?? null);
     if (!$id) json_error('Missing id.', 422);
     $stmt = $pdo->prepare('DELETE FROM estimator_hours WHERE id = :id');
     $stmt->execute(['id' => $id]);

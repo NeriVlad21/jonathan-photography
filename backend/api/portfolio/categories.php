@@ -43,7 +43,8 @@ if ($method === 'POST') {
     $input = json_input();
 
     $v = new Validator($input);
-    $v->required('name', 'a category name')->maxLength('name', 120);
+    $v->required('name', 'a category name')->string('name', 'Category name')->maxLength('name', 120)
+      ->string('description', 'Description')->maxLength('description', 2000);
     if ($v->fails()) {
         json_error('Please fix the errors below.', 422, $v->errors());
     }
@@ -81,24 +82,29 @@ if ($method === 'PUT') {
     $input = json_input();
 
     $v = new Validator($input);
-    $v->required('id')->required('name', 'a category name');
+    $v->required('id')->positiveInteger('id', 'category id')
+      ->required('name', 'a category name')->string('name', 'Category name')->maxLength('name', 120)
+      ->string('description', 'Description')->maxLength('description', 2000)
+      ->boolean('visible')->integer('sort_order', -100000, 100000);
     if ($v->fails()) {
         json_error('Please fix the errors below.', 422, $v->errors());
     }
 
+    $id = positive_integer_input($input['id']);
+    $visible = boolean_input($input['visible'] ?? true);
     $stmt = $pdo->prepare(
         'UPDATE portfolio_categories SET name = :name, description = :desc, visible = :visible, sort_order = :sort WHERE id = :id'
     );
     $stmt->execute([
         'name'    => clean_string($input['name']),
         'desc'    => clean_string($input['description'] ?? ''),
-        'visible' => !empty($input['visible']) ? 1 : 0,
+        'visible' => $visible,
         'sort'    => (int) ($input['sort_order'] ?? 0),
-        'id'      => (int) $input['id'],
+        'id'      => $id,
     ]);
 
     $row = $pdo->prepare('SELECT * FROM portfolio_categories WHERE id = :id');
-    $row->execute(['id' => (int) $input['id']]);
+    $row->execute(['id' => $id]);
     $category = $row->fetch();
     if (!$category) {
         json_error('Category not found.', 404);
@@ -109,12 +115,13 @@ if ($method === 'PUT') {
 if ($method === 'DELETE') {
     require_admin();
     require_csrf();
-    $id = (int) ($_GET['id'] ?? 0);
+    $id = positive_integer_input($_GET['id'] ?? null);
     if (!$id) {
         json_error('Missing category id.', 422);
     }
     $stmt = $pdo->prepare('DELETE FROM portfolio_categories WHERE id = :id');
     $stmt->execute(['id' => $id]);
+    if ($stmt->rowCount() < 1) json_error('Category not found.', 404);
     json_success(['deleted' => true]);
 }
 

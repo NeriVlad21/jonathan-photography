@@ -21,7 +21,8 @@ start_secure_session();
 $input = json_input();
 
 $v = new Validator($input);
-$v->required('username', 'a username')->required('password', 'a password');
+$v->required('username', 'a username or email')->string('username', 'Username or email')->maxLength('username', 160)
+  ->required('password', 'a password')->string('password', 'Password')->maxLength('password', 1024);
 if ($v->fails()) {
     json_error('Please enter your username and password.', 422, $v->errors());
 }
@@ -55,6 +56,11 @@ $admin = $stmt->fetch();
 $hashToVerify = $admin['password_hash'] ?? '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.';
 if (!password_verify($password, $hashToVerify) || !$admin) {
     json_error('Incorrect username or password.', 401);
+}
+
+if (password_needs_rehash($admin['password_hash'], PASSWORD_DEFAULT)) {
+    $pdo->prepare('UPDATE admins SET password_hash = :hash WHERE id = :id')
+        ->execute(['hash' => password_hash($password, PASSWORD_DEFAULT), 'id' => $admin['id']]);
 }
 
 session_regenerate_id(true);

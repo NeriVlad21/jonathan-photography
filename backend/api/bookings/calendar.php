@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../middleware/cors.php';
 require_once __DIR__ . '/../../helpers/response.php';
+require_once __DIR__ . '/../../helpers/validation.php';
 require_once __DIR__ . '/../../middleware/auth.php';
 require_once __DIR__ . '/../../config/database.php';
 
@@ -76,12 +77,12 @@ if ($method === 'POST') {
     $bookingId = !empty($input['booking_id']) ? (int) $input['booking_id'] : null;
     $eventDate = trim((string) ($input['event_date'] ?? ''));
     $eventTime = trim((string) ($input['event_time'] ?? ''));
-    $name = trim((string) ($input['name'] ?? ''));
-    $shootType = trim((string) ($input['shoot_type'] ?? ''));
-    $email = trim((string) ($input['email'] ?? ''));
-    $phone = trim((string) ($input['phone'] ?? ''));
-    $location = trim((string) ($input['location'] ?? ''));
-    $notes = trim((string) ($input['notes'] ?? ''));
+    $name = clean_string($input['name'] ?? '');
+    $shootType = clean_string($input['shoot_type'] ?? '');
+    $email = strtolower(clean_string($input['email'] ?? ''));
+    $phone = clean_string($input['phone'] ?? '');
+    $location = clean_string($input['location'] ?? '');
+    $notes = clean_string($input['notes'] ?? '');
 
     $lengthLimits = [
         'name' => [$name, 160], 'shoot_type' => [$shootType, 120], 'email' => [$email, 160],
@@ -232,7 +233,10 @@ if ($method === 'POST') {
 }
 
 if ($method === 'PUT') {
-    $eventId = (int) ($input['id'] ?? 0);
+    if (isset($input['status']) && !is_string($input['status'])) {
+        json_error('Please provide a valid calendar event and status.', 422);
+    }
+    $eventId = positive_integer_input($input['id'] ?? null);
     $status = strtoupper(trim((string) ($input['status'] ?? '')));
     if ($eventId < 1 || !in_array($status, ['BOOKED', 'CANCELLED'], true)) {
         json_error('Please provide a valid calendar event and status.', 422);

@@ -28,7 +28,7 @@ require_csrf();
 
 $pdo = Database::connect();
 
-$shootId = (int) ($_POST['shoot_id'] ?? 0);
+$shootId = positive_integer_input($_POST['shoot_id'] ?? null);
 if (!$shootId) {
     json_error('Missing shoot_id.', 422);
 }
@@ -41,6 +41,15 @@ if (!$shootCheck->fetch()) {
 
 if (empty($_FILES['original']) && empty($_FILES['image'])) {
     json_error('Please attach an image.', 422);
+}
+
+foreach (['title' => 160, 'caption' => 2000] as $field => $max) {
+    if (isset($_POST[$field]) && !is_string($_POST[$field])) {
+        json_error('Please fix the upload fields.', 422, [$field => 'Invalid value.']);
+    }
+    if (mb_strlen((string) ($_POST[$field] ?? '')) > $max) {
+        json_error('Please fix the upload fields.', 422, [$field => "Keep this under {$max} characters."]);
+    }
 }
 
 $original = null;

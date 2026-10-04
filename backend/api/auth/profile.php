@@ -36,11 +36,19 @@ $input = json_input();
 
 $v = new Validator($input);
 $v->required('username', 'username')
+    ->string('username', 'Username')
     ->required('email', 'email address')
+    ->string('email', 'Email address')
     ->email('email')
     ->required('current_password', 'current password')
+    ->string('current_password', 'Current password')
+    ->string('new_password', 'New password')
+    ->string('confirm_password', 'Password confirmation')
     ->maxLength('username', 60)
-    ->maxLength('email', 160);
+    ->maxLength('email', 160)
+    ->maxLength('current_password', 1024)
+    ->maxLength('new_password', 1024)
+    ->maxLength('confirm_password', 1024);
 
 if ($v->fails()) {
     json_error('Please check the profile fields.', 422, $v->errors());
@@ -51,6 +59,12 @@ $email = strtolower(clean_string($input['email']));
 $currentPassword = (string) $input['current_password'];
 $newPassword = (string) ($input['new_password'] ?? '');
 $confirmPassword = (string) ($input['confirm_password'] ?? '');
+
+if (!preg_match('/^[A-Za-z0-9_.-]{3,60}$/', $username)) {
+    json_error('Please check the profile fields.', 422, [
+        'username' => 'Use 3–60 letters, numbers, periods, underscores, or hyphens.'
+    ]);
+}
 
 if ($newPassword !== '') {
     if (strlen($newPassword) < 12) {

@@ -159,7 +159,11 @@ function normalize_service_input(array $input, bool $requireName): array
 
     if (array_key_exists('visible', $input)) {
         $visible = $input['visible'];
-        $clean['visible'] = ($visible === true || $visible === 1 || $visible === '1' || $visible === 'true') ? 1 : 0;
+        if (!in_array($visible, [true, false, 0, 1, '0', '1', 'true', 'false'], true)) {
+            $errors['visible'] = 'Invalid visibility value.';
+        } else {
+            $clean['visible'] = in_array($visible, [true, 1, '1', 'true'], true) ? 1 : 0;
+        }
     }
 
     if (array_key_exists('sort_order', $input)) {

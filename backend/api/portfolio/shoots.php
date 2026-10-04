@@ -193,9 +193,12 @@ if ($method === 'POST') {
     $v = new Validator($input);
 
     $v
-        ->required('category_id')
+        ->required('category_id')->positiveInteger('category_id', 'category id')
         ->required('title', 'a shoot title')
-        ->maxLength('title', 160);
+        ->string('title', 'Shoot title')->maxLength('title', 160)
+        ->string('description', 'Description')->maxLength('description', 3000)
+        ->string('location', 'Location')->maxLength('location', 160)
+        ->date('shoot_date');
 
     if ($v->fails()) {
         json_error(
@@ -206,6 +209,10 @@ if ($method === 'POST') {
     }
 
     $title = clean_string($input['title']);
+    $categoryId = positive_integer_input($input['category_id']);
+    $categoryCheck = $pdo->prepare('SELECT id FROM portfolio_categories WHERE id = :id');
+    $categoryCheck->execute(['id' => $categoryId]);
+    if (!$categoryCheck->fetchColumn()) json_error('Category not found.', 404);
 
     $slugBase = slugify_text($title);
     $slug = $slugBase;
@@ -220,7 +227,7 @@ if ($method === 'POST') {
 
     do {
         $check->execute([
-            'c' => (int) $input['category_id'],
+            'c' => $categoryId,
             's' => $slug
         ]);
 
@@ -239,12 +246,12 @@ if ($method === 'POST') {
     );
 
     $stmt->execute([
-        'cat'   => (int) $input['category_id'],
+        'cat'   => $categoryId,
         'title' => $title,
         'slug'  => $slug,
         'desc'  => clean_string($input['description'] ?? ''),
         'loc'   => clean_string($input['location'] ?? ''),
-        'date'  => $input['shoot_date'] ?: null,
+        'date'  => ($input['shoot_date'] ?? '') !== '' ? $input['shoot_date'] : null,
     ]);
 
     $id = (int) $pdo->lastInsertId();
@@ -274,8 +281,12 @@ if ($method === 'PUT') {
     $v = new Validator($input);
 
     $v
-        ->required('id')
-        ->required('title', 'a shoot title');
+        ->required('id')->positiveInteger('id', 'shoot id')
+        ->required('category_id')->positiveInteger('category_id', 'category id')
+        ->required('title', 'a shoot title')->string('title', 'Shoot title')->maxLength('title', 160)
+        ->string('description', 'Description')->maxLength('description', 3000)
+        ->string('location', 'Location')->maxLength('location', 160)
+        ->date('shoot_date')->boolean('visible');
 
     if ($v->fails()) {
         json_error(
@@ -284,6 +295,13 @@ if ($method === 'PUT') {
             $v->errors()
         );
     }
+
+    $id = positive_integer_input($input['id']);
+    $categoryId = positive_integer_input($input['category_id']);
+    $visible = boolean_input($input['visible'] ?? true);
+    $categoryCheck = $pdo->prepare('SELECT id FROM portfolio_categories WHERE id = :id');
+    $categoryCheck->execute(['id' => $categoryId]);
+    if (!$categoryCheck->fetchColumn()) json_error('Category not found.', 404);
 
     $stmt = $pdo->prepare(
         'UPDATE portfolio_shoots
@@ -301,10 +319,10 @@ if ($method === 'PUT') {
         'title'   => clean_string($input['title']),
         'desc'    => clean_string($input['description'] ?? ''),
         'loc'     => clean_string($input['location'] ?? ''),
-        'date'    => $input['shoot_date'] ?: null,
-        'visible' => !empty($input['visible']) ? 1 : 0,
-        'cat'     => (int) $input['category_id'],
-        'id'      => (int) $input['id'],
+        'date'    => ($input['shoot_date'] ?? '') !== '' ? $input['shoot_date'] : null,
+        'visible' => $visible,
+        'cat'     => $categoryId,
+        'id'      => $id,
     ]);
 
     $row = $pdo->prepare(
@@ -314,7 +332,7 @@ if ($method === 'PUT') {
     );
 
     $row->execute([
-        'id' => (int) $input['id']
+        'id' => $id
     ]);
 
     $shoot = $row->fetch();
@@ -330,7 +348,7 @@ if ($method === 'DELETE') {
     require_admin();
     require_csrf();
 
-    $id = (int) ($_GET['id'] ?? 0);
+    $id = positive_integer_input($_GET['id'] ?? null);
 
     if (!$id) {
         json_error('Missing shoot id.', 422);
@@ -344,6 +362,7 @@ if ($method === 'DELETE') {
     $stmt->execute([
         'id' => $id
     ]);
+    if ($stmt->rowCount() < 1) json_error('Shoot not found.', 404);
 
     json_success([
         'deleted' => true

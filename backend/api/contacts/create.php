@@ -24,7 +24,9 @@ $pdo = Database::connect();
 $input = json_input();
 
 $v = new Validator($input);
-$v->required('label', 'a platform name')->required('link', 'a link or contact value')
+$v->required('label', 'a platform name')->string('label', 'Platform name')
+  ->required('link', 'a link or contact value')->string('link', 'Link')
+  ->string('tagline', 'Tagline')->string('handle', 'Handle')->string('icon', 'Icon')
   ->maxLength('label', 80)->maxLength('tagline', 180)->maxLength('handle', 160)
   ->maxLength('link', 255)->maxLength('icon', 60);
 if ($v->fails()) json_error('Please fix the errors below.', 422, $v->errors());

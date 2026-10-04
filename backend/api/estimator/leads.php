@@ -140,9 +140,10 @@ if ($method === 'POST') {
 
     $v = new Validator($input);
     $v->required('name', 'your name')->maxLength('name', 160)
-        ->required('email', 'your email')->email('email')->maxLength('email', 160)
-        ->required('service_type_id', 'a service')
-        ->required('hour_id', 'a coverage option')
+        ->string('name', 'Name')
+        ->required('email', 'your email')->string('email', 'Email')->email('email')->maxLength('email', 160)
+        ->required('service_type_id', 'a service')->positiveInteger('service_type_id', 'service id')
+        ->required('hour_id', 'a coverage option')->positiveInteger('hour_id', 'coverage option id')
         ->boolTrue('privacy_agreed', 'Please agree to the privacy notice before continuing.');
     if ($v->fails()) json_error('Please fix the errors below.', 422, $v->errors());
 
@@ -150,6 +151,9 @@ if ($method === 'POST') {
     // Rebuild the complete estimate from active database records.
     $serviceId = (int) ($input['service_type_id'] ?? 0);
     $hourId = (int) ($input['hour_id'] ?? 0);
+    if (isset($input['addons']) && !is_array($input['addons'])) {
+        json_error('Please fix the errors below.', 422, ['addons' => 'Add-ons must be a list.']);
+    }
     $submittedAddons = is_array($input['addons'] ?? null) ? $input['addons'] : [];
 
     $serviceStmt = $pdo->prepare(
@@ -265,7 +269,7 @@ if ($method === 'POST') {
                 </table>
                 <p style='color:#777;font-size:13px;margin-top:20px;'>This is a baseline estimate — we're happy to customize it during a consultation. Ready to move forward? Just reply to this email or visit our booking page.</p>
                 </div>";
-            $mail->send();
+            send_mail_with_retry($mail, 'Estimate email');
         }
     } catch (Throwable $e) {
         log_server_error('ESTIMATOR_LEAD_EMAIL', $e);
