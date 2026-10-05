@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { bookingsApi } from '../services/api.js'
 import { peso, formatDateTime } from '../utils/format.js'
 import LoadingState from '../components/LoadingState.jsx'
@@ -49,12 +49,13 @@ const TIMEFRAMES = [
 ]
 
 export default function Bookings() {
+  const location = useLocation()
   const navigate = useNavigate()
 
   const [bookings, setBookings] = useState(null)
-  const [status, setStatus] = useState('')
-  const [search, setSearch] = useState('')
-  const [timeframe, setTimeframe] = useState('today')
+  const [status, setStatus] = useState(() => location.state?.bookingFilters?.status || '')
+  const [search, setSearch] = useState(() => location.state?.bookingFilters?.search || '')
+  const [timeframe, setTimeframe] = useState(() => location.state?.bookingFilters?.timeframe || 'today')
   const [isExporting, setIsExporting] = useState(false)
 
   /*
@@ -1052,7 +1053,8 @@ export default function Bookings() {
                             className="bookings-row"
                             onClick={() =>
                               navigate(
-                                `/admin/bookings/${booking.id}`
+                                `/admin/bookings/${booking.id}`,
+                                { state: { from: { ...location, state: { ...(location.state || {}), bookingFilters: { status, search, timeframe } } } } }
                               )
                             }
                           >

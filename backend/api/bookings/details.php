@@ -33,5 +33,8 @@ $booking['addons'] = $addons->fetchAll();
 if ($booking['estimate_breakdown']) {
     $booking['estimate_breakdown'] = json_decode($booking['estimate_breakdown'], true);
 }
+if ($booking['confirmed_details']) {
+    $booking['confirmed_details'] = json_decode($booking['confirmed_details'], true);
+}
 
 json_success($booking);

@@ -140,6 +140,22 @@ function send_booking_emails(array $booking): void
     $estimate = $booking['estimate_total'] ? peso((float) $booking['estimate_total']) : 'To be discussed';
     $reference = htmlspecialchars($booking['reference_code']);
 
+    // Notify the studio first so client-mail latency cannot delay the new-request alert.
+    try {
+        $mail = make_mailer();
+        $studioEmail = studio_profile_email($config);
+        if ($mail && $studioEmail !== '') {
+            $mail->addAddress($studioEmail);
+            $mail->isHTML(true);
+            $subjectDate = $booking['preferred_date'] ?: 'Date TBD';
+            $mail->Subject = "New booking request — {$booking['name']}, {$booking['shoot_type']}, {$subjectDate}";
+            $mail->Body = admin_email_body($booking);
+            send_mail_with_retry($mail, 'Studio booking email');
+        }
+    } catch (Throwable $e) {
+        error_log('[MAILER] Admin notification email failed: ' . $e->getMessage());
+    }
+
     // ---- Client confirmation email ----
     try {
         $mail = make_mailer();
@@ -156,20 +172,6 @@ function send_booking_emails(array $booking): void
         error_log('[MAILER] Client email failed: ' . $e->getMessage());
     }
 
-    // ---- Admin notification email ----
-    try {
-        $mail = make_mailer();
-        $studioEmail = studio_profile_email($config);
-        if ($mail && $studioEmail !== '') {
-            $mail->addAddress($studioEmail);
-            $mail->isHTML(true);
-            $mail->Subject = "New booking request — {$booking['name']} ({$shootType})";
-            $mail->Body = admin_email_body($booking);
-            send_mail_with_retry($mail, 'Studio booking email');
-        }
-    } catch (Throwable $e) {
-        error_log('[MAILER] Admin notification email failed: ' . $e->getMessage());
-    }
 }
 
 function client_email_body(string $name, string $shootType, string $date, string $location, string $estimate, string $reference): string
@@ -228,6 +230,10 @@ function admin_email_body(array $b): string
             . peso((float) ($addon['total'] ?? $addon['price'] ?? 0)) . '</td></tr>';
     }
 
+    $config = require __DIR__ . '/../config/config.php';
+    $adminUrl = rtrim((string) $config['frontend_url'], '/') . '/admin/bookings/' . rawurlencode((string) $b['id']);
+    $adminUrlSafe = htmlspecialchars($adminUrl, ENT_QUOTES, 'UTF-8');
+
     return <<<HTML
     <div style="font-family: Arial, sans-serif; max-width:560px; margin:0 auto; color:#0A0A0A;">
       <h2 style="border-bottom:3px solid #F5D000; padding-bottom:8px;">New booking request</h2>
@@ -244,6 +250,73 @@ function admin_email_body(array $b): string
       <p style="color:#666;font-size:12px;">Preliminary estimate only; review the final quotation with the client.</p>
       <h3>Message</h3>
       <p>{$safe($b['message'] ?? null)}</p>
+      <p style="margin-top:24px;"><a href="{$adminUrlSafe}" style="display:inline-block;background:#F5D000;color:#0A0A0A;padding:12px 18px;text-decoration:none;font-weight:bold;">Open booking details</a></p>
     </div>
     HTML;
+}
+
+/** Sends the final-package invoice after a manually recorded down payment. */
+function send_booking_invoice(array $booking): bool
+{
+    try {
+        $details = is_array($booking['confirmed_details'] ?? null)
+            ? $booking['confirmed_details']
+            : json_decode((string) ($booking['confirmed_details'] ?? ''), true, 512, JSON_THROW_ON_ERROR);
+        $total = round((float) ($details['total'] ?? 0), 2);
+        $payment = round((float) ($booking['down_payment_amount'] ?? 0), 2);
+        if ($total <= 0 || $payment <= 0 || empty($booking['email'])) return false;
+        $fee = round($total * ($total > 10000 ? 0.01 : 0.005), 2);
+        $balance = max(0, round($total - $payment, 2));
+        $safe = fn($value) => htmlspecialchars((string) ($value ?? '—'), ENT_QUOTES, 'UTF-8');
+        $rows = '';
+        if (!empty($details['coverage'])) {
+            $coverage = $safe($details['coverage'] . (!empty($details['hours']) ? ' (' . $details['hours'] . ' hours)' : ''));
+            $rows .= "<tr><td style='padding:7px 0;border-bottom:1px solid #ddd;'>Coverage</td><td style='padding:7px 0;border-bottom:1px solid #ddd;text-align:right;'>{$coverage}</td></tr>";
+        }
+        foreach (($details['addons'] ?? []) as $addon) {
+            $label = $safe(((int) ($addon['quantity'] ?? 1) > 1 ? (int) $addon['quantity'] . '× ' : '') . ($addon['label'] ?? 'Add-on'));
+            $amount = peso((float) ($addon['amount'] ?? 0) * max(1, (int) ($addon['quantity'] ?? 1)));
+            $rows .= "<tr><td style='padding:7px 0;border-bottom:1px solid #ddd;'>{$label}</td><td style='padding:7px 0;border-bottom:1px solid #ddd;text-align:right;'>{$amount}</td></tr>";
+        }
+        $config = require __DIR__ . '/../config/config.php';
+        $studioEmail = studio_profile_email($config);
+        $studioPhone = '';
+        $studioAddress = '';
+        try {
+            require_once __DIR__ . '/../config/database.php';
+            $contactPdo = Database::connect();
+            $contactRows = $contactPdo->query("SELECT setting_key, setting_value FROM site_settings WHERE setting_key IN ('business_phone','business_address')")->fetchAll(PDO::FETCH_KEY_PAIR);
+            $studioPhone = (string) ($contactRows['business_phone'] ?? '');
+            $studioAddress = (string) ($contactRows['business_address'] ?? '');
+            Database::disconnect();
+        } catch (Throwable $e) {
+            Database::disconnect();
+            error_log('[MAILER] Invoice contact lookup failed: ' . $e->getMessage());
+        }
+        $mail = make_mailer();
+        if (!$mail) return false;
+        add_studio_reply_to($mail, $config);
+        $mail->addAddress((string) $booking['email'], (string) $booking['name']);
+        $mail->isHTML(true);
+        $mail->Subject = 'Payment receipt and invoice — ' . $booking['reference_code'];
+        $mail->Body = "<div style='font-family:Arial,sans-serif;max-width:580px;margin:auto;color:#111'>
+          <h2 style='border-bottom:3px solid #F5D000;padding-bottom:10px'>Jonathan Photography invoice</h2>
+          <p><strong>Reference:</strong> {$safe($booking['reference_code'])}<br><strong>Client:</strong> {$safe($booking['name'])}<br><strong>Final event date:</strong> {$safe($details['date'] ?? '')}</p>
+          <table style='width:100%;border-collapse:collapse;font-size:14px'>
+            <tr><td style='padding:7px 0;border-bottom:1px solid #ddd;'>Package</td><td style='padding:7px 0;border-bottom:1px solid #ddd;text-align:right;'>{$safe($booking['shoot_type'])}</td></tr>{$rows}
+            <tr><td style='padding:10px 0;font-weight:bold'>Final agreed total</td><td style='text-align:right;font-weight:bold'>" . peso($total) . "</td></tr>
+            <tr><td style='padding:7px 0'>Down payment received ({$safe($booking['down_payment_received_at'])})</td><td style='text-align:right'>−" . peso($payment) . "</td></tr>
+            <tr><td style='padding:7px 0'>Platform service fee (informational only; not charged separately)</td><td style='text-align:right'>" . peso($fee) . "</td></tr>
+            <tr><td style='padding:12px 0;border-top:2px solid #111;font-weight:bold'>Balance due to studio</td><td style='padding:12px 0;border-top:2px solid #111;text-align:right;font-weight:bold'>" . peso($balance) . "</td></tr>
+          </table>
+          <p style='color:#666;font-size:13px'>The platform service fee is shown for transparency and is not added to the amount you owe Jonathan Photography.</p>
+          <p>Questions? Contact <a href='mailto:{$safe($studioEmail)}'>{$safe($studioEmail)}</a>" . ($studioPhone !== '' ? '<br>' . $safe($studioPhone) : '') . ($studioAddress !== '' ? '<br>' . $safe($studioAddress) : '') . ".</p>
+        </div>";
+        $mail->AltBody = "Invoice {$booking['reference_code']}\nPackage: {$booking['shoot_type']}\nFinal total: " . peso($total) . "\nDown payment received: " . peso($payment) . " on {$booking['down_payment_received_at']}\nPlatform service fee (informational only): " . peso($fee) . "\nBalance due: " . peso($balance) . "\nContact: {$studioEmail} {$studioPhone} {$studioAddress}";
+        send_mail_with_retry($mail, 'Booking invoice');
+        return true;
+    } catch (Throwable $e) {
+        error_log('[MAILER] Invoice email failed: ' . $e->getMessage());
+        return false;
+    }
 }

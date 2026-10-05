@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { CalendarDays, Download, Mail, MapPin, Phone, Plus, X } from 'lucide-react'
 import { bookingsApi } from '../services/api.js'
 import { formatDate, peso } from '../utils/format.js'
@@ -37,7 +37,7 @@ const rangeBounds = (range, month) => {
   return { start: toDateKey(start), end: toDateKey(addDays(start, 6)) }
 }
 
-function CalendarEventDialog({ date, events, onClose, onEventUpdated }) {
+function CalendarEventDialog({ date, events, onClose, onEventUpdated, returnLocation }) {
   if (!date) return null
 
   return (
@@ -69,7 +69,7 @@ function CalendarEventDialog({ date, events, onClose, onEventUpdated }) {
                 </dl>
                 {event.message && <p>{event.message}</p>}
                 <div className="calendar-event-card__actions">
-                  {event.booking_id && <Link to={`/admin/bookings/${event.booking_id}`} className="text-link">Open booking request →</Link>}
+                  {event.booking_id && <Link to={`/admin/bookings/${event.booking_id}`} state={{ from: returnLocation }} className="text-link">Open booking request →</Link>}
                   {event.status === 'REQUESTED' && event.calendar_event_id && (
                     <div className="calendar-event-card__status-actions">
                       <button type="button" className="calendar-event-confirm" onClick={() => onEventUpdated(event.calendar_event_id, 'BOOKED')}>
@@ -216,14 +216,20 @@ function SchedulePrint({ bounds, events, label }) {
 
 function CalendarWorkspace({ archive = false }) {
   const { showToast } = useToast()
+  const location = useLocation()
   const now = new Date()
-  const [month, setMonth] = useState(() => archive
-    ? new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    : new Date(now.getFullYear(), now.getMonth(), 1))
+  const [month, setMonth] = useState(() => {
+    const saved = location.state?.calendarView?.month
+    if (saved && /^\d{4}-\d{2}$/.test(saved)) {
+      const [year, monthIndex] = saved.split('-').map(Number)
+      return new Date(year, monthIndex - 1, 1)
+    }
+    return archive ? new Date(now.getFullYear(), now.getMonth() - 1, 1) : new Date(now.getFullYear(), now.getMonth(), 1)
+  })
   const [events, setEvents] = useState(null)
   const [loadError, setLoadError] = useState('')
   const [selectedDay, setSelectedDay] = useState(null)
-  const [exportRange, setExportRange] = useState('monthly')
+  const [exportRange, setExportRange] = useState(() => location.state?.calendarView?.exportRange || 'monthly')
   const [exporting, setExporting] = useState(false)
   const [printData, setPrintData] = useState({ bounds: null, events: [], label: '' })
   const [requests, setRequests] = useState([])
@@ -358,7 +364,13 @@ function CalendarWorkspace({ archive = false }) {
         <SchedulePrint {...printData} />
       </div>
 
-      <CalendarEventDialog date={selectedDay?.date} events={selectedDay?.events || []} onClose={() => setSelectedDay(null)} onEventUpdated={eventUpdated} />
+      <CalendarEventDialog
+        date={selectedDay?.date}
+        events={selectedDay?.events || []}
+        onClose={() => setSelectedDay(null)}
+        onEventUpdated={eventUpdated}
+        returnLocation={{ ...location, state: { ...(location.state || {}), calendarView: { month: `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`, exportRange } } }}
+      />
       {addDate && (
         <AddScheduleDialog
           initialDate={addDate}

@@ -398,6 +398,36 @@
   border-radius: 3px;
 }
 
+.booking-workflow-panel .booking-details-panel__head { gap: 16px; flex-wrap: wrap; }
+.booking-action-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.booking-action-form label { display: grid; gap: 8px; font-weight: 700; }
+.booking-action-form label small { color: var(--admin-muted); font-weight: 400; }
+.booking-action-form input,
+.booking-action-form textarea { width: 100%; border: 1px solid var(--admin-line); border-radius: 8px; background: #fff; padding: 12px 14px; color: var(--admin-ink); font: inherit; box-sizing: border-box; }
+.booking-action-form textarea { resize: vertical; }
+.booking-action-form__wide,
+.booking-action-form__actions { grid-column: 1 / -1; }
+.booking-action-form__actions { display: flex; justify-content: flex-end; gap: 10px; }
+.booking-confirmed-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.booking-confirmed-summary > div,
+.booking-payment-record > div { display: grid; gap: 4px; }
+.booking-confirmed-summary span,
+.booking-payment-record span { color: var(--admin-muted); font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; }
+.booking-confirmed-summary__wide { grid-column: 1 / -1; }
+.booking-workflow-note { margin: 0; color: var(--admin-muted); }
+.booking-payment-button,
+.booking-payment-form,
+.booking-payment-record { margin-top: 22px; }
+.booking-payment-record { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px; background: var(--admin-soft); border-radius: 10px; flex-wrap: wrap; }
+
+@media (max-width: 700px) {
+  .booking-action-form,
+  .booking-confirmed-summary { grid-template-columns: 1fr; }
+  .booking-confirmed-summary__wide { grid-column: auto; }
+  .booking-action-form__actions { flex-direction: column-reverse; }
+  .booking-action-form__actions .btn { width: 100%; }
+}
+
 .admin-shell .portfolio-admin__list-item,
 .admin-shell .portfolio-admin__shoot,
 .admin-shell .portfolio-admin__control-button,

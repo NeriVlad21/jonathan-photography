@@ -1556,7 +1556,8 @@ export default function AdminLayout() {
                                     }
                                     onClick={() => {
                                       navigate(
-                                        `/admin/bookings/${booking.id}`
+                                        `/admin/bookings/${booking.id}`,
+                                        { state: { from: location } }
                                       )
 
                                       clearSearch()

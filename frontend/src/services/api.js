@@ -697,7 +697,16 @@ export const bookingsApi = {
         status,
         final_update: finalUpdate
       }
-    )
+    ),
+
+  updateConfirmedDetails: (data) =>
+    put('/bookings/confirmed-details.php', data),
+
+  markDownPayment: (data) =>
+    post('/bookings/down-payment.php', data),
+
+  resendInvoice: (id) =>
+    post('/bookings/invoice.php', { id })
 }
 
 // ============================================================

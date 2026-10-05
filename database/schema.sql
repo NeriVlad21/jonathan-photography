@@ -6,9 +6,10 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
-CREATE DATABASE IF NOT EXISTS jonathan_photography
-  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE jonathan_photography;
+-- Run this file against an explicitly selected database, for example:
+-- mysql -u root -p jonathan_photography < database/schema.sql
+-- Deliberately do not CREATE/USE a hardcoded database here; doing so makes
+-- isolated schema verification capable of targeting the wrong environment.
 
 -- ------------------------------------------------------------
 -- admins
@@ -189,6 +190,12 @@ CREATE TABLE bookings (
   message TEXT NULL,
   estimate_total DECIMAL(10,2) NULL,
   estimate_breakdown JSON NULL,
+  confirmed_details JSON NULL,
+  confirmed_details_updated_at DATETIME NULL,
+  down_payment_amount DECIMAL(10,2) NULL,
+  down_payment_received_at DATE NULL,
+  down_payment_note VARCHAR(500) NULL,
+  invoice_sent_at DATETIME NULL,
   privacy_agreed TINYINT(1) NOT NULL DEFAULT 0,
   privacy_agreed_at DATETIME NULL,
   status ENUM('NEW','CONFIRMED','CANCELLED') NOT NULL DEFAULT 'NEW',
@@ -201,7 +208,8 @@ CREATE TABLE bookings (
   INDEX idx_bookings_date_status (preferred_date, status),
   INDEX idx_bookings_created (created_at),
   CONSTRAINT chk_bookings_privacy CHECK (privacy_agreed IN (0, 1)),
-  CONSTRAINT chk_bookings_estimate CHECK (estimate_total IS NULL OR estimate_total >= 0)
+  CONSTRAINT chk_bookings_estimate CHECK (estimate_total IS NULL OR estimate_total >= 0),
+  CONSTRAINT chk_bookings_down_payment CHECK (down_payment_amount IS NULL OR down_payment_amount >= 0)
 ) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------
@@ -219,6 +227,7 @@ CREATE TABLE booking_addons (
 -- ------------------------------------------------------------
 -- calendar_events  (admin-owned confirmed studio schedule)
 -- ------------------------------------------------------------
+DROP TABLE IF EXISTS calendar_events;
 CREATE TABLE calendar_events (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   booking_id INT UNSIGNED NULL UNIQUE,

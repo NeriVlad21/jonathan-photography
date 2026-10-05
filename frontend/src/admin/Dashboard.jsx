@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { dashboardApi } from '../services/api.js'
 import { peso, formatDateTime } from '../utils/format.js'
 import LoadingState from '../components/LoadingState.jsx'
@@ -25,6 +25,7 @@ const TIMEFRAME_LABELS = {
 }
 
 export default function Dashboard() {
+  const location = useLocation()
   const [stats, setStats] = useState(null)
   const [timeframe, setTimeframe] = useState('today')
   const [isExporting, setIsExporting] = useState(false)
@@ -1098,6 +1099,7 @@ export default function Dashboard() {
                         'booking' ? (
                           <Link
                             to={`/admin/bookings/${item.id}`}
+                            state={{ from: location }}
                             className="dashboard-activity__link"
                           >
                             {item.name}
