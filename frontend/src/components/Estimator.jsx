@@ -330,7 +330,7 @@ export default function Estimator({ estimator }) {
         </div>
 
         <p className="estimate-summary__disclaimer">
-          Please note: This is an estimated baseline. We are happy to customize this package and negotiate terms to better fit your budget during our consultation meeting.
+          Please note: This is an estimated baseline. We are happy to customize this package and negotiate terms to better fit your budget during our consultation meeting. The final agreed price includes a small platform service fee; it is not added as a separate client charge.
         </p>
 
         <div className="estimate-summary__actions">

@@ -7,6 +7,7 @@ require_once __DIR__ . '/../../helpers/response.php';
 require_once __DIR__ . '/../../helpers/validation.php';
 require_once __DIR__ . '/../../middleware/auth.php';
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../helpers/billing.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
     json_error('Method not allowed.', 405);
@@ -45,7 +46,7 @@ try {
 
     // Lock the record so two admin requests cannot finalize it at once.
     $check = $pdo->prepare(
-        'SELECT id, status, preferred_date FROM bookings WHERE id = :id LIMIT 1 FOR UPDATE'
+        "SELECT id,status,COALESCE(JSON_UNQUOTE(JSON_EXTRACT(agreed_details,'$.date')),preferred_date) preferred_date FROM bookings WHERE id=:id LIMIT 1 FOR UPDATE"
     );
 
     $check->execute([
@@ -119,8 +120,12 @@ try {
     }
 
     $source = $pdo->prepare(
-        'SELECT reference_code, name, email, phone, shoot_type, preferred_date, preferred_time, location, message
-         FROM bookings WHERE id = :id LIMIT 1'
+        "SELECT reference_code,name,email,phone,shoot_type,
+                COALESCE(JSON_UNQUOTE(JSON_EXTRACT(agreed_details,'$.date')),preferred_date) preferred_date,
+                preferred_time,
+                COALESCE(JSON_UNQUOTE(JSON_EXTRACT(agreed_details,'$.location')),location) location,
+                COALESCE(JSON_UNQUOTE(JSON_EXTRACT(agreed_details,'$.notes')),message) message
+         FROM bookings WHERE id = :id LIMIT 1"
     );
     $source->execute(['id' => $bookingId]);
     $bookingSource = $source->fetch(PDO::FETCH_ASSOC);
@@ -169,6 +174,10 @@ try {
     ]);
 
     $booking = $result->fetch(PDO::FETCH_ASSOC);
+
+    if ($newStatus === 'CANCELLED') {
+        void_platform_fee($pdo, $bookingId);
+    }
 
     $pdo->commit();
 

@@ -1025,7 +1025,11 @@ export default function Bookings() {
                         </th>
 
                         <th>
-                          Estimate
+                          Agreed / Estimate
+                        </th>
+
+                        <th>
+                          Balance
                         </th>
 
                         <th>
@@ -1054,7 +1058,7 @@ export default function Bookings() {
                             onClick={() =>
                               navigate(
                                 `/admin/bookings/${booking.id}`,
-                                { state: { from: { ...location, state: { ...(location.state || {}), bookingFilters: { status, search, timeframe } } } } }
+                                { state: { from: { ...location, state: { ...(location.state || {}), bookingFilters: { status, search, timeframe }, scrollY: window.scrollY } } } }
                               )
                             }
                           >
@@ -1084,15 +1088,21 @@ export default function Bookings() {
                             </td>
 
                             <td>
-                              {booking.preferred_date ||
+                              {booking.agreed_date || booking.preferred_date ||
                                 '—'}
                             </td>
 
                             <td>
-                              {booking.estimate_total
+                              {booking.agreed_total || booking.estimate_total
                                 ? peso(
-                                    booking.estimate_total
+                                    booking.agreed_total || booking.estimate_total
                                   )
+                                : '—'}
+                            </td>
+
+                            <td>
+                              {booking.agreed_total
+                                ? peso(booking.balance_due)
                                 : '—'}
                             </td>
 

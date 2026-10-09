@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { dashboardApi } from '../services/api.js'
 import { peso, formatDateTime } from '../utils/format.js'
 import LoadingState from '../components/LoadingState.jsx'
+import { subscribeAdminDataChanged } from '../utils/adminDataSync.js'
 import {
   AreaChart,
   Area,
@@ -35,6 +36,8 @@ export default function Dashboard() {
     loadStats()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeframe])
+
+  useEffect(() => subscribeAdminDataChanged(loadStats), [timeframe])
 
   const loadStats = () => {
     setStats(null)
@@ -305,6 +308,10 @@ export default function Dashboard() {
             border-color 0.2s ease,
             box-shadow 0.2s ease;
         }
+
+        a.dashboard-stat { color: inherit; text-decoration: none; }
+        .dashboard-stat--alert { border-color: #9d342b; background: #fff3f0; }
+        .dashboard-stat small { color: #9d342b; font-weight: 700; }
 
         .dashboard-stat:hover {
           transform:
@@ -930,6 +937,12 @@ export default function Dashboard() {
 
               </div>
 
+              <Link to="/admin/platform-fees" className={`dashboard-stat ${cards.overdue_fee_cycles ? 'dashboard-stat--alert' : ''}`}>
+                <div className="dashboard-stat__top"><div className="dashboard-stat__label">Platform Fees Due</div><span className="dashboard-stat__marker" /></div>
+                <div className="dashboard-stat__value">{peso(cards.platform_fees_due)}</div>
+                {cards.overdue_fee_cycles > 0 && <small>{cards.overdue_fee_cycles} due or overdue cycle(s)</small>}
+              </Link>
+
             </div>
 
             {/* ==================================================
@@ -1099,7 +1112,7 @@ export default function Dashboard() {
                         'booking' ? (
                           <Link
                             to={`/admin/bookings/${item.id}`}
-                            state={{ from: location }}
+                            state={{ from: { ...location, state: { ...(location.state || {}), scrollY: window.scrollY } } }}
                             className="dashboard-activity__link"
                           >
                             {item.name}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   bookingsApi,
   estimatorApi
@@ -45,11 +46,13 @@ const TIMEFRAMES = [
 ]
 
 export default function Archive() {
+  const location = useLocation()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] =
-    useState('bookings')
+    useState(() => location.state?.archiveView?.activeTab || 'bookings')
 
   const [timeframe, setTimeframe] =
-    useState('today')
+    useState(() => location.state?.archiveView?.timeframe || 'today')
 
   const [data, setData] =
     useState(null)
@@ -900,7 +903,11 @@ export default function Archive() {
                             </th>
 
                             <th>
-                              Estimate
+                              Agreed / Estimate
+                            </th>
+
+                            <th>
+                              Balance
                             </th>
 
                             <th>
@@ -922,6 +929,8 @@ export default function Archive() {
                                 key={
                                   booking.id
                                 }
+                                className="bookings-row"
+                                onClick={() => navigate(`/admin/bookings/${booking.id}`, { state: { from: { ...location, state: { ...(location.state || {}), archiveView: { activeTab, timeframe }, scrollY: window.scrollY } } } })}
                               >
 
                                 <td>
@@ -949,15 +958,21 @@ export default function Archive() {
                                 </td>
 
                                 <td>
-                                  {booking.preferred_date ||
+                                  {booking.agreed_date || booking.preferred_date ||
                                     '—'}
                                 </td>
 
                                 <td>
-                                  {booking.estimate_total
+                                  {booking.agreed_total || booking.estimate_total
                                     ? peso(
-                                        booking.estimate_total
+                                        booking.agreed_total || booking.estimate_total
                                       )
+                                    : '—'}
+                                </td>
+
+                                <td>
+                                  {booking.agreed_total
+                                    ? peso(booking.balance_due)
                                     : '—'}
                                 </td>
 

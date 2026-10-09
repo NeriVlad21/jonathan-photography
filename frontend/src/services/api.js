@@ -699,14 +699,20 @@ export const bookingsApi = {
       }
     ),
 
-  updateConfirmedDetails: (data) =>
-    put('/bookings/confirmed-details.php', data),
+  updateAgreedDetails: (data) =>
+    put('/bookings/agreed-details.php', data),
 
-  markDownPayment: (data) =>
-    post('/bookings/down-payment.php', data),
+  recordPayment: (data) =>
+    post('/bookings/payments.php', data),
 
-  resendInvoice: (id) =>
-    post('/bookings/invoice.php', { id })
+  sendInvoice: (invoiceId) =>
+    post('/bookings/invoice.php', { invoice_id: invoiceId })
+}
+
+export const feesApi = {
+  list: () => get('/fees/index.php'),
+  updateSettings: (cycleStartDate) => put('/fees/index.php', { cycle_start_date: cycleStartDate }),
+  markCyclePaid: (data) => post('/fees/index.php', data)
 }
 
 // ============================================================

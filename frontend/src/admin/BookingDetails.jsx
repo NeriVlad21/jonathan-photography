@@ -22,7 +22,9 @@ import {
   ShieldCheck,
   Pencil,
   CreditCard,
-  Send
+  Send,
+  Eye,
+  Download
 } from 'lucide-react'
 
 import { bookingsApi } from '../services/api.js'
@@ -34,6 +36,7 @@ import {
 
 import { useToast } from '../context/ToastContext.jsx'
 import LoadingState from '../components/LoadingState.jsx'
+import { notifyAdminDataChanged } from '../utils/adminDataSync.js'
 
 const FINAL_STATUSES = ['CONFIRMED', 'CANCELLED']
 
@@ -60,12 +63,16 @@ export default function BookingDetails() {
   const [paymentOpen, setPaymentOpen] = useState(false)
   const [savingPayment, setSavingPayment] = useState(false)
   const [sendingInvoice, setSendingInvoice] = useState(false)
-  const [detailsForm, setDetailsForm] = useState({ total: '', coverage: '', hours: '', date: '', notes: '', addonsText: '' })
+  const [previewInvoice, setPreviewInvoice] = useState(null)
+  const [detailsForm, setDetailsForm] = useState({ total: '', coverage: '', hours: '', date: '', location: '', notes: '', addonsText: '' })
   const [paymentForm, setPaymentForm] = useState({ amount: '', date: new Date().toISOString().slice(0, 10), note: '' })
   const backTarget = location.state?.from || '/admin/bookings'
   const goBack = () => {
     if (typeof backTarget === 'string') navigate(backTarget)
-    else navigate({ pathname: backTarget.pathname, search: backTarget.search, hash: backTarget.hash }, { state: backTarget.state })
+    else {
+      navigate({ pathname: backTarget.pathname, search: backTarget.search, hash: backTarget.hash }, { state: backTarget.state })
+      window.setTimeout(() => window.scrollTo({ top: Number(backTarget.state?.scrollY || 0), behavior: 'auto' }), 0)
+    }
   }
 
   /*
@@ -121,6 +128,7 @@ export default function BookingDetails() {
       setSelectedStatus('')
       setFinalAcknowledged(false)
       setBooking((current) => ({ ...current, status: updated.status }))
+      notifyAdminDataChanged({ bookingId: id, type: 'status' })
     } catch (error) {
       showToast(
         error?.message ||
@@ -133,16 +141,16 @@ export default function BookingDetails() {
   }
 
   const openDetailsEditor = () => {
-    const current = booking.confirmed_details || {}
+    const current = booking.agreed_details || {}
     setDetailsForm({
       total: current.total ?? booking.estimate_total ?? '', coverage: current.coverage ?? '',
-      hours: current.hours ?? '', date: current.date ?? booking.preferred_date ?? '', notes: current.notes ?? '',
+      hours: current.hours ?? '', date: current.date ?? booking.preferred_date ?? '', location: current.location ?? booking.location ?? '', notes: current.notes ?? '',
       addonsText: (current.addons || []).map((item) => `${item.label}|${item.amount}|${item.quantity || 1}`).join('\n')
     })
     setEditingDetails(true)
   }
 
-  const saveConfirmedDetails = async (event) => {
+  const saveAgreedDetails = async (event) => {
     event.preventDefault()
     const addons = detailsForm.addonsText.split('\n').map((line) => line.trim()).filter(Boolean).map((line) => {
       const [label, amount = '0', quantity = '1'] = line.split('|').map((value) => value.trim())
@@ -150,34 +158,57 @@ export default function BookingDetails() {
     })
     setSavingDetails(true)
     try {
-      const data = await bookingsApi.updateConfirmedDetails({ id, ...detailsForm, addons })
-      setBooking((current) => ({ ...current, ...data }))
+      const data = await bookingsApi.updateAgreedDetails({ id, ...detailsForm, addons })
+      setBooking((current) => ({ ...current, ...data, invoices: [...(data.revised_invoices || []), ...(current.invoices || []).map((invoice) => invoice.voided_at ? invoice : ({ ...invoice, voided_at: new Date().toISOString() }))] }))
       setEditingDetails(false)
-      showToast('Confirmed booking details saved.')
-    } catch (error) { showToast(error?.message || 'Unable to save confirmed details.', 'error') }
+      notifyAdminDataChanged({ bookingId: id, type: 'agreed-details' })
+      showToast(data.revised_invoices?.length ? 'Agreed details saved. Earlier invoices were preserved and revised drafts were created.' : 'Agreed booking details saved.')
+    } catch (error) { showToast(error?.message || 'Unable to save agreed details.', 'error') }
     finally { setSavingDetails(false) }
   }
 
-  const markDownPayment = async (event) => {
+  const previewPaymentInvoice = (event) => {
     event.preventDefault()
+    const type = booking.payments?.some((item) => item.payment_type === 'DOWN_PAYMENT') ? 'FINAL_PAYMENT' : 'DOWN_PAYMENT'
+    setPreviewInvoice({ draftPayment: true, payment_type: type, amount: Number(paymentForm.amount), date: paymentForm.date, note: paymentForm.note })
+  }
+
+  const recordPayment = async () => {
+    const paymentType = previewInvoice?.payment_type
+    if (!paymentType) return
     setSavingPayment(true)
     try {
-      const data = await bookingsApi.markDownPayment({ id, ...paymentForm })
-      setBooking((current) => ({ ...current, ...data, invoice_sent_at: data.invoice_sent ? new Date().toISOString() : current.invoice_sent_at }))
+      const data = await bookingsApi.recordPayment({ id, payment_type: paymentType, ...paymentForm })
+      setBooking((current) => ({ ...current, payments: data.payments, invoices: [data.invoice, ...(current.invoices || [])], total_paid: data.total_paid, balance_due: data.balance_due }))
       setPaymentOpen(false)
-      showToast(data.message || 'Down payment recorded.')
-    } catch (error) { showToast(error?.message || 'Unable to record down payment.', 'error') }
+      setPreviewInvoice(null)
+      notifyAdminDataChanged({ bookingId: id, type: 'payment' })
+      showToast(data.message || 'Payment recorded.')
+    } catch (error) { showToast(error?.message || 'Unable to record payment.', 'error') }
     finally { setSavingPayment(false) }
   }
 
-  const resendInvoice = async () => {
+  const resendInvoice = async (invoiceId) => {
     setSendingInvoice(true)
     try {
-      const data = await bookingsApi.resendInvoice(id)
-      setBooking((current) => ({ ...current, invoice_sent_at: data.invoice_sent_at }))
+      const data = await bookingsApi.sendInvoice(invoiceId)
+      setBooking((current) => ({ ...current, invoices: current.invoices.map((invoice) => invoice.id === invoiceId ? { ...invoice, sent_at: data.sent_at } : invoice) }))
+      notifyAdminDataChanged({ bookingId: id, type: 'invoice' })
       showToast(data.message || 'Invoice sent successfully.')
     } catch (error) { showToast(error?.message || 'Unable to send invoice.', 'error') }
     finally { setSendingInvoice(false) }
+  }
+
+  const downloadInvoice = async (invoice) => {
+    const snapshot = invoice.snapshot
+    const root = document.createElement('div')
+    root.style.cssText = 'font-family:Arial,sans-serif;padding:38px;color:#111;max-width:760px'
+    const agreed = snapshot.agreed_details || {}
+    const lines = [snapshot.studio?.name || 'Jonathan Photography', invoice.invoice_number, snapshot.status_label, `Booking: ${snapshot.booking?.reference_code}`, `Client: ${snapshot.client?.name}`, `Package: ${snapshot.booking?.shoot_type}`, `Coverage: ${agreed.coverage || '—'}${agreed.hours ? ` · ${agreed.hours} hours` : ''}`, ...(agreed.addons || []).map((item) => `Add-on: ${item.quantity || 1}× ${item.label} — ${peso(Number(item.amount || 0) * Number(item.quantity || 1))}`), `Agreed total: ${peso(snapshot.agreed_total)}`, ...(snapshot.payments || []).map((p) => `${p.payment_type === 'FINAL_PAYMENT' ? 'Final payment' : 'Down payment'} (${p.received_at}): ${peso(p.amount)}`), `Balance due: ${peso(snapshot.balance_due)}`, `Platform service fee included: ${peso(snapshot.platform_fee?.amount || 0)}`, 'The platform service fee is already included in the agreed total and is not charged separately.']
+    lines.forEach((line, index) => { const node = document.createElement(index < 3 ? 'h2' : 'p'); node.textContent = line; root.appendChild(node) })
+    document.body.appendChild(root)
+    try { const { default: html2pdf } = await import('html2pdf.js'); await html2pdf().set({ margin: 0.5, filename: `${invoice.invoice_number}.pdf`, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter' } }).from(root).save() }
+    finally { root.remove() }
   }
 
   /*
@@ -264,6 +295,15 @@ export default function BookingDetails() {
     Array.isArray(booking.addons)
       ? booking.addons
       : []
+  const payments = Array.isArray(booking.payments) ? booking.payments : []
+  const invoices = Array.isArray(booking.invoices) ? booking.invoices : []
+  const hasDownPayment = payments.some((item) => item.payment_type === 'DOWN_PAYMENT')
+  const hasFinalPayment = payments.some((item) => item.payment_type === 'FINAL_PAYMENT')
+  const downInvoiceSent = invoices.some((item) => item.invoice_type === 'DOWN_PAYMENT' && !item.voided_at && item.sent_at)
+  const finalInvoiceSent = invoices.some((item) => item.invoice_type === 'FINAL_PAYMENT' && !item.voided_at && item.sent_at)
+  const nextPaymentType = hasDownPayment ? 'FINAL_PAYMENT' : 'DOWN_PAYMENT'
+  const nextPaymentLabel = hasDownPayment ? 'Record Final Payment' : 'Record Down Payment'
+  const canRecordNextPayment = !hasDownPayment || (downInvoiceSent && !hasFinalPayment)
 
   /*
   ============================================================
@@ -1203,50 +1243,75 @@ export default function BookingDetails() {
             <div className="booking-details-panel__head">
               <div className="booking-details-panel__title-wrap">
                 <span className="booking-details-panel__icon"><Receipt size={17} /></span>
-                <h2 className="booking-details-panel__title">Confirmed Details & Payment</h2>
+                <h2 className="booking-details-panel__title">Agreed Details & Payments</h2>
               </div>
               {!editingDetails && booking.status !== 'CANCELLED' && (
-                <button type="button" className="btn btn--secondary" onClick={openDetailsEditor}><Pencil size={15} /> Edit Details</button>
+                <button type="button" className="btn btn--secondary" onClick={openDetailsEditor}><Pencil size={15} /> Edit Agreed Details</button>
               )}
             </div>
             <div className="booking-details-panel__body">
               {editingDetails ? (
-                <form className="booking-action-form" onSubmit={saveConfirmedDetails}>
+                <form className="booking-action-form" onSubmit={saveAgreedDetails}>
                   <label>Final agreed price<input type="number" min="0.01" step="0.01" required value={detailsForm.total} onChange={(e) => setDetailsForm({ ...detailsForm, total: e.target.value })} /></label>
                   <label>Coverage description<input type="text" maxLength="160" value={detailsForm.coverage} onChange={(e) => setDetailsForm({ ...detailsForm, coverage: e.target.value })} placeholder="Full-day photo and video coverage" /></label>
                   <label>Coverage hours<input type="number" min="0.5" max="24" step="0.5" value={detailsForm.hours} onChange={(e) => setDetailsForm({ ...detailsForm, hours: e.target.value })} /></label>
                   <label>Final event date<input type="date" required value={detailsForm.date} onChange={(e) => setDetailsForm({ ...detailsForm, date: e.target.value })} /></label>
+                  <label>Final location<input type="text" maxLength="200" value={detailsForm.location} onChange={(e) => setDetailsForm({ ...detailsForm, location: e.target.value })} /></label>
                   <label className="booking-action-form__wide">Add-ons <small>One per line: Name | Amount | Quantity</small><textarea rows="4" value={detailsForm.addonsText} onChange={(e) => setDetailsForm({ ...detailsForm, addonsText: e.target.value })} placeholder="Printed album | 3500 | 1" /></label>
                   <label className="booking-action-form__wide">Final notes<textarea rows="4" maxLength="2000" value={detailsForm.notes} onChange={(e) => setDetailsForm({ ...detailsForm, notes: e.target.value })} /></label>
-                  <div className="booking-action-form__actions"><button type="button" className="btn btn--secondary" onClick={() => setEditingDetails(false)} disabled={savingDetails}>Cancel</button><button type="submit" className="btn btn--primary" disabled={savingDetails}>{savingDetails ? 'Saving…' : 'Save confirmed details'}</button></div>
+                  <div className="booking-action-form__wide booking-fee-preview">Platform fee included: <strong>{peso(Number(detailsForm.total || 0) * (Number(detailsForm.total || 0) > Number(booking.platform_fee?.settings?.threshold || 10000) ? Number(booking.platform_fee?.settings?.high_rate || .01) : Number(booking.platform_fee?.settings?.low_rate || .005)))}</strong>. This is not added to the client total.</div>
+                  <div className="booking-action-form__actions"><button type="button" className="btn btn--secondary" onClick={() => setEditingDetails(false)} disabled={savingDetails}>Cancel</button><button type="submit" className="btn btn--primary" disabled={savingDetails}>{savingDetails ? 'Saving…' : 'Save agreed details'}</button></div>
                 </form>
-              ) : booking.confirmed_details ? (
+              ) : booking.agreed_details ? (
                 <div className="booking-confirmed-summary">
-                  <div><span>Final total</span><strong>{peso(booking.confirmed_details.total)}</strong></div>
-                  <div><span>Coverage</span><strong>{booking.confirmed_details.coverage || '—'}{booking.confirmed_details.hours ? ` · ${booking.confirmed_details.hours} hours` : ''}</strong></div>
-                  <div><span>Final date</span><strong>{formatDate(booking.confirmed_details.date)}</strong></div>
-                  <div><span>Last updated</span><strong>{booking.confirmed_details_updated_at ? formatDateTime(booking.confirmed_details_updated_at) : '—'}</strong></div>
-                  {(booking.confirmed_details.addons || []).length > 0 && <div className="booking-confirmed-summary__wide"><span>Add-ons</span><strong>{booking.confirmed_details.addons.map((item) => `${item.quantity || 1}× ${item.label}`).join(', ')}</strong></div>}
-                  {booking.confirmed_details.notes && <div className="booking-confirmed-summary__wide"><span>Notes</span><strong>{booking.confirmed_details.notes}</strong></div>}
+                  <div><span>Agreed total</span><strong>{peso(booking.agreed_details.total)}</strong></div>
+                  <div><span>Balance due</span><strong>{peso(booking.balance_due)}</strong></div>
+                  <div><span>Coverage</span><strong>{booking.agreed_details.coverage || '—'}{booking.agreed_details.hours ? ` · ${booking.agreed_details.hours} hours` : ''}</strong></div>
+                  <div><span>Final date</span><strong>{formatDate(booking.agreed_details.date)}</strong></div>
+                  <div><span>Location</span><strong>{booking.agreed_details.location || '—'}</strong></div>
+                  <div><span>Platform fee included</span><strong>{peso(booking.platform_fee?.amount || 0)} · {Number(booking.platform_fee?.rate || 0) * 100}%</strong></div>
+                  <div><span>Last updated</span><strong>{booking.agreed_details_updated_at ? formatDateTime(booking.agreed_details_updated_at) : '—'}</strong></div>
+                  {(booking.agreed_details.addons || []).length > 0 && <div className="booking-confirmed-summary__wide"><span>Add-ons</span><strong>{booking.agreed_details.addons.map((item) => `${item.quantity || 1}× ${item.label}`).join(', ')}</strong></div>}
+                  {booking.agreed_details.notes && <div className="booking-confirmed-summary__wide"><span>Notes</span><strong>{booking.agreed_details.notes}</strong></div>}
                 </div>
               ) : <p className="booking-workflow-note">No final terms have been recorded. The original client estimate remains unchanged.</p>}
 
-              {booking.status === 'CONFIRMED' && booking.confirmed_details && !booking.down_payment_received_at && !paymentOpen && (
-                <button type="button" className="btn btn--primary booking-payment-button" onClick={() => setPaymentOpen(true)}><CreditCard size={16} /> Mark Down Payment Received</button>
+              <div className="booking-stage-timeline" aria-label="Booking payment timeline">
+                {['Requested', 'Confirmed', 'Down payment invoice sent', 'Paid in full invoice sent'].map((stage, index) => {
+                  const complete = index === 0 || (index === 1 && booking.status === 'CONFIRMED') || (index === 2 && hasDownPayment && downInvoiceSent) || (index === 3 && hasFinalPayment && finalInvoiceSent)
+                  return <span key={stage} className={complete ? 'is-complete' : ''}><i />{stage}</span>
+                })}
+              </div>
+
+              {booking.status === 'CONFIRMED' && booking.agreed_details && !hasFinalPayment && canRecordNextPayment && !paymentOpen && (
+                <button type="button" className="btn btn--primary booking-payment-button" onClick={() => { setPaymentForm({ amount: nextPaymentType === 'FINAL_PAYMENT' ? booking.balance_due : '', date: new Date().toISOString().slice(0, 10), note: '' }); setPaymentOpen(true) }}><CreditCard size={16} /> {nextPaymentLabel}</button>
               )}
+              {hasDownPayment && !downInvoiceSent && <p className="booking-workflow-note">Send the active down-payment invoice before recording the final payment.</p>}
               {paymentOpen && (
-                <form className="booking-action-form booking-payment-form" onSubmit={markDownPayment}>
-                  <label>Amount received<input type="number" min="0.01" step="0.01" max={booking.confirmed_details?.total} required value={paymentForm.amount} onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })} /></label>
+                <form className="booking-action-form booking-payment-form" onSubmit={previewPaymentInvoice}>
+                  <label>{nextPaymentLabel} amount<input type="number" min="0.01" step="0.01" max={nextPaymentType === 'FINAL_PAYMENT' ? booking.balance_due : Math.max(0.01, Number(booking.balance_due) - 0.01)} required readOnly={nextPaymentType === 'FINAL_PAYMENT'} value={paymentForm.amount} onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })} /></label>
                   <label>Date received<input type="date" required value={paymentForm.date} onChange={(e) => setPaymentForm({ ...paymentForm, date: e.target.value })} /></label>
                   <label className="booking-action-form__wide">Optional note<textarea maxLength="500" rows="3" value={paymentForm.note} onChange={(e) => setPaymentForm({ ...paymentForm, note: e.target.value })} /></label>
-                  <div className="booking-action-form__actions"><button type="button" className="btn btn--secondary" onClick={() => setPaymentOpen(false)} disabled={savingPayment}>Cancel</button><button type="submit" className="btn btn--primary" disabled={savingPayment}>{savingPayment ? 'Recording…' : 'Record payment & send invoice'}</button></div>
+                  <div className="booking-action-form__actions"><button type="button" className="btn btn--secondary" onClick={() => setPaymentOpen(false)} disabled={savingPayment}>Cancel</button><button type="submit" className="btn btn--primary" disabled={savingPayment}><Eye size={15} /> Preview invoice</button></div>
                 </form>
               )}
-              {booking.down_payment_received_at && (
-                <div className="booking-payment-record"><div><span>Down payment received</span><strong>{peso(booking.down_payment_amount)} · {formatDate(booking.down_payment_received_at)}</strong></div><div><span>Invoice</span><strong>{booking.invoice_sent_at ? `Sent ${formatDateTime(booking.invoice_sent_at)}` : 'Not sent'}</strong></div><button type="button" className="btn btn--secondary" onClick={resendInvoice} disabled={sendingInvoice}><Send size={15} /> {sendingInvoice ? 'Sending…' : 'Resend Invoice'}</button></div>
-              )}
+
+              {invoices.length > 0 && <div className="booking-invoice-list">{invoices.map((invoice) => <article key={invoice.id} className={invoice.voided_at ? 'is-voided' : ''}><div><span>{invoice.invoice_type === 'FINAL_PAYMENT' ? 'Final receipt' : 'Down payment invoice'}</span><strong>{invoice.invoice_number}</strong><small>{invoice.voided_at ? 'Voided — preserved snapshot' : invoice.sent_at ? `Sent ${formatDateTime(invoice.sent_at)}` : 'Draft — ready to preview'}</small></div><div><button type="button" className="btn btn--secondary" onClick={() => setPreviewInvoice(invoice)}><Eye size={15} /> Preview</button><button type="button" className="btn btn--secondary" onClick={() => downloadInvoice(invoice)}><Download size={15} /> PDF</button>{!invoice.voided_at && <button type="button" className="btn btn--secondary" onClick={() => resendInvoice(invoice.id)} disabled={sendingInvoice}><Send size={15} /> {invoice.sent_at ? 'Resend' : 'Send'}</button>}</div></article>)}</div>}
             </div>
           </section>
+
+          {previewInvoice && (
+            <div className="invoice-preview-modal" role="presentation" onMouseDown={() => !savingPayment && setPreviewInvoice(null)}>
+              <section role="dialog" aria-modal="true" aria-label="Invoice preview" onMouseDown={(event) => event.stopPropagation()}>
+                <span className="booking-details-panel__title">Invoice preview</span>
+                <h2>{previewInvoice.draftPayment ? (previewInvoice.payment_type === 'FINAL_PAYMENT' ? 'PAID IN FULL receipt' : 'Down payment invoice') : previewInvoice.invoice_number}</h2>
+                <p><strong>Client:</strong> {booking.name}<br /><strong>Package:</strong> {booking.shoot_type}<br /><strong>Coverage:</strong> {booking.agreed_details?.coverage || previewInvoice.snapshot?.agreed_details?.coverage || '—'}{(booking.agreed_details?.hours || previewInvoice.snapshot?.agreed_details?.hours) ? ` · ${booking.agreed_details?.hours || previewInvoice.snapshot?.agreed_details?.hours} hours` : ''}<br /><strong>Add-ons:</strong> {(booking.agreed_details?.addons || previewInvoice.snapshot?.agreed_details?.addons || []).map((item) => `${item.quantity || 1}× ${item.label}`).join(', ') || 'None'}<br /><strong>Agreed total:</strong> {peso(booking.agreed_details?.total || previewInvoice.snapshot?.agreed_total || 0)}</p>
+                {previewInvoice.draftPayment ? <p><strong>Payment to record:</strong> {peso(previewInvoice.amount)} on {formatDate(previewInvoice.date)}<br /><strong>Balance afterward:</strong> {peso(Math.max(0, Number(booking.balance_due) - previewInvoice.amount))}</p> : <p><strong>Status:</strong> {previewInvoice.snapshot.status_label}<br /><strong>Paid:</strong> {peso(previewInvoice.snapshot.total_paid)}<br /><strong>Balance:</strong> {peso(previewInvoice.snapshot.balance_due)}</p>}
+                <p className="booking-workflow-note">The agreed price includes the platform service fee. It is not charged separately.</p>
+                <div className="booking-action-form__actions"><button type="button" className="btn btn--secondary" disabled={savingPayment} onClick={() => setPreviewInvoice(null)}>Close</button>{previewInvoice.draftPayment && <button type="button" className="btn btn--primary" disabled={savingPayment} onClick={recordPayment}>{savingPayment ? 'Recording…' : 'Confirm, record & email'}</button>}</div>
+              </section>
+            </div>
+          )}
 
           <div className="booking-details-columns">
 

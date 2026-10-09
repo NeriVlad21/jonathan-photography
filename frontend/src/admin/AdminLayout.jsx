@@ -22,7 +22,8 @@ import {
   Archive,
   User,
   ChevronRight,
-  PanelsTopLeft
+  PanelsTopLeft,
+  WalletCards
 } from 'lucide-react'
 
 import { useAdminAuth } from '../context/AdminAuthContext.jsx'
@@ -87,6 +88,16 @@ const NAV = [
         to: '/admin/contacts',
         label: 'Contact Links',
         icon: AtSign
+      }
+    ]
+  },
+  {
+    section: 'Billing',
+    links: [
+      {
+        to: '/admin/platform-fees',
+        label: 'Platform Fees',
+        icon: WalletCards
       }
     ]
   },
@@ -1557,7 +1568,7 @@ export default function AdminLayout() {
                                     onClick={() => {
                                       navigate(
                                         `/admin/bookings/${booking.id}`,
-                                        { state: { from: location } }
+                                        { state: { from: { ...location, state: { ...(location.state || {}), scrollY: window.scrollY } } } }
                                       )
 
                                       clearSearch()

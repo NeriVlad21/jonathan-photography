@@ -419,6 +419,51 @@
 .booking-payment-form,
 .booking-payment-record { margin-top: 22px; }
 .booking-payment-record { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px; background: var(--admin-soft); border-radius: 10px; flex-wrap: wrap; }
+.booking-fee-preview { padding: 14px; background: #fff8cc; border-left: 3px solid var(--c-yellow); color: var(--admin-muted); }
+.booking-stage-timeline { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-top: 24px; }
+.booking-stage-timeline span { display: flex; align-items: center; gap: 7px; color: var(--admin-muted); font-size: .75rem; }
+.booking-stage-timeline i { width: 10px; height: 10px; border: 1px solid var(--admin-muted); border-radius: 50%; }
+.booking-stage-timeline .is-complete { color: var(--admin-ink); font-weight: 700; }
+.booking-stage-timeline .is-complete i { border-color: var(--admin-ink); background: var(--c-yellow); }
+.booking-invoice-list { display: grid; gap: 10px; margin-top: 22px; }
+.booking-invoice-list article { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px; border: 1px solid var(--admin-line); border-radius: 8px; }
+.booking-invoice-list article > div:first-child { display: grid; gap: 3px; }
+.booking-invoice-list article > div:last-child { display: flex; gap: 8px; flex-wrap: wrap; }
+.booking-invoice-list span,.booking-invoice-list small { color: var(--admin-muted); }
+.booking-invoice-list .is-voided { opacity: .58; background: var(--admin-soft); }
+.invoice-preview-modal { position: fixed; inset: 0; z-index: 1200; display: grid; place-items: center; padding: 20px; background: rgba(17,17,15,.66); }
+.invoice-preview-modal > section { width: min(560px,100%); max-height: 88vh; overflow: auto; padding: clamp(24px,5vw,42px); background: #fff; border-radius: 10px; box-shadow: 12px 12px 0 var(--c-yellow); }
+.invoice-preview-modal h2 { margin: 10px 0 20px; }
+.invoice-preview-modal p { line-height: 1.65; }
+.invoice-preview-modal form { display: grid; gap: 16px; }
+.invoice-preview-modal form label { display: grid; gap: 7px; font-weight: 700; }
+.invoice-preview-modal form input,.invoice-preview-modal form textarea { padding: 12px; border: 1px solid var(--admin-line); border-radius: 7px; font: inherit; }
+.platform-fees-page { width: 100%; }
+.platform-fees-hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 28px; }
+.platform-fees-hero span { color: var(--admin-muted); font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; }
+.platform-fees-hero h2 { margin: 7px 0; font-size: clamp(2rem,4vw,3.3rem); }
+.platform-fees-hero p { max-width: 720px; margin: 0; color: var(--admin-muted); }
+.platform-fees-summary { display: flex; align-items: end; justify-content: space-between; gap: 24px; padding: 24px; background: var(--c-yellow); border: 1px solid var(--admin-ink); }
+.platform-fees-summary div,.platform-fees-summary label { display: grid; gap: 6px; }
+.platform-fees-summary span,.platform-fees-summary label { font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; }
+.platform-fees-summary strong { font-size: 2rem; }
+.platform-fees-summary input { padding: 10px; border: 1px solid var(--admin-ink); background: #fff; }
+.platform-fees-panel { margin-top: 22px; padding: 24px; background: var(--admin-panel); border: 1px solid var(--admin-line); border-radius: 10px; }
+.platform-fees-panel h3 { margin: 0 0 18px; }
+.platform-cycle-grid,.platform-fee-ledger { display: grid; gap: 10px; }
+.platform-cycle { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 17px; border: 1px solid var(--admin-line); }
+.platform-cycle > div:first-child { display: grid; gap: 4px; }
+.platform-cycle > div:last-child { display: flex; gap: 8px; }
+.platform-cycle strong { font-size: 1.35rem; }
+.platform-cycle small { color: var(--admin-muted); }
+.platform-cycle--due { border-color: #9d342b; background: #fff3f0; }
+.platform-cycle--paid { opacity: .68; }
+.platform-fee-ledger a { display: grid; grid-template-columns: 1.5fr 1fr .7fr .6fr; align-items: center; gap: 14px; padding: 14px; color: inherit; border-bottom: 1px solid var(--admin-line); text-decoration: none; }
+.platform-fee-ledger a:hover { background: var(--admin-soft); }
+.platform-fee-ledger span { display: grid; gap: 3px; }
+.platform-fee-ledger small { color: var(--admin-muted); }
+.platform-fee-ledger em { font-style: normal; text-transform: uppercase; font-size: .7rem; }
+.platform-fee-ledger .is-voided { opacity: .48; text-decoration: line-through; }
 
 @media (max-width: 700px) {
   .booking-action-form,
@@ -426,6 +471,11 @@
   .booking-confirmed-summary__wide { grid-column: auto; }
   .booking-action-form__actions { flex-direction: column-reverse; }
   .booking-action-form__actions .btn { width: 100%; }
+  .booking-stage-timeline { grid-template-columns: 1fr 1fr; }
+  .booking-invoice-list article { align-items: stretch; flex-direction: column; }
+  .platform-fees-summary,.platform-cycle { align-items: stretch; flex-direction: column; }
+  .platform-cycle > div:last-child { flex-wrap: wrap; }
+  .platform-fee-ledger a { grid-template-columns: 1fr 1fr; }
 }
 
 .admin-shell .portfolio-admin__list-item,

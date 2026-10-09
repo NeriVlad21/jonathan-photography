@@ -181,4 +181,9 @@ INSERT INTO site_settings (setting_key, setting_value) VALUES
 ('business_phone', '0963-332-7847'),
 ('business_phone_alt', '0927-776-3101'),
 ('business_email', 'mereziko@gmail.com'),
-('estimator_range_margin', '15');
+('estimator_range_margin', '15'),
+('platform_fee_threshold', '10000'),
+('platform_fee_low_rate', '0.005'),
+('platform_fee_high_rate', '0.01'),
+('platform_fee_cycle_start_date', '2026-01-01'),
+('platform_fee_due_days', '7');

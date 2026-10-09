@@ -29,6 +29,7 @@ const Archive = lazy(() => import('./admin/Archive.jsx'))
 const AdminProfile = lazy(() => import('./admin/AdminProfile.jsx'))
 const AdminBookingCalendar = lazy(() => import('./admin/AdminBookingCalendar.jsx'))
 const SiteContentManager = lazy(() => import('./admin/SiteContentManager.jsx'))
+const PlatformFees = lazy(() => import('./admin/PlatformFees.jsx'))
 
 function NotFound() {
   return (
@@ -106,6 +107,7 @@ export default function App() {
               />
               <Route path="contacts" element={<ContactManager />} />
               <Route path="profile" element={<AdminProfile />} />
+              <Route path="platform-fees" element={<PlatformFees />} />
 
               {/* Archive */}
               <Route path="archive" element={<Archive />} />

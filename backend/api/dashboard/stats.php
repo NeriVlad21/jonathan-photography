@@ -10,6 +10,7 @@ require_once __DIR__ . '/../../middleware/cors.php';
 require_once __DIR__ . '/../../helpers/response.php';
 require_once __DIR__ . '/../../middleware/auth.php';
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../helpers/billing.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     json_error('Method not allowed.', 405);
@@ -42,6 +43,9 @@ $totalBookings = (int) $pdo->query("SELECT COUNT(*) FROM bookings WHERE $timeCon
 $newBookings = (int) $pdo->query("SELECT COUNT(*) FROM bookings WHERE $timeCondition AND status = 'NEW'")->fetchColumn();
 $estimatorUses = (int) $pdo->query("SELECT COUNT(*) FROM estimator_leads WHERE $timeCondition")->fetchColumn();
 $avgEstimate = (float) $pdo->query("SELECT COALESCE(AVG(total),0) FROM estimator_leads WHERE $timeCondition")->fetchColumn();
+refresh_fee_cycle_statuses($pdo);
+$platformFeesDue = (float) $pdo->query("SELECT COALESCE(SUM(pfl.fee_amount),0) FROM platform_fee_ledger pfl JOIN fee_cycles fc ON fc.id=pfl.cycle_id WHERE pfl.voided_at IS NULL AND fc.status<>'PAID'")->fetchColumn();
+$overdueFeeCycles = (int) $pdo->query("SELECT COUNT(*) FROM fee_cycles WHERE status='DUE'")->fetchColumn();
 
 // Conversion Rate
 $lCondition = str_replace('created_at', 'l.created_at', $timeCondition);
@@ -101,6 +105,8 @@ json_success([
         'estimator_uses'            => $estimatorUses,
         'average_estimate'          => round($avgEstimate, 2),
         'estimator_to_booking_rate' => $conversionRate,
+        'platform_fees_due'         => round($platformFeesDue, 2),
+        'overdue_fee_cycles'        => $overdueFeeCycles,
     ],
     'recent_activity' => $recentActivity,
     'chart_data'      => $chartData

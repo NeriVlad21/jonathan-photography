@@ -148,7 +148,7 @@ function send_booking_emails(array $booking): void
             $mail->addAddress($studioEmail);
             $mail->isHTML(true);
             $subjectDate = $booking['preferred_date'] ?: 'Date TBD';
-            $mail->Subject = "New booking request — {$booking['name']}, {$booking['shoot_type']}, {$subjectDate}";
+            $mail->Subject = "New booking request: {$booking['name']}, {$booking['shoot_type']}, {$subjectDate}";
             $mail->Body = admin_email_body($booking);
             send_mail_with_retry($mail, 'Studio booking email');
         }
@@ -317,6 +317,58 @@ function send_booking_invoice(array $booking): bool
         return true;
     } catch (Throwable $e) {
         error_log('[MAILER] Invoice email failed: ' . $e->getMessage());
+        return false;
+    }
+}
+
+/** Send an invoice strictly from its immutable stored snapshot. */
+function send_stored_invoice(array $invoice, array $booking): bool
+{
+    try {
+        $snapshot = is_array($invoice['snapshot'] ?? null)
+            ? $invoice['snapshot']
+            : json_decode((string) ($invoice['snapshot'] ?? ''), true, 512, JSON_THROW_ON_ERROR);
+        $safe = fn($value) => htmlspecialchars((string) ($value ?? '—'), ENT_QUOTES, 'UTF-8');
+        $money = fn($value) => peso((float) $value);
+        $agreed = $snapshot['agreed_details'] ?? [];
+        $rows = "<tr><td style='padding:7px 0;border-bottom:1px solid #ddd'>Package</td><td style='padding:7px 0;border-bottom:1px solid #ddd;text-align:right'>{$safe($snapshot['booking']['shoot_type'] ?? '')}</td></tr>";
+        if (!empty($agreed['coverage'])) {
+            $coverage = $agreed['coverage'] . (!empty($agreed['hours']) ? ' · ' . $agreed['hours'] . ' hours' : '');
+            $rows .= "<tr><td style='padding:7px 0;border-bottom:1px solid #ddd'>Coverage</td><td style='padding:7px 0;border-bottom:1px solid #ddd;text-align:right'>{$safe($coverage)}</td></tr>";
+        }
+        foreach (($agreed['addons'] ?? []) as $addon) {
+            $qty = max(1, (int) ($addon['quantity'] ?? 1));
+            $rows .= "<tr><td style='padding:7px 0;border-bottom:1px solid #ddd'>{$safe(($qty > 1 ? $qty . '× ' : '') . ($addon['label'] ?? 'Add-on'))}</td><td style='padding:7px 0;border-bottom:1px solid #ddd;text-align:right'>{$money((float)($addon['amount'] ?? 0) * $qty)}</td></tr>";
+        }
+        $paymentRows = '';
+        foreach (($snapshot['payments'] ?? []) as $payment) {
+            $label = $payment['payment_type'] === 'FINAL_PAYMENT' ? 'Final payment' : 'Down payment';
+            $paymentRows .= "<tr><td style='padding:7px 0'>{$safe($label)} ({$safe($payment['received_at'])})</td><td style='padding:7px 0;text-align:right'>−{$money($payment['amount'])}</td></tr>";
+        }
+        $fee = $snapshot['platform_fee'] ?? [];
+        $studio = $snapshot['studio'] ?? [];
+        $mail = make_mailer();
+        if (!$mail) return false;
+        add_studio_reply_to($mail);
+        $mail->addAddress((string) $booking['email'], (string) $booking['name']);
+        $mail->isHTML(true);
+        $mail->Subject = ($snapshot['invoice_type'] === 'FINAL_PAYMENT' ? 'Paid in full receipt' : 'Down payment invoice') . ' — ' . $invoice['invoice_number'];
+        $mail->Body = "<div style='font-family:Arial,sans-serif;max-width:600px;margin:auto;color:#111'>
+          <h2 style='border-bottom:3px solid #F5D000;padding-bottom:10px'>{$safe($studio['name'] ?? 'Jonathan Photography')}</h2>
+          <p><strong>Invoice:</strong> {$safe($invoice['invoice_number'])}<br><strong>Status:</strong> {$safe($snapshot['status_label'] ?? '')}<br><strong>Booking:</strong> {$safe($snapshot['booking']['reference_code'] ?? '')}<br><strong>Client:</strong> {$safe($snapshot['client']['name'] ?? '')}</p>
+          <table style='width:100%;border-collapse:collapse;font-size:14px'>{$rows}
+            <tr><td style='padding:10px 0;font-weight:bold'>Agreed total</td><td style='padding:10px 0;text-align:right;font-weight:bold'>{$money($snapshot['agreed_total'] ?? 0)}</td></tr>
+            {$paymentRows}
+            <tr><td style='padding:12px 0;border-top:2px solid #111;font-weight:bold'>Balance due</td><td style='padding:12px 0;border-top:2px solid #111;text-align:right;font-weight:bold'>{$money($snapshot['balance_due'] ?? 0)}</td></tr>
+          </table>
+          <p style='color:#666;font-size:13px'>The agreed package price includes a platform service fee of {$money($fee['amount'] ?? 0)} ({$safe(number_format(((float)($fee['rate'] ?? 0))*100, 1))}%). It is already included and is not charged separately.</p>
+          <p>{$safe($studio['email'] ?? '')}<br>{$safe($studio['phone'] ?? '')}<br>{$safe($studio['address'] ?? '')}</p>
+        </div>";
+        $mail->AltBody = "Invoice {$invoice['invoice_number']}\n{$snapshot['status_label']}\nAgreed total: {$money($snapshot['agreed_total'])}\nPaid: {$money($snapshot['total_paid'])}\nBalance: {$money($snapshot['balance_due'])}\nThe price includes a platform service fee; it is not charged separately.";
+        send_mail_with_retry($mail, 'Stored booking invoice');
+        return true;
+    } catch (Throwable $e) {
+        error_log('[MAILER] Stored invoice email failed: ' . $e->getMessage());
         return false;
     }
 }

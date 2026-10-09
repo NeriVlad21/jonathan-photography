@@ -7,6 +7,7 @@ require_once __DIR__ . '/../../helpers/response.php';
 require_once __DIR__ . '/../../helpers/validation.php';
 require_once __DIR__ . '/../../middleware/auth.php';
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../helpers/billing.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 $admin = require_admin();
@@ -50,11 +51,14 @@ if ($method === 'GET') {
                 ce.location,
                 ce.notes AS message,
                 b.estimate_total,
+                CAST(JSON_UNQUOTE(JSON_EXTRACT(b.agreed_details, \'$.total\')) AS DECIMAL(10,2)) AS agreed_total,
+                COALESCE(pay.total_paid,0) AS total_paid,
                 ce.status,
                 ce.created_at,
                 \'schedule\' AS source
          FROM calendar_events ce
          LEFT JOIN bookings b ON b.id = ce.booking_id
+         LEFT JOIN (SELECT booking_id,SUM(amount) total_paid FROM booking_payments GROUP BY booking_id) pay ON pay.booking_id=b.id
          WHERE ce.event_date BETWEEN :start AND :end
          ORDER BY ce.event_date ASC, ce.created_at ASC'
     );
@@ -284,6 +288,9 @@ if ($method === 'PUT') {
             $bookingStatus = $status === 'BOOKED' ? 'CONFIRMED' : 'CANCELLED';
             $pdo->prepare('UPDATE bookings SET status = :status WHERE id = :id')
                 ->execute(['status' => $bookingStatus, 'id' => $event['booking_id']]);
+            if ($bookingStatus === 'CANCELLED') {
+                void_platform_fee($pdo, (int) $event['booking_id']);
+            }
         }
 
         $pdo->commit();

@@ -65,7 +65,8 @@ function CalendarEventDialog({ date, events, onClose, onEventUpdated, returnLoca
                   <div><dt><MapPin size={13} /> Location</dt><dd>{event.location || 'To be confirmed'}</dd></div>
                   <div><dt><Mail size={13} /> Email</dt><dd>{event.email ? <a href={`mailto:${event.email}`}>{event.email}</a> : '—'}</dd></div>
                   <div><dt><Phone size={13} /> Phone</dt><dd>{event.phone ? <a href={`tel:${event.phone}`}>{event.phone}</a> : '—'}</dd></div>
-                  <div><dt>Estimate</dt><dd>{event.estimate_total ? peso(event.estimate_total) : '—'}</dd></div>
+                  <div><dt>{event.agreed_total ? 'Agreed total' : 'Estimate'}</dt><dd>{event.agreed_total ? peso(event.agreed_total) : event.estimate_total ? peso(event.estimate_total) : '—'}</dd></div>
+                  {event.agreed_total && <div><dt>Balance</dt><dd>{peso(Math.max(0, Number(event.agreed_total) - Number(event.total_paid || 0)))}</dd></div>}
                 </dl>
                 {event.message && <p>{event.message}</p>}
                 <div className="calendar-event-card__actions">
@@ -369,7 +370,7 @@ function CalendarWorkspace({ archive = false }) {
         events={selectedDay?.events || []}
         onClose={() => setSelectedDay(null)}
         onEventUpdated={eventUpdated}
-        returnLocation={{ ...location, state: { ...(location.state || {}), calendarView: { month: `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`, exportRange } } }}
+        returnLocation={{ ...location, state: { ...(location.state || {}), calendarView: { month: `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`, exportRange }, scrollY: window.scrollY } }}
       />
       {addDate && (
         <AddScheduleDialog
