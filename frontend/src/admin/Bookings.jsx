@@ -4,18 +4,41 @@ import { bookingsApi } from '../services/api.js'
 import { peso, formatDateTime } from '../utils/format.js'
 import LoadingState from '../components/LoadingState.jsx'
 import EmptyState from '../components/EmptyState.jsx'
+import { useToast } from '../context/ToastContext.jsx'
+import { notifyAdminDataChanged } from '../utils/adminDataSync.js'
 import {
   Search,
   SlidersHorizontal,
   Download,
-  ChevronRight
+  ChevronRight,
+  CheckCircle2,
+  Clock3,
+  XCircle
 } from 'lucide-react'
 
 const STATUSES = [
   'NEW',
+  'PENDING',
   'CONFIRMED',
+  'COMPLETED',
   'CANCELLED'
 ]
+
+const QUICK_ACTIONS = {
+  NEW: [
+    { status: 'PENDING', label: 'Pending', icon: Clock3 },
+    { status: 'CONFIRMED', label: 'Confirm', icon: CheckCircle2 },
+    { status: 'CANCELLED', label: 'Cancel', icon: XCircle }
+  ],
+  PENDING: [
+    { status: 'CONFIRMED', label: 'Confirm', icon: CheckCircle2 },
+    { status: 'CANCELLED', label: 'Cancel', icon: XCircle }
+  ],
+  CONFIRMED: [
+    { status: 'COMPLETED', label: 'Complete', icon: CheckCircle2 },
+    { status: 'CANCELLED', label: 'Cancel', icon: XCircle }
+  ]
+}
 
 const TIMEFRAMES = [
   {
@@ -51,12 +74,16 @@ const TIMEFRAMES = [
 export default function Bookings() {
   const location = useLocation()
   const navigate = useNavigate()
+  const { showToast } = useToast()
 
   const [bookings, setBookings] = useState(null)
   const [status, setStatus] = useState(() => location.state?.bookingFilters?.status || '')
   const [search, setSearch] = useState(() => location.state?.bookingFilters?.search || '')
   const [timeframe, setTimeframe] = useState(() => location.state?.bookingFilters?.timeframe || 'today')
+  const [priorityOnly, setPriorityOnly] = useState(() => Boolean(location.state?.bookingFilters?.priorityOnly))
   const [isExporting, setIsExporting] = useState(false)
+  const [updatingId, setUpdatingId] = useState(null)
+  const [priorityCount, setPriorityCount] = useState(0)
 
   /*
   ============================================================
@@ -73,6 +100,8 @@ export default function Bookings() {
       params.status = status
     }
 
+    if (search.trim()) params.search = search.trim()
+
     if (
       timeframe &&
       timeframe !== 'all'
@@ -88,34 +117,8 @@ export default function Bookings() {
             ? data
             : []
 
-        const query =
-          search.trim().toLowerCase()
-
-        if (query) {
-          filtered =
-            filtered.filter((booking) => {
-              return (
-                (
-                  booking.name &&
-                  booking.name
-                    .toLowerCase()
-                    .includes(query)
-                ) ||
-                (
-                  booking.email &&
-                  booking.email
-                    .toLowerCase()
-                    .includes(query)
-                ) ||
-                (
-                  booking.reference_code &&
-                  booking.reference_code
-                    .toLowerCase()
-                    .includes(query)
-                )
-              )
-            })
-        }
+        setPriorityCount(filtered.filter((booking) => ['NEW', 'PENDING'].includes(booking.status)).length)
+        if (priorityOnly) filtered = filtered.filter((booking) => ['NEW', 'PENDING'].includes(booking.status))
 
         setBookings(filtered)
       })
@@ -152,8 +155,34 @@ export default function Bookings() {
   }, [
     status,
     search,
-    timeframe
+    timeframe,
+    priorityOnly
   ])
+
+  const updateBookingStatus = async (event, booking, nextStatus) => {
+    event.stopPropagation()
+    if (['CANCELLED', 'COMPLETED'].includes(nextStatus) && !window.confirm(`Mark this booking as ${nextStatus.toLowerCase()}?`)) return
+    setUpdatingId(booking.id)
+    try {
+      const updated = await bookingsApi.updateStatus(booking.id, nextStatus, true)
+      setBookings((current) => current.flatMap((item) => {
+        if (item.id !== booking.id) return [item]
+        if ((status && status !== updated.status) || (priorityOnly && !['NEW', 'PENDING'].includes(updated.status))) return []
+        return [{ ...item, status: updated.status }]
+      }))
+      setPriorityCount((current) => {
+        const wasPriority = ['NEW', 'PENDING'].includes(booking.status)
+        const isPriority = ['NEW', 'PENDING'].includes(updated.status)
+        return Math.max(0, current + (isPriority ? 1 : 0) - (wasPriority ? 1 : 0))
+      })
+      showToast(`Booking updated to ${nextStatus}.`)
+      notifyAdminDataChanged({ bookingId: booking.id, type: 'status' })
+    } catch (error) {
+      showToast(error?.message || 'Unable to update this booking.', 'error')
+    } finally {
+      setUpdatingId(null)
+    }
+  }
 
   /*
   ============================================================
@@ -498,6 +527,22 @@ export default function Bookings() {
             wait;
         }
 
+        .bookings-priority-strip {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 18px;
+          margin: -8px 0 20px;
+          padding: 14px 16px;
+          border-left: 4px solid var(--c-yellow, #f6ce00);
+          background: #fff;
+        }
+
+        .bookings-priority-strip div { display: grid; gap: 3px; }
+        .bookings-priority-strip span { color: #6b6b6b; font-size: .82rem; }
+        .bookings-priority-toggle { border: 0; background: transparent; font: inherit; font-size: .8rem; font-weight: 800; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; white-space: nowrap; }
+        .bookings-priority-toggle.is-active { color: #8a6e00; }
+
         /*
         ============================================================
         DATA PANEL
@@ -684,10 +729,12 @@ export default function Bookings() {
         .bookings-row__open {
           color:
             var(--c-text, #111);
-
-          transform:
-            translateX(2px);
         }
+
+        .bookings-quick-actions { display: flex; align-items: center; justify-content: flex-end; gap: 5px; }
+        .bookings-quick-actions button { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 0 8px; border: 1px solid #d7d7d7; border-radius: 5px; background: #fff; color: #222; font: inherit; font-size: .7rem; font-weight: 750; cursor: pointer; white-space: nowrap; }
+        .bookings-quick-actions button:hover:not(:disabled) { border-color: #111; background: #111; color: #fff; }
+        .bookings-quick-actions button:disabled { opacity: .5; cursor: wait; }
 
         /*
         ============================================================
@@ -725,6 +772,8 @@ export default function Bookings() {
           .bookings-export {
             width: 100%;
           }
+
+          .bookings-priority-strip { align-items: flex-start; flex-direction: column; }
 
         }
 
@@ -813,7 +862,7 @@ export default function Bookings() {
                 <input
                   type="text"
                   className="bookings-search__input"
-                  placeholder="Search name, email, or reference..."
+                  placeholder="Search client, reference, service, or event date..."
                   value={search}
                   onChange={(event) =>
                     setSearch(
@@ -928,6 +977,23 @@ export default function Bookings() {
 
             </button>
 
+          </div>
+
+          <div className="bookings-priority-strip">
+            <div>
+              <strong>{priorityCount} request{priorityCount === 1 ? '' : 's'} need attention</strong>
+              <span>New and pending requests that still need an owner decision.</span>
+            </div>
+            <button
+              type="button"
+              className={`bookings-priority-toggle${priorityOnly ? ' is-active' : ''}`}
+              onClick={() => {
+                setStatus('')
+                setPriorityOnly((current) => !current)
+              }}
+            >
+              {priorityOnly ? 'Show all requests' : 'Show priority only'}
+            </button>
           </div>
 
           {/* ====================================================
@@ -1058,17 +1124,17 @@ export default function Bookings() {
                             onClick={() =>
                               navigate(
                                 `/admin/bookings/${booking.id}`,
-                                { state: { from: { ...location, state: { ...(location.state || {}), bookingFilters: { status, search, timeframe }, scrollY: window.scrollY } } } }
+                                { state: { from: { ...location, state: { ...(location.state || {}), bookingFilters: { status, search, timeframe, priorityOnly }, scrollY: window.scrollY } } } }
                               )
                             }
                           >
 
-                            <td className="bookings-row__reference">
+                            <td className="bookings-row__reference" data-label="Reference">
                               {booking.reference_code ||
                                 '—'}
                             </td>
 
-                            <td className="bookings-row__client">
+                            <td className="bookings-row__client" data-label="Client">
 
                               <strong>
                                 {booking.name ||
@@ -1082,17 +1148,17 @@ export default function Bookings() {
 
                             </td>
 
-                            <td className="bookings-row__shoot">
+                            <td className="bookings-row__shoot" data-label="Shoot">
                               {booking.shoot_type ||
                                 '—'}
                             </td>
 
-                            <td>
+                            <td data-label="Date">
                               {booking.agreed_date || booking.preferred_date ||
                                 '—'}
                             </td>
 
-                            <td>
+                            <td data-label="Agreed / Estimate">
                               {booking.agreed_total || booking.estimate_total
                                 ? peso(
                                     booking.agreed_total || booking.estimate_total
@@ -1100,13 +1166,13 @@ export default function Bookings() {
                                 : '—'}
                             </td>
 
-                            <td>
+                            <td data-label="Balance">
                               {booking.agreed_total
                                 ? peso(booking.balance_due)
                                 : '—'}
                             </td>
 
-                            <td>
+                            <td data-label="Status">
                               <span
                                 className={`
                                   status-badge
@@ -1118,19 +1184,33 @@ export default function Bookings() {
                               </span>
                             </td>
 
-                            <td>
+                            <td data-label="Submitted">
                               {formatDateTime(
                                 booking.created_at
                               )}
                             </td>
 
-                            <td className="bookings-row__open">
-
-                              <ChevronRight
-                                size={16}
-                                aria-hidden="true"
-                              />
-
+                            <td className="bookings-row__open" data-label="Actions">
+                              {QUICK_ACTIONS[booking.status]?.length ? (
+                                <div className="bookings-quick-actions" aria-label={`Actions for ${booking.name}`}>
+                                  {QUICK_ACTIONS[booking.status].map((action) => {
+                                    const Icon = action.icon
+                                    return (
+                                      <button
+                                        key={action.status}
+                                        type="button"
+                                        onClick={(event) => updateBookingStatus(event, booking, action.status)}
+                                        disabled={updatingId === booking.id}
+                                        title={action.label}
+                                        aria-label={`${action.label} ${booking.name}`}
+                                      >
+                                        <Icon size={14} aria-hidden="true" />
+                                        <span>{action.label}</span>
+                                      </button>
+                                    )
+                                  })}
+                                </div>
+                              ) : <ChevronRight size={16} aria-hidden="true" />}
                             </td>
 
                           </tr>

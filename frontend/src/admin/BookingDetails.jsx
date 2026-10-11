@@ -38,7 +38,18 @@ import { useToast } from '../context/ToastContext.jsx'
 import LoadingState from '../components/LoadingState.jsx'
 import { notifyAdminDataChanged } from '../utils/adminDataSync.js'
 
-const FINAL_STATUSES = ['CONFIRMED', 'CANCELLED']
+const STATUS_ACTIONS = {
+  NEW: ['PENDING', 'CONFIRMED', 'CANCELLED'],
+  PENDING: ['CONFIRMED', 'CANCELLED'],
+  CONFIRMED: ['COMPLETED', 'CANCELLED']
+}
+
+const STATUS_COPY = {
+  PENDING: ['Mark pending', 'Keep this request visible while you contact the client.'],
+  CONFIRMED: ['Confirm booking', 'The client accepted the final arrangement.'],
+  COMPLETED: ['Mark completed', 'The photography service has been delivered.'],
+  CANCELLED: ['Cancel booking', 'The booking will not proceed.']
+}
 
 export default function BookingDetails() {
   const { id } = useParams()
@@ -137,6 +148,21 @@ export default function BookingDetails() {
       )
     } finally {
       setUpdating(false)
+    }
+  }
+
+  const copyResponse = async (kind) => {
+    const date = formatDate(booking.agreed_details?.date || booking.preferred_date)
+    const messages = {
+      acknowledge: `Hi ${booking.name}, we received your ${booking.shoot_type} booking request (${booking.reference_code}) for ${date}. We will review the details and contact you shortly. This is still a request and is not yet a confirmed booking.`,
+      confirm: `Hi ${booking.name}, your ${booking.shoot_type} booking for ${date} is confirmed under reference ${booking.reference_code}. Please contact us if any agreed event detail changes.`,
+      cancel: `Hi ${booking.name}, we are sorry to let you know that booking request ${booking.reference_code} for ${date} will not proceed. Please contact us if you would like to discuss another date or service.`
+    }
+    try {
+      await navigator.clipboard.writeText(messages[kind])
+      showToast('Response copied. You can paste it into Messenger, email, or SMS.')
+    } catch {
+      showToast('Unable to copy the response in this browser.', 'error')
     }
   }
 
@@ -819,6 +845,13 @@ export default function BookingDetails() {
             var(--c-hairline, #e5e5e5);
         }
 
+        .booking-template-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 9px;
+          margin-top: 16px;
+        }
+
         .booking-message__label {
           display: flex;
 
@@ -1161,15 +1194,17 @@ export default function BookingDetails() {
 
             <div className="booking-details-panel__body">
 
-              {booking.status === 'CANCELLED' ? (
+              {['COMPLETED', 'CANCELLED'].includes(booking.status) ? (
                 <div className="booking-status-final">
                   <span className="booking-status-final__icon">
                     <ShieldCheck size={22} />
                   </span>
                   <div>
-                    <strong>This booking request is closed.</strong>
+                    <strong>{booking.status === 'COMPLETED' ? 'This booking is completed.' : 'This booking request is closed.'}</strong>
                     <p>
-                      The request was cancelled and its preferred date is available to the public again.
+                      {booking.status === 'COMPLETED'
+                        ? 'The service is recorded as completed and remains available in the studio history.'
+                        : 'The request was cancelled and its preferred date is available to the public again.'}
                     </p>
                   </div>
                 </div>
@@ -1177,16 +1212,18 @@ export default function BookingDetails() {
                 <div className="booking-status-workflow">
                   <div className="booking-status-workflow__intro">
                     <span>Current stage</span>
-                    <strong>{booking.status === 'CONFIRMED' ? 'Confirmed booking' : 'New booking request'}</strong>
+                    <strong>{booking.status === 'CONFIRMED' ? 'Confirmed booking' : booking.status === 'PENDING' ? 'Pending client discussion' : 'New booking request'}</strong>
                     <p>
                       {booking.status === 'CONFIRMED'
                         ? 'This date is booked. If the arrangement is cancelled outside the website, update it here to reopen the date.'
-                        : 'The requested date is shown as pending and temporarily unavailable while you contact the client.'}
+                        : booking.status === 'PENDING'
+                          ? 'You have started handling this request. Confirm or cancel it after speaking with the client.'
+                          : 'The requested date is shown as pending and temporarily unavailable while you contact the client.'}
                     </p>
                   </div>
 
                   <div className="booking-status-actions" role="radiogroup" aria-label="Final booking outcome">
-                    {(booking.status === 'CONFIRMED' ? ['CANCELLED'] : FINAL_STATUSES).map((item) => (
+                    {(STATUS_ACTIONS[booking.status] || []).map((item) => (
                       <button
                         key={item}
                         type="button"
@@ -1199,8 +1236,8 @@ export default function BookingDetails() {
                           setFinalAcknowledged(false)
                         }}
                       >
-                        <span>{item === 'CONFIRMED' ? 'Confirm booking' : 'Cancel booking'}</span>
-                        <small>{item === 'CONFIRMED' ? 'The client accepted the booking.' : 'The booking will not proceed.'}</small>
+                        <span>{STATUS_COPY[item][0]}</span>
+                        <small>{STATUS_COPY[item][1]}</small>
                       </button>
                     ))}
                   </div>
@@ -1215,7 +1252,7 @@ export default function BookingDetails() {
                     <span className="booking-final-toggle__track" aria-hidden="true" />
                     <span>
                       <strong>I understand this updates the booking calendar.</strong>
-                      <small>{selectedStatus === 'CANCELLED' ? 'Cancelling reopens the preferred date publicly.' : 'Confirming marks the date as booked.'}</small>
+                      <small>{selectedStatus === 'CANCELLED' ? 'Cancelling reopens the preferred date publicly.' : selectedStatus === 'COMPLETED' ? 'Completing closes the active workflow but keeps its record.' : selectedStatus === 'PENDING' ? 'Pending keeps the requested date held while you contact the client.' : 'Confirming marks the date as booked.'}</small>
                     </span>
                   </label>
 
@@ -1245,7 +1282,7 @@ export default function BookingDetails() {
                 <span className="booking-details-panel__icon"><Receipt size={17} /></span>
                 <h2 className="booking-details-panel__title">Agreed Details & Payments</h2>
               </div>
-              {!editingDetails && booking.status !== 'CANCELLED' && (
+              {!editingDetails && !['COMPLETED', 'CANCELLED'].includes(booking.status) && (
                 <button type="button" className="btn btn--secondary" onClick={openDetailsEditor}><Pencil size={15} /> Edit Agreed Details</button>
               )}
             </div>
@@ -1278,7 +1315,7 @@ export default function BookingDetails() {
 
               <div className="booking-stage-timeline" aria-label="Booking payment timeline">
                 {['Requested', 'Confirmed', 'Down payment invoice sent', 'Paid in full invoice sent'].map((stage, index) => {
-                  const complete = index === 0 || (index === 1 && booking.status === 'CONFIRMED') || (index === 2 && hasDownPayment && downInvoiceSent) || (index === 3 && hasFinalPayment && finalInvoiceSent)
+                  const complete = index === 0 || (index === 1 && ['CONFIRMED', 'COMPLETED'].includes(booking.status)) || (index === 2 && hasDownPayment && downInvoiceSent) || (index === 3 && hasFinalPayment && finalInvoiceSent)
                   return <span key={stage} className={complete ? 'is-complete' : ''}><i />{stage}</span>
                 })}
               </div>
@@ -1530,6 +1567,23 @@ export default function BookingDetails() {
             </section>
 
           </div>
+
+          <section className="booking-details-panel">
+            <div className="booking-details-panel__head">
+              <div className="booking-details-panel__title-wrap">
+                <span className="booking-details-panel__icon"><MessageSquare size={17} /></span>
+                <h2 className="booking-details-panel__title">Response Templates</h2>
+              </div>
+            </div>
+            <div className="booking-details-panel__body">
+              <p className="booking-workflow-note">Copy a clear response, then send it through the client’s preferred contact channel. No message is sent automatically.</p>
+              <div className="booking-template-actions">
+                <button type="button" className="btn btn--secondary" onClick={() => copyResponse('acknowledge')}>Copy acknowledgement</button>
+                <button type="button" className="btn btn--secondary" onClick={() => copyResponse('confirm')}>Copy confirmation</button>
+                <button type="button" className="btn btn--secondary" onClick={() => copyResponse('cancel')}>Copy cancellation</button>
+              </div>
+            </div>
+          </section>
 
           {/* ====================================================
               ESTIMATE

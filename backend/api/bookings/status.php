@@ -18,7 +18,7 @@ require_csrf();
 
 $input = json_input();
 
-$allowedStatuses = ['CONFIRMED', 'CANCELLED'];
+$allowedStatuses = ['PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'];
 
 $v = new Validator($input);
 $v->required('id')
@@ -26,7 +26,7 @@ $v->required('id')
     ->inList('status', $allowedStatuses)
     ->boolTrue(
         'final_update',
-        'Please confirm that this is the final booking status update.'
+        'Please confirm this booking status update.'
     );
 
 if ($v->fails()) {
@@ -62,9 +62,9 @@ try {
 
     $currentStatus = strtoupper((string) $existing['status']);
 
-    if ($currentStatus === 'CANCELLED') {
+    if (in_array($currentStatus, ['COMPLETED', 'CANCELLED'], true)) {
         $pdo->rollBack();
-        json_error('This booking request is already cancelled.', 409);
+        json_error('Completed or cancelled bookings are closed and cannot change status.', 409);
     }
 
     if ($currentStatus === $newStatus) {
@@ -72,21 +72,26 @@ try {
         json_error('This booking already has that status.', 409);
     }
 
-    if ($currentStatus === 'CONFIRMED' && $newStatus !== 'CANCELLED') {
+    $transitions = [
+        'NEW' => ['PENDING', 'CONFIRMED', 'CANCELLED'],
+        'PENDING' => ['CONFIRMED', 'CANCELLED'],
+        'CONFIRMED' => ['COMPLETED', 'CANCELLED'],
+    ];
+    if (!in_array($newStatus, $transitions[$currentStatus] ?? [], true)) {
         $pdo->rollBack();
-        json_error('A confirmed booking can only be changed to cancelled.', 409);
+        json_error('That status change is not allowed for this booking.', 409);
     }
 
-    if ($newStatus === 'CONFIRMED') {
+    if (in_array($newStatus, ['PENDING', 'CONFIRMED', 'COMPLETED'], true)) {
         if (empty($existing['preferred_date'])) {
             $pdo->rollBack();
-            json_error('A preferred date is required before confirming this booking.', 422);
+            json_error('A preferred date is required before updating this booking.', 422);
         }
 
         $conflict = $pdo->prepare(
             'SELECT id FROM calendar_events
              WHERE event_date = :preferred_date
-               AND status IN (\'REQUESTED\', \'BOOKED\')
+               AND status IN (\'REQUESTED\', \'BOOKED\', \'COMPLETED\')
                AND (booking_id IS NULL OR booking_id <> :booking_id)
              LIMIT 1
              FOR UPDATE'
@@ -129,7 +134,12 @@ try {
     );
     $source->execute(['id' => $bookingId]);
     $bookingSource = $source->fetch(PDO::FETCH_ASSOC);
-    $calendarStatus = $newStatus === 'CONFIRMED' ? 'BOOKED' : 'CANCELLED';
+    $calendarStatus = match ($newStatus) {
+        'PENDING' => 'REQUESTED',
+        'CONFIRMED' => 'BOOKED',
+        'COMPLETED' => 'COMPLETED',
+        default => 'CANCELLED',
+    };
 
     if (empty($bookingSource['preferred_date'])) {
         // calendar_events.event_date is NOT NULL; an undated request can only
@@ -186,7 +196,7 @@ try {
     json_success([
         'id' => (int) $booking['id'],
         'status' => $booking['status'],
-        'final' => $newStatus === 'CANCELLED',
+        'final' => in_array($newStatus, ['COMPLETED', 'CANCELLED'], true),
         'message' => 'Booking and calendar status updated successfully.'
     ]);
 

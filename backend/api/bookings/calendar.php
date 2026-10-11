@@ -242,7 +242,7 @@ if ($method === 'PUT') {
     }
     $eventId = positive_integer_input($input['id'] ?? null);
     $status = strtoupper(trim((string) ($input['status'] ?? '')));
-    if ($eventId < 1 || !in_array($status, ['BOOKED', 'CANCELLED'], true)) {
+    if ($eventId < 1 || !in_array($status, ['BOOKED', 'COMPLETED', 'CANCELLED'], true)) {
         json_error('Please provide a valid calendar event and status.', 422);
     }
 
@@ -258,11 +258,21 @@ if ($method === 'PUT') {
             json_error('Calendar event not found.', 404);
         }
 
-        if ($status === 'BOOKED') {
+        $calendarTransitions = [
+            'REQUESTED' => ['BOOKED', 'CANCELLED'],
+            'BOOKED' => ['COMPLETED', 'CANCELLED'],
+        ];
+        $currentCalendarStatus = strtoupper((string) $event['status']);
+        if (!in_array($status, $calendarTransitions[$currentCalendarStatus] ?? [], true)) {
+            $pdo->rollBack();
+            json_error('That calendar status change is not allowed.', 409);
+        }
+
+        if (in_array($status, ['BOOKED', 'COMPLETED'], true)) {
             $conflict = $pdo->prepare(
                 'SELECT id FROM calendar_events
                  WHERE event_date = :event_date
-                   AND status IN (\'REQUESTED\', \'BOOKED\')
+                   AND status IN (\'REQUESTED\', \'BOOKED\', \'COMPLETED\')
                    AND id <> :id
                  LIMIT 1 FOR UPDATE'
             );
@@ -277,15 +287,15 @@ if ($method === 'PUT') {
         $stmt->execute(['status' => $status, 'id' => $eventId]);
 
         if (!empty($event['booking_id'])) {
-            if ($status === 'BOOKED') {
+            if (in_array($status, ['BOOKED', 'COMPLETED'], true)) {
                 $bookingState = $pdo->prepare('SELECT status FROM bookings WHERE id = :id LIMIT 1 FOR UPDATE');
                 $bookingState->execute(['id' => $event['booking_id']]);
-                if (strtoupper((string) $bookingState->fetchColumn()) === 'CANCELLED') {
+                if (in_array(strtoupper((string) $bookingState->fetchColumn()), ['COMPLETED', 'CANCELLED'], true)) {
                     $pdo->rollBack();
-                    json_error('A cancelled booking request cannot be restored from the calendar.', 409);
+                    json_error('A completed or cancelled booking cannot be changed from the calendar.', 409);
                 }
             }
-            $bookingStatus = $status === 'BOOKED' ? 'CONFIRMED' : 'CANCELLED';
+            $bookingStatus = $status === 'BOOKED' ? 'CONFIRMED' : ($status === 'COMPLETED' ? 'COMPLETED' : 'CANCELLED');
             $pdo->prepare('UPDATE bookings SET status = :status WHERE id = :id')
                 ->execute(['status' => $bookingStatus, 'id' => $event['booking_id']]);
             if ($bookingStatus === 'CANCELLED') {

@@ -933,12 +933,12 @@ export default function Archive() {
                                 onClick={() => navigate(`/admin/bookings/${booking.id}`, { state: { from: { ...location, state: { ...(location.state || {}), archiveView: { activeTab, timeframe }, scrollY: window.scrollY } } } })}
                               >
 
-                                <td>
+                                <td data-label="Reference">
                                   {booking.reference_code ||
                                     '—'}
                                 </td>
 
-                                <td>
+                                <td data-label="Client">
 
                                   <strong>
                                     {booking.name ||
@@ -952,17 +952,17 @@ export default function Archive() {
 
                                 </td>
 
-                                <td>
+                                <td data-label="Shoot">
                                   {booking.shoot_type ||
                                     '—'}
                                 </td>
 
-                                <td>
+                                <td data-label="Date">
                                   {booking.agreed_date || booking.preferred_date ||
                                     '—'}
                                 </td>
 
-                                <td>
+                                <td data-label="Agreed / Estimate">
                                   {booking.agreed_total || booking.estimate_total
                                     ? peso(
                                         booking.agreed_total || booking.estimate_total
@@ -970,13 +970,13 @@ export default function Archive() {
                                     : '—'}
                                 </td>
 
-                                <td>
+                                <td data-label="Balance">
                                   {booking.agreed_total
                                     ? peso(booking.balance_due)
                                     : '—'}
                                 </td>
 
-                                <td>
+                                <td data-label="Status">
                                   <span
                                     className={`
                                       status-badge
@@ -988,7 +988,7 @@ export default function Archive() {
                                   </span>
                                 </td>
 
-                                <td>
+                                <td data-label="Submitted">
                                   {formatDateTime(
                                     booking.created_at
                                   )}
@@ -1081,29 +1081,29 @@ export default function Archive() {
                                   }
                                 >
 
-                                  <td>
+                                  <td data-label="Name">
                                     <strong>
                                       {lead.name ||
                                         'Unnamed Lead'}
                                     </strong>
                                   </td>
 
-                                  <td>
+                                  <td data-label="Email">
                                     {lead.email ||
                                       '—'}
                                   </td>
 
-                                  <td>
+                                  <td data-label="Hours">
                                     {lead.hours ||
                                       '—'}
                                   </td>
 
-                                  <td>
+                                  <td data-label="Service">
                                     {lead.service_type ||
                                       '—'}
                                   </td>
 
-                                  <td>
+                                  <td data-label="Add-ons">
                                     <span className="archive-table__addons">
                                       {addons.length
                                         ? addons
@@ -1120,19 +1120,19 @@ export default function Archive() {
                                     </span>
                                   </td>
 
-                                  <td>
+                                  <td data-label="Total">
                                     {peso(
                                       lead.total
                                     )}
                                   </td>
 
-                                  <td>
+                                  <td data-label="Status">
                                     <span className="status-badge">
                                       {status}
                                     </span>
                                   </td>
 
-                                  <td>
+                                  <td data-label="Submitted">
                                     {formatDateTime(
                                       lead.created_at
                                     )}

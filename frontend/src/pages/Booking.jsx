@@ -16,6 +16,7 @@ export default function Booking() {
   const navigate = useNavigate()
   const estimator = useEstimator()
   const routeEstimate = location.state?.estimate
+  const [reviewing, setReviewing] = useState(false)
   const [estimate, setEstimate] = useState(() => {
     const storedEstimate = readBookingEstimate()
     return isBookingEstimate(routeEstimate) && isBookingEstimate(storedEstimate)
@@ -39,6 +40,7 @@ export default function Booking() {
 
   const returnToStepOne = () => {
     clearBookingEstimate()
+    setReviewing(false)
     setEstimate(null)
     navigate('/booking', { replace: true, state: null })
     window.requestAnimationFrame(() => {
@@ -50,11 +52,11 @@ export default function Booking() {
     <>
       <PageHero
         eyebrow={bookingPage.eyebrow}
-        title={estimate ? bookingPage.requestTitle : bookingPage.estimateTitle}
+        title={reviewing ? 'Review your request' : estimate ? bookingPage.requestTitle : bookingPage.estimateTitle}
         intro={estimate
           ? bookingPage.requestIntro
           : bookingPage.estimateIntro}
-        note={estimate ? 'Step 2 of 2 · Booking request' : 'Step 1 of 2 · Package estimate'}
+        note={reviewing ? 'Step 3 of 3 · Final review' : estimate ? 'Step 2 of 3 · Request details' : 'Step 1 of 3 · Package estimate'}
       />
       <section className="page-content" id="estimator">
         <div className="container">
@@ -89,7 +91,7 @@ export default function Booking() {
                 <ArrowLeft size={18} aria-hidden="true" />
                 Back to Step 1 — Change Package
               </button>
-              <BookingFormComponent estimate={estimate} onChangeEstimate={returnToStepOne} />
+              <BookingFormComponent estimate={estimate} onChangeEstimate={returnToStepOne} onReviewChange={setReviewing} />
             </div>
           ) : (
             <div className="combined-booking-estimator">

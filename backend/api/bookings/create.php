@@ -36,9 +36,8 @@ $v->required('name', 'your full name')->maxLength('name', 160)
   ->required('facebook', 'your Facebook profile link')->maxLength('facebook', 255)
   ->required('shoot_type', 'a shoot type')->string('shoot_type', 'Shoot type')->maxLength('shoot_type', 120)
   ->required('preferred_date', 'a preferred date')
-  ->required('preferred_time', 'a preferred start time')
   ->required('submission_token', 'a request token')
-  ->required('message', 'a short message')->maxLength('message', 3000)
+  ->maxLength('message', 3000)
   ->maxLength('email', 160)
   ->maxLength('location', 200)
   ->maxLength('guest_count', 40);
@@ -62,7 +61,7 @@ if (!is_safe_link(clean_string($input['facebook']))) {
 }
 
 $preferredDate = (string) $input['preferred_date'];
-$preferredTime = trim((string) $input['preferred_time']);
+$preferredTime = trim((string) ($input['preferred_time'] ?? ''));
 $submissionToken = trim((string) $input['submission_token']);
 $parsedDate = DateTime::createFromFormat('Y-m-d', $preferredDate);
 if (!$parsedDate || $parsedDate->format('Y-m-d') !== $preferredDate || $preferredDate < date('Y-m-d')) {
@@ -77,8 +76,8 @@ if (!preg_match('/^(?:[a-f0-9]{32,64}|[a-f0-9-]{36})$/i', $submissionToken)) {
     ]);
 }
 
-$parsedTime = DateTime::createFromFormat('H:i', $preferredTime);
-if (!$parsedTime || $parsedTime->format('H:i') !== $preferredTime) {
+$parsedTime = $preferredTime === '' ? null : DateTime::createFromFormat('H:i', $preferredTime);
+if ($preferredTime !== '' && (!$parsedTime || $parsedTime->format('H:i') !== $preferredTime)) {
     json_error('Please choose a valid preferred start time.', 422, [
         'preferred_time' => 'Choose the time you would like the coverage to begin.'
     ]);
@@ -231,7 +230,7 @@ if ($existingRequest) {
 
 $availability = $pdo->prepare(
     'SELECT COUNT(*) FROM calendar_events
-     WHERE event_date = :preferred_date AND status IN (\'REQUESTED\', \'BOOKED\')'
+     WHERE event_date = :preferred_date AND status IN (\'REQUESTED\', \'BOOKED\', \'COMPLETED\')'
 );
 $availability->execute(['preferred_date' => $preferredDate]);
 if ((int) $availability->fetchColumn() > 0) {
@@ -271,11 +270,11 @@ try {
         'fb'        => clean_string($input['facebook'] ?? ''),
         'shoot'     => $shootType,
         'date'      => $preferredDate,
-        'time'      => $preferredTime . ':00',
+        'time'      => $preferredTime !== '' ? $preferredTime . ':00' : null,
         'token'     => $submissionToken,
         'loc'       => clean_string($input['location'] ?? ''),
         'guests'    => clean_string($input['guest_count'] ?? ''),
-        'msg'       => clean_string($input['message']),
+        'msg'       => clean_string($input['message'] ?? ''),
         'total'     => $estimateTotal,
         'breakdown' => $breakdown ? json_encode($breakdown, JSON_UNESCAPED_SLASHES) : null,
     ]);
@@ -295,9 +294,9 @@ try {
         'phone' => clean_string($input['phone']),
         'shoot_type' => $shootType,
         'event_date' => $preferredDate,
-        'event_time' => $preferredTime . ':00',
+        'event_time' => $preferredTime !== '' ? $preferredTime . ':00' : null,
         'location' => clean_string($input['location'] ?? ''),
-        'notes' => clean_string($input['message']),
+        'notes' => clean_string($input['message'] ?? ''),
     ]);
 
     if ($breakdown && !empty($breakdown['addons']) && is_array($breakdown['addons'])) {
@@ -373,7 +372,7 @@ $booking = [
     'preferred_time'  => $preferredTime,
     'location'        => clean_string($input['location'] ?? ''),
     'guest_count'     => clean_string($input['guest_count'] ?? ''),
-    'message'         => clean_string($input['message']),
+    'message'         => clean_string($input['message'] ?? ''),
     'estimate_total'  => $estimateTotal,
     'estimate_breakdown' => $breakdown,
 ];

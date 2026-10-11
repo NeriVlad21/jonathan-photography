@@ -40,14 +40,14 @@ try {
     $stmt = $pdo->prepare('SELECT * FROM bookings WHERE id=:id FOR UPDATE'); $stmt->execute(['id'=>$id]);
     $booking = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$booking) { $pdo->rollBack(); json_error('Booking not found.', 404); }
-    if ($booking['status'] === 'CANCELLED') { $pdo->rollBack(); json_error('Cancelled bookings cannot be edited.', 409); }
+    if (in_array($booking['status'], ['COMPLETED', 'CANCELLED'], true)) { $pdo->rollBack(); json_error('Completed or cancelled bookings cannot be edited.', 409); }
     $paymentSummary = $pdo->prepare("SELECT COALESCE(SUM(amount),0) paid, MAX(payment_type='FINAL_PAYMENT') has_final FROM booking_payments WHERE booking_id=:id");
     $paymentSummary->execute(['id'=>$id]);
     $paymentState = $paymentSummary->fetch(PDO::FETCH_ASSOC);
     $paid = (float) ($paymentState['paid'] ?? 0);
     if ($total < $paid) { $pdo->rollBack(); json_error('Agreed total cannot be lower than payments already received.', 422); }
     if (!empty($paymentState['has_final']) && abs($total - $paid) > 0.009) { $pdo->rollBack(); json_error('The final payment is already recorded. The agreed total must continue to match the total received.', 409); }
-    $conflict = $pdo->prepare("SELECT id FROM calendar_events WHERE event_date=:date AND (booking_id IS NULL OR booking_id<>:id) AND status IN ('REQUESTED','BOOKED') LIMIT 1");
+    $conflict = $pdo->prepare("SELECT id FROM calendar_events WHERE event_date=:date AND (booking_id IS NULL OR booking_id<>:id) AND status IN ('REQUESTED','BOOKED','COMPLETED') LIMIT 1");
     $conflict->execute(['date'=>$details['date'],'id'=>$id]);
     if ($conflict->fetch()) { $pdo->rollBack(); json_error('The agreed date conflicts with another active booking.', 409); }
     $pdo->prepare('UPDATE bookings SET agreed_details=:details, agreed_details_updated_at=NOW() WHERE id=:id')->execute(['details'=>json_encode($details, JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR),'id'=>$id]);

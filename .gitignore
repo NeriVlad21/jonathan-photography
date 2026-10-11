@@ -13,6 +13,7 @@ backend/uploads/portfolio/demo/
 backend/storage/portfolio-originals/*
 !backend/storage/portfolio-originals/.htaccess
 !backend/storage/portfolio-originals/.gitkeep
+database/backups/
 
 # --- OS / editor ---
 .DS_Store

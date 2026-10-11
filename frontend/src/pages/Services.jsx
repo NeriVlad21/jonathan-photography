@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Info } from 'lucide-react'
 import LoadingState from '../components/LoadingState.jsx'
 import EmptyState from '../components/EmptyState.jsx'
+import ErrorState from '../components/ErrorState.jsx'
 import PageHero from '../components/PageHero.jsx'
 import ServiceDetailsDialog from '../components/ServiceDetailsDialog.jsx'
 import { servicesApi } from '../services/api.js'
@@ -14,13 +15,25 @@ const CATEGORY_LABELS = { photography: 'Photography', additional: 'Additional Se
 export default function Services() {
   const { servicesPage } = useSiteContent()
   const [services, setServices] = useState(null)
+  const [loadError, setLoadError] = useState(false)
   const [detailsId, setDetailsId] = useState(null)
   const closeDetails = useCallback(() => setDetailsId(null), [])
 
+  const loadServices = useCallback(() => {
+    setServices(null)
+    setLoadError(false)
+    servicesApi.list()
+      .then((rows) => setServices(Array.isArray(rows) ? rows : []))
+      .catch(() => {
+        setServices([])
+        setLoadError(true)
+      })
+  }, [])
+
   useEffect(() => {
     document.title = 'Jonathan Photography — Services'
-    servicesApi.list().then((rows) => setServices(Array.isArray(rows) ? rows : [])).catch(() => setServices([]))
-  }, [])
+    loadServices()
+  }, [loadServices])
 
   const categoryLabel = (key) =>
     servicesPage.categories?.find((item) => item.key === key)?.label || CATEGORY_LABELS[key] || key
@@ -47,7 +60,8 @@ export default function Services() {
         <div className="container">
 
         {services === null && <LoadingState label="Loading services…" />}
-        {services && services.length === 0 && <EmptyState title="Services are being updated." />}
+        {loadError && <ErrorState title="Services could not be loaded." body="Check your connection, then try again." onRetry={loadServices} />}
+        {!loadError && services && services.length === 0 && <EmptyState title="Services are being updated." />}
 
         {Object.entries(grouped).map(([cat, items]) => (
           <div key={cat} style={{ marginBottom: 56 }}>

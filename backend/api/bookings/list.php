@@ -1,7 +1,7 @@
 <?php
 /**
  * GET /api/bookings/list.php
- * Admin only. Supports ?status=NEW, ?search=name-or-email, and ?timeframe=date-range
+ * Admin only. Supports status, broad booking search, and timeframe filters.
  */
 
 declare(strict_types=1);
@@ -23,21 +23,30 @@ $params = [];
 
 // Filter by Status
 if (!empty($_GET['status'])) {
-    if (!in_array($_GET['status'], ['NEW', 'CONFIRMED', 'CANCELLED'], true)) {
+    if (!in_array($_GET['status'], ['NEW', 'PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'], true)) {
         json_error('Invalid booking status.', 422);
     }
     $where[] = 'b.status = :status';
     $params['status'] = $_GET['status'];
 }
 
-// Filter by Search (Name or Email)
+// Filter by client, reference, service type, or event date.
 if (!empty($_GET['search'])) {
     if (mb_strlen((string) $_GET['search']) > 100) {
         json_error('Search text is too long.', 422);
     }
-    // Native prepares cannot reuse one named placeholder, so bind it twice.
-    $where[] = '(b.name LIKE :search_name OR b.email LIKE :search_email)';
-    $params['search_name'] = $params['search_email'] = '%' . $_GET['search'] . '%';
+    // Native prepares cannot safely reuse one named placeholder.
+    $needle = '%' . trim((string) $_GET['search']) . '%';
+    $where[] = '(b.name LIKE :search_name
+        OR b.email LIKE :search_email
+        OR b.reference_code LIKE :search_reference
+        OR b.shoot_type LIKE :search_service
+        OR DATE_FORMAT(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(b.agreed_details,\'$.date\')), b.preferred_date), \'%Y-%m-%d\') LIKE :search_date)';
+    $params['search_name'] = $needle;
+    $params['search_email'] = $needle;
+    $params['search_reference'] = $needle;
+    $params['search_service'] = $needle;
+    $params['search_date'] = $needle;
 }
 
 // Filter by Timeframe (Archive / Date Range)

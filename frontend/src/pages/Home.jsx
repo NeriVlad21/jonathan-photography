@@ -75,16 +75,17 @@ export default function Home() {
               <span className="about-player__count">{songs.length} tracks</span>
             </button>
 
-            <ol className="about-player__tracks">
+            <ol className="about-player__tracks" role="radiogroup" aria-label="Choose a soundtrack">
               {songs.map((song, index) => {
                 const active = song.title === selectedSong.title
                 return (
                   <li key={song.title}>
                     <button
                       type="button"
+                      role="radio"
                       className={active ? 'is-active' : ''}
                       onClick={() => selectSong(song)}
-                      aria-pressed={active}
+                      aria-checked={active}
                     >
                       <span className="about-player__track-number">{String(index + 1).padStart(2, '0')}</span>
                       <span className="about-player__track-copy">

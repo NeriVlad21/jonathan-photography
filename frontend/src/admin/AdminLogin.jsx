@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Navigate,
   useNavigate
@@ -26,6 +26,10 @@ export default function AdminLogin() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    document.title = 'Admin — Sign In'
+  }, [])
 
   if (admin) {
     return (

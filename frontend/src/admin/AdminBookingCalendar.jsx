@@ -14,6 +14,7 @@ const parseDateKey = (key) => {
 
 const eventProgress = (event) => {
   if (event.status === 'CANCELLED') return 'Cancelled'
+  if (event.status === 'COMPLETED') return 'Completed'
   if (event.status === 'REQUESTED') return 'Requested'
   return event.preferred_date < toDateKey(new Date()) ? 'Finished' : 'Upcoming'
 }
@@ -82,9 +83,10 @@ function CalendarEventDialog({ date, events, onClose, onEventUpdated, returnLoca
                     </div>
                   )}
                   {event.status === 'BOOKED' && event.calendar_event_id && (
-                    <button type="button" className="calendar-event-cancel" onClick={() => onEventUpdated(event.calendar_event_id, 'CANCELLED')}>
-                      Mark event cancelled
-                    </button>
+                    <div className="calendar-event-card__status-actions">
+                      <button type="button" className="calendar-event-confirm" onClick={() => onEventUpdated(event.calendar_event_id, 'COMPLETED')}>Mark completed</button>
+                      <button type="button" className="calendar-event-cancel" onClick={() => onEventUpdated(event.calendar_event_id, 'CANCELLED')}>Mark event cancelled</button>
+                    </div>
                   )}
                 </div>
               </article>

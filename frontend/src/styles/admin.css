@@ -70,7 +70,9 @@
 
 .status-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
 .status-badge--NEW { background: #FFF3C4; color: #7A5D00; }
+.status-badge--PENDING { background: #e6f1fb; color: #285781; }
 .status-badge--CONFIRMED { background: #DBF3DE; color: #1E6B2C; }
+.status-badge--COMPLETED { background: #e8e8e8; color: #404040; }
 .status-badge--CANCELLED { background: #F3DBDB; color: #8A2222; }
 .status-badge--booked { background: #DBF3DE; color: #1E6B2C; }
 .status-badge--not-booked { background: #EDEBE4; color: var(--c-gray); }
@@ -368,7 +370,9 @@
 }
 
 .admin-shell .status-badge--NEW { background: #fff8cc; color: #705d00; }
+.admin-shell .status-badge--PENDING { background: #e6f1fb; color: #285781; }
 .admin-shell .status-badge--CONFIRMED { background: #e4f4e6; color: #165f24; }
+.admin-shell .status-badge--COMPLETED { background: #e8e8e8; color: #404040; }
 .admin-shell .status-badge--CANCELLED { background: #f7e5e3; color: #8a2720; }
 
 .admin-shell .btn {
@@ -502,7 +506,7 @@ body .admin-login-page {
 .admin-login-page .admin-login-card {
   border: 1px solid var(--c-black);
   border-radius: 3px;
-  box-shadow: 18px 18px 0 var(--c-yellow);
+  box-shadow: 8px 8px 0 var(--c-yellow);
 }
 
 .admin-login-page .admin-login-brand {
@@ -541,7 +545,7 @@ body .admin-login-page {
 @media (max-width: 520px) {
   .admin-shell .dashboard-stat-grid { grid-template-columns: 1fr 1fr; }
   .admin-shell .dashboard-stat { min-height: 126px; padding: 16px; }
-  .admin-login-page .admin-login-card { box-shadow: 8px 8px 0 var(--c-yellow); }
+  .admin-login-page .admin-login-card { box-shadow: 5px 5px 0 var(--c-yellow); }
 }
 
 /* Booking calendar */
@@ -631,6 +635,7 @@ body .admin-login-page {
 .calendar-progress--upcoming { color: #705d00; background: #fff8cc; }
 .calendar-progress--requested { color: #285781; background: #e6f1fb; }
 .calendar-progress--finished { color: #276033; background: #e4f4e6; }
+.calendar-progress--completed { color: #404040; background: #e8e8e8; }
 .calendar-progress--cancelled { color: #8a2720; background: #f7e5e3; }
 .calendar-event-card dl { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; margin: 15px 0; }
 .calendar-event-card dl > div { min-width: 0; }
@@ -1648,4 +1653,98 @@ body .admin-login-page {
   .admin-shell .dashboard-export {
     width: 100%;
   }
+}
+
+/* ============================================================
+   FINAL ADMIN POLISH — compact, task-first, touch friendly
+   ============================================================ */
+.admin-shell {
+  --admin-paper: #f7f7f5;
+  --admin-panel: #fff;
+  --admin-ink: #0a0a0a;
+  --admin-muted: #777;
+}
+.admin-shell .admin-sidebar__link,
+.admin-shell .btn,
+.admin-shell button,
+.admin-shell input,
+.admin-shell select,
+.admin-shell textarea { min-height: 44px; }
+.admin-shell .admin-sidebar__link.active {
+  background: #fff;
+  color: var(--admin-ink);
+  box-shadow: inset 4px 0 0 var(--c-yellow);
+}
+.admin-shell .dashboard-stat:first-child {
+  color: var(--admin-ink);
+  background: var(--admin-panel);
+  border-color: var(--admin-line);
+  box-shadow: inset 0 4px 0 var(--c-yellow);
+}
+.admin-shell .status-badge { border-radius: 999px; border: 1px solid currentColor; }
+.admin-shell :is(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--c-yellow);
+  outline-offset: 2px;
+}
+.admin-shell .admin-sidebar :is(a, button):focus-visible {
+  outline-color: #fff;
+  box-shadow: 0 0 0 4px var(--c-yellow);
+}
+.admin-shell .image-tile:focus-within .image-tile__actions { opacity: 1; }
+.admin-shell .empty-state { min-height: 180px; }
+.admin-shell .loading-state { min-height: 180px; display: grid; align-content: center; }
+
+@media (hover: none), (pointer: coarse) {
+  .admin-shell .image-tile__actions { opacity: 1; }
+  .admin-shell .image-tile__actions button { min-height: 38px; }
+}
+
+@media (max-width: 700px) {
+  .admin-shell .bookings-table-wrap,
+  .admin-shell .archive-table-wrap { overflow: visible; }
+  .admin-shell .bookings-table,
+  .admin-shell .archive-table,
+  .admin-shell .bookings-table tbody,
+  .admin-shell .archive-table tbody { display: block; width: 100%; }
+  .admin-shell .bookings-table thead,
+  .admin-shell .archive-table thead { display: none; }
+  .admin-shell .bookings-table tr,
+  .admin-shell .archive-table tr {
+    display: grid;
+    gap: 0;
+    margin: 0 0 12px;
+    padding: 8px 14px;
+    border: 1px solid var(--admin-line);
+    border-radius: 10px;
+    background: #fff;
+  }
+  .admin-shell .bookings-table td,
+  .admin-shell .archive-table td {
+    display: grid;
+    grid-template-columns: minmax(92px, .7fr) minmax(0, 1.3fr);
+    gap: 12px;
+    align-items: start;
+    min-height: 0;
+    padding: 9px 0;
+    border: 0;
+    border-bottom: 1px solid rgba(10,10,10,.08);
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+  .admin-shell .bookings-table td:last-child,
+  .admin-shell .archive-table td:last-child { border-bottom: 0; }
+  .admin-shell .bookings-table td::before,
+  .admin-shell .archive-table td::before {
+    content: attr(data-label);
+    color: var(--admin-muted);
+    font-size: .68rem;
+    font-weight: 750;
+    letter-spacing: .08em;
+    text-align: left;
+    text-transform: uppercase;
+  }
+  .admin-shell .bookings-row__client,
+  .admin-shell .archive-table td > strong { text-align: right; }
+  .admin-shell .bookings-quick-actions { justify-content: flex-end; flex-wrap: wrap; }
+  .admin-shell .bookings-quick-actions button { min-height: 38px; }
 }

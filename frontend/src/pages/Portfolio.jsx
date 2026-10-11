@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import LoadingState from '../components/LoadingState.jsx'
 import EmptyState from '../components/EmptyState.jsx'
+import ErrorState from '../components/ErrorState.jsx'
 import { assetUrl, portfolioApi } from '../services/api.js'
 import { temporaryPhotosForCategory } from '../data/temporaryPortfolio.js'
 import { useSiteContent } from '../context/SiteContentContext.jsx'
@@ -29,12 +30,14 @@ export default function Portfolio() {
   const { portfolioPage } = useSiteContent()
   const [categories, setCategories] = useState(null)
   const [photos, setPhotos] = useState([])
+  const [loadError, setLoadError] = useState(false)
   const [activeSlide, setActiveSlide] = useState(0)
   const galleryRef = useRef(null)
   const frameRef = useRef(null)
 
   useEffect(() => {
     let cancelled = false
+    setLoadError(false)
 
     document.title = 'Jonathan Photography — Work'
 
@@ -63,7 +66,10 @@ export default function Portfolio() {
         if (!cancelled) setPhotos(imageGroups.flat())
       })
       .catch(() => {
-        if (!cancelled) setCategories([])
+        if (!cancelled) {
+          setCategories([])
+          setLoadError(true)
+        }
       })
 
     return () => { cancelled = true }
@@ -178,14 +184,20 @@ export default function Portfolio() {
         </button>
       </header>
 
-      <div ref={galleryRef} className="work-gallery" id="work-gallery">
+      <div ref={galleryRef} className="work-gallery" id="work-gallery" aria-label="Selected photography">
         {categories === null && (
           <div className="work-gallery__state">
             <LoadingState label="Loading the gallery…" />
           </div>
         )}
 
-        {categories && categories.length === 0 && (
+        {loadError && (
+          <div className="work-gallery__state">
+            <ErrorState title="The gallery could not be loaded." body="Please refresh the page or try again shortly." onRetry={() => window.location.reload()} />
+          </div>
+        )}
+
+        {!loadError && categories && categories.length === 0 && (
           <div className="work-gallery__state">
             <EmptyState title="The portfolio is being updated." body="Please check back shortly." />
           </div>
@@ -196,7 +208,7 @@ export default function Portfolio() {
             key={`${item.id}-${index}`}
             to={`/portfolio/${item.categorySlug}`}
             className={`work-gallery__item work-gallery__item--${item.orientation || 'portrait'}`}
-            aria-label={`View ${item.categoryName}`}
+            aria-label={`View ${item.title || `${item.categoryName} photograph ${index + 1}`} in ${item.categoryName}`}
           >
             <img
               src={assetUrl(item.image_path)}

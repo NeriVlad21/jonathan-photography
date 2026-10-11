@@ -22,11 +22,11 @@ $pdo = Database::connect();
 $stmt = $pdo->prepare(
     'SELECT event_date,
             CASE
-              WHEN SUM(status = \'BOOKED\') > 0 THEN \'BOOKED\'
+              WHEN SUM(status IN (\'BOOKED\', \'COMPLETED\')) > 0 THEN \'BOOKED\'
               ELSE \'REQUESTED\'
             END AS availability_status
      FROM calendar_events
-     WHERE status IN (\'REQUESTED\', \'BOOKED\')
+     WHERE status IN (\'REQUESTED\', \'BOOKED\', \'COMPLETED\')
        AND event_date >= :start
        AND event_date < :end
      GROUP BY event_date

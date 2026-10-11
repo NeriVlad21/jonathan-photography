@@ -1,87 +1,101 @@
-import React, { useState, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import { ArrowLeft, CheckCircle2, Send } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { bookingsApi } from '../services/api.js'
 import { peso, formatDate } from '../utils/format.js'
 import { useToast } from '../context/ToastContext.jsx'
 import AvailabilityCalendar from './AvailabilityCalendar.jsx'
 import { clearBookingEstimate } from '../utils/bookingEstimate.js'
+import { clearBookingDraft, readBookingDraft, saveBookingDraft } from '../utils/bookingDraft.js'
 
 const initialState = {
   name: '', email: '', phone: '', facebook: '',
   shoot_type: '', preferred_date: '', preferred_time: '', location: '', guest_count: '', message: '',
   privacy_agreed: false,
-  website: '' // honeypot
+  website: ''
 }
 
-export default function BookingForm({ estimate, onChangeEstimate }) {
+export default function BookingForm({ estimate, onChangeEstimate, onReviewChange }) {
   const navigate = useNavigate()
   const { showToast } = useToast()
-
-  const [form, setForm] = useState({
+  const [form, setForm] = useState(() => ({
     ...initialState,
-    shoot_type: estimate.service.name
-  })
+    ...readBookingDraft(),
+    shoot_type: estimate.service.name,
+    privacy_agreed: false
+  }))
   const [errors, setErrors] = useState({})
+  const [reviewing, setReviewing] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submissionNote, setSubmissionNote] = useState('')
   const submissionToken = useRef(
     globalThis.crypto?.randomUUID?.() || `${Date.now().toString(16)}${Array.from(globalThis.crypto?.getRandomValues?.(new Uint32Array(4)) || [1, 2, 3, 4], (value) => value.toString(16)).join('')}`
   )
-  
-  // Privacy Scroll State
-  const [isScrolledToBottom, setIsScrolledToBottom] = useState(false)
-  const privacyRef = useRef(null)
 
-  const update = (field) => (e) => {
-    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value
-    setForm((f) => ({ ...f, [field]: value }))
-  }
+  useEffect(() => {
+    saveBookingDraft(form)
+  }, [form])
 
-  const handlePrivacyScroll = () => {
-    if (!privacyRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = privacyRef.current;
-    // Check if user has scrolled to the bottom (with a 2px buffer for rendering decimals)
-    if (scrollTop + clientHeight >= scrollHeight - 2) {
-      setIsScrolledToBottom(true);
-    }
+  useEffect(() => () => onReviewChange?.(false), [onReviewChange])
+
+  const update = (field) => (event) => {
+    const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value
+    setForm((current) => ({ ...current, [field]: value }))
+    setErrors((current) => ({ ...current, [field]: '' }))
   }
 
   const validate = () => {
-    const errs = {}
-    if (!form.name.trim()) errs.name = 'Please provide your full name.'
-    if (!form.email.trim()) errs.email = 'Please provide your email address.'
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Please enter a valid email address.'
-    if (!form.phone.trim()) errs.phone = 'Please provide your phone number.'
-    if (!form.facebook.trim()) errs.facebook = 'Please provide your Facebook profile link.'
-    if (!form.shoot_type) errs.shoot_type = 'Please select a shoot type.'
-    if (!form.preferred_date) errs.preferred_date = 'Please choose an available preferred date.'
-    if (!form.preferred_time) errs.preferred_time = 'Please choose your preferred start time.'
-    if (!form.message.trim()) errs.message = 'Please tell us a little about what you need.'
-    if (!form.privacy_agreed) errs.privacy_agreed = 'Please agree to the data privacy notice before continuing.'
-    return errs
+    const nextErrors = {}
+    if (!form.preferred_date) nextErrors.preferred_date = 'Please choose an available preferred date.'
+    if (!form.name.trim()) nextErrors.name = 'Please provide your full name.'
+    if (!form.email.trim()) nextErrors.email = 'Please provide your email address.'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) nextErrors.email = 'Please enter a valid email address.'
+    if (!form.phone.trim()) nextErrors.phone = 'Please provide your phone number.'
+    if (!form.facebook.trim()) nextErrors.facebook = 'Please provide your Facebook profile link.'
+    if (!form.privacy_agreed) nextErrors.privacy_agreed = 'Please agree to the data privacy notice before continuing.'
+    return nextErrors
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    const errs = validate()
-    setErrors(errs)
-    if (Object.keys(errs).length > 0) return
+  const openReview = (event) => {
+    event.preventDefault()
+    const nextErrors = validate()
+    setErrors(nextErrors)
+    if (Object.keys(nextErrors).length > 0) {
+      showToast('Please complete the highlighted required fields.', 'error')
+      return
+    }
+    setReviewing(true)
+    onReviewChange?.(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const editDetails = () => {
+    setReviewing(false)
+    onReviewChange?.(false)
+    window.requestAnimationFrame(() => document.getElementById('booking-details')?.scrollIntoView({ behavior: 'smooth' }))
+  }
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    if (!reviewing) return openReview(event)
+
+    const nextErrors = validate()
+    setErrors(nextErrors)
+    if (Object.keys(nextErrors).length > 0) return editDetails()
 
     setSubmitting(true)
     setSubmissionNote('Saving your request… Please keep this page open.')
     try {
-      const payload = {
+      const data = await bookingsApi.create({
         ...form,
         submission_token: submissionToken.current,
         estimate_total: estimate?.total || null,
         estimate_breakdown: estimate || null
-      }
-      const data = await bookingsApi.create(payload)
+      })
+      clearBookingDraft()
       clearBookingEstimate()
       navigate('/booking/success', { state: { name: form.name, reference: data.reference } })
     } catch (err) {
-      // The database may have saved the request even when a slow mail server
-      // delays the original response. Recover by the one-time request token.
       let recovered = null
       if (err.status === 0) {
         setSubmissionNote('Checking whether your request was saved…')
@@ -89,11 +103,12 @@ export default function BookingForm({ estimate, onChangeEstimate }) {
           if (attempt > 0) await new Promise((resolve) => window.setTimeout(resolve, 900))
           try {
             recovered = await bookingsApi.requestStatus(submissionToken.current)
-          } catch { /* keep the original error */ }
+          } catch { /* Preserve the original request error. */ }
         }
       }
 
       if (recovered?.saved) {
+        clearBookingDraft()
         clearBookingEstimate()
         navigate('/booking/success', { state: { name: form.name, reference: recovered.reference } })
         return
@@ -101,189 +116,184 @@ export default function BookingForm({ estimate, onChangeEstimate }) {
 
       setSubmissionNote('')
       showToast(err.message, 'error')
-      if (err.errors) setErrors((e2) => ({ ...e2, ...err.errors }))
+      if (err.errors) setErrors((current) => ({ ...current, ...err.errors }))
     } finally {
       setSubmitting(false)
     }
   }
 
+  const estimateLines = [
+    estimate.service && { label: estimate.service.name, value: peso(estimate.service.price) },
+    estimate.hours && { label: `${estimate.hours.label} coverage`, value: Number(estimate.hours.price || 0) > 0 ? `+${peso(estimate.hours.price)}` : 'Included' },
+    ...(estimate.addons || []).map((addon) => ({
+      label: `${Number(addon.quantity || 1) > 1 ? `${addon.quantity}× ` : ''}${addon.label}`,
+      value: peso(addon.total ?? addon.price)
+    }))
+  ].filter(Boolean)
+
   return (
-    <div className="booking-layout">
+    <div className="booking-layout" id="booking-details">
       <form onSubmit={handleSubmit} noValidate>
-        {/* Honeypot — hidden from real visitors via CSS, bots often fill every field. */}
-        <div style={{ position: 'absolute', left: '-9999px', opacity: 0 }} aria-hidden="true">
+        <div className="booking-honeypot" aria-hidden="true">
           <label htmlFor="website">Leave this field empty</label>
           <input id="website" name="website" tabIndex={-1} autoComplete="off" value={form.website} onChange={update('website')} />
         </div>
 
-        <h4 className="fieldset-title display">Your Details</h4>
-        <div className="grid-2">
-          <div className="field">
-            <label htmlFor="name">Full Name</label>
-            <input id="name" className={errors.name ? 'has-error' : ''} value={form.name} onChange={update('name')} />
-            {errors.name && <span className="field-error">{errors.name}</span>}
-          </div>
-          <div className="field">
-            <label htmlFor="email">Email</label>
-            <input id="email" type="email" className={errors.email ? 'has-error' : ''} value={form.email} onChange={update('email')} />
-            {errors.email && <span className="field-error">{errors.email}</span>}
-          </div>
-        </div>
-        <div className="grid-2">
-          <div className="field">
-            <label htmlFor="phone">Phone Number</label>
-            <input id="phone" className={errors.phone ? 'has-error' : ''} value={form.phone} onChange={update('phone')} />
-            {errors.phone && <span className="field-error">{errors.phone}</span>}
-          </div>
-          <div className="field">
-            <label htmlFor="facebook">Facebook Profile Link</label>
-            <input
-              id="facebook"
-              type="url"
-              required
-              className={errors.facebook ? 'has-error' : ''}
-              value={form.facebook}
-              onChange={update('facebook')}
-              placeholder="https://facebook.com/yourname"
-            />
-            {errors.facebook && <span className="field-error">{errors.facebook}</span>}
-          </div>
-        </div>
+        {reviewing ? (
+          <section className="booking-review" aria-labelledby="booking-review-title">
+            <div className="booking-review__heading">
+              <CheckCircle2 size={28} aria-hidden="true" />
+              <div>
+                <span className="eyebrow">Final check</span>
+                <h3 className="display" id="booking-review-title">Review Your Request</h3>
+                <p>Nothing is sent until you select “Send Booking Request.”</p>
+              </div>
+            </div>
 
-        <h4 className="fieldset-title display">The Shoot</h4>
-        <div className="booking-schedule-row">
-          <div className="booking-request-fields">
+            <div className="booking-review__grid">
+              <article>
+                <h4>Event</h4>
+                <dl>
+                  <div><dt>Service</dt><dd>{form.shoot_type}</dd></div>
+                  <div><dt>Date</dt><dd>{formatDate(form.preferred_date)}</dd></div>
+                  <div><dt>Time</dt><dd>{form.preferred_time || 'To be discussed'}</dd></div>
+                  <div><dt>Location</dt><dd>{form.location || 'To be discussed'}</dd></div>
+                  <div><dt>Guests</dt><dd>{form.guest_count || 'Not provided'}</dd></div>
+                  <div><dt>Notes</dt><dd>{form.message || 'No additional notes'}</dd></div>
+                </dl>
+              </article>
+              <article>
+                <h4>Contact</h4>
+                <dl>
+                  <div><dt>Name</dt><dd>{form.name}</dd></div>
+                  <div><dt>Email</dt><dd>{form.email}</dd></div>
+                  <div><dt>Phone</dt><dd>{form.phone}</dd></div>
+                  <div><dt>Facebook</dt><dd>{form.facebook}</dd></div>
+                </dl>
+              </article>
+            </div>
+
+            <div className="booking-review__notice">
+              This submits a booking request, not a confirmed reservation. The studio will contact you to discuss and confirm the final details.
+            </div>
+            <div className="booking-review__actions">
+              <button type="button" className="btn btn--outline" onClick={editDetails} disabled={submitting}>
+                <ArrowLeft size={17} aria-hidden="true" /> Edit Details
+              </button>
+              <button type="submit" className="btn btn--primary" disabled={submitting}>
+                <Send size={17} aria-hidden="true" /> {submitting ? 'Saving Request…' : 'Send Booking Request'}
+              </button>
+            </div>
+            {submissionNote && <p className="booking-submit-note" role="status" aria-live="polite">{submissionNote}</p>}
+          </section>
+        ) : (
+          <>
+            <h4 className="fieldset-title display">Choose Your Date</h4>
+            <p className="booking-section-intro">Check availability first. Your selected date will stay saved while you complete the remaining details.</p>
+            <div className="booking-schedule-row">
+              <div className="booking-request-fields">
+                <div className="field">
+                  <label htmlFor="shoot_type">Shoot Type (from your estimate)</label>
+                  <input id="shoot_type" value={form.shoot_type} readOnly />
+                  <button type="button" className="field-help-link" onClick={onChangeEstimate}>Change estimate</button>
+                </div>
+                <div className="booking-date-instruction">
+                  <span>Preferred date</span>
+                  <strong>{form.preferred_date ? formatDate(form.preferred_date) : 'Not selected'}</strong>
+                  <p>Select a green day. Grey dates already have a scheduled or pending request.</p>
+                </div>
+              </div>
+              <AvailabilityCalendar
+                value={form.preferred_date}
+                onChange={(preferredDate) => {
+                  setForm((current) => ({ ...current, preferred_date: preferredDate }))
+                  setErrors((current) => ({ ...current, preferred_date: '' }))
+                }}
+                error={errors.preferred_date}
+              />
+            </div>
+
+            <h4 className="fieldset-title display">Event Details</h4>
+            <div className="grid-2">
+              <div className="field">
+                <label htmlFor="preferred_time">Preferred Start Time <span className="field-optional">Optional</span></label>
+                <input id="preferred_time" type="time" value={form.preferred_time} onChange={update('preferred_time')} />
+                <small>The studio will confirm the exact schedule with you.</small>
+              </div>
+              <div className="field">
+                <label htmlFor="location">Location <span className="field-optional">Optional</span></label>
+                <input id="location" value={form.location} onChange={update('location')} placeholder="Venue or city" />
+              </div>
+              <div className="field">
+                <label htmlFor="guest_count">Estimated Guest Count <span className="field-optional">Optional</span></label>
+                <input id="guest_count" value={form.guest_count} onChange={update('guest_count')} placeholder="e.g. 80–100" />
+              </div>
+            </div>
             <div className="field">
-              <label htmlFor="shoot_type">Shoot Type (from your estimate)</label>
-              <input id="shoot_type" value={form.shoot_type} readOnly />
-              <button type="button" className="field-help-link" onClick={onChangeEstimate}>Change estimate</button>
-              {errors.shoot_type && <span className="field-error">{errors.shoot_type}</span>}
+              <label htmlFor="message">Message / Requirements <span className="field-optional">Optional</span></label>
+              <textarea id="message" value={form.message} onChange={update('message')} placeholder="Tell us anything useful about the event or the photographs you want." />
             </div>
-            <div className="booking-date-instruction">
-              <span>Preferred date</span>
-              <strong>{form.preferred_date ? formatDate(form.preferred_date) : 'Not selected'}</strong>
-              <p>Select a green day from the calendar. Grey dates are already booked.</p>
+
+            <h4 className="fieldset-title display">Your Contact Details</h4>
+            <div className="grid-2">
+              <div className="field">
+                <label htmlFor="name">Full Name</label>
+                <input id="name" autoComplete="name" className={errors.name ? 'has-error' : ''} value={form.name} onChange={update('name')} />
+                {errors.name && <span className="field-error">{errors.name}</span>}
+              </div>
+              <div className="field">
+                <label htmlFor="email">Email</label>
+                <input id="email" type="email" autoComplete="email" className={errors.email ? 'has-error' : ''} value={form.email} onChange={update('email')} />
+                {errors.email && <span className="field-error">{errors.email}</span>}
+              </div>
+              <div className="field">
+                <label htmlFor="phone">Phone Number</label>
+                <input id="phone" type="tel" autoComplete="tel" className={errors.phone ? 'has-error' : ''} value={form.phone} onChange={update('phone')} />
+                {errors.phone && <span className="field-error">{errors.phone}</span>}
+              </div>
+              <div className="field">
+                <label htmlFor="facebook">Facebook Profile Link</label>
+                <input id="facebook" type="url" required className={errors.facebook ? 'has-error' : ''} value={form.facebook} onChange={update('facebook')} placeholder="https://facebook.com/yourname" />
+                {errors.facebook && <span className="field-error">{errors.facebook}</span>}
+              </div>
             </div>
-          </div>
-          <AvailabilityCalendar
-            value={form.preferred_date}
-            onChange={(preferredDate) => {
-              setForm((current) => ({ ...current, preferred_date: preferredDate }))
-              setErrors((current) => ({ ...current, preferred_date: '' }))
-            }}
-            error={errors.preferred_date}
-          />
-        </div>
-        <div className="grid-2">
-          <div className="field">
-            <label htmlFor="preferred_time">Preferred Start Time</label>
-            <input id="preferred_time" type="time" className={errors.preferred_time ? 'has-error' : ''} value={form.preferred_time} onChange={update('preferred_time')} />
-            <small>The studio will confirm the exact schedule with you.</small>
-            {errors.preferred_time && <span className="field-error">{errors.preferred_time}</span>}
-          </div>
-          <div className="field">
-            <label htmlFor="location">Location</label>
-            <input id="location" value={form.location} onChange={update('location')} placeholder="Venue or city" />
-          </div>
-          <div className="field">
-            <label htmlFor="guest_count">Estimated Guest Count</label>
-            <input id="guest_count" value={form.guest_count} onChange={update('guest_count')} placeholder="e.g. 80–100" />
-          </div>
-        </div>
-        <div className="field">
-          <label htmlFor="message">Message / Requirements</label>
-          <textarea id="message" className={errors.message ? 'has-error' : ''} value={form.message} onChange={update('message')} placeholder="Tell us about the day, the vibe, anything we should know." />
-          {errors.message && <span className="field-error">{errors.message}</span>}
-        </div>
 
-        <h4 className="fieldset-title display">Data Privacy Agreement</h4>
-        <div className="field">
-          <div 
-            ref={privacyRef} 
-            onScroll={handlePrivacyScroll}
-            style={{ 
-              maxHeight: '150px', 
-              overflowY: 'scroll', 
-              padding: '1rem', 
-              border: '1px solid var(--c-hairline, #e5e5e5)', 
-              borderRadius: '4px',
-              backgroundColor: '#fafafa',
-              fontSize: '0.85rem',
-              lineHeight: '1.6'
-            }}
-          >
-            <strong>Data Privacy Policy</strong>
-            <p style={{ marginTop: '0.5rem' }}>By submitting this form, you consent to the collection and processing of your personal information in accordance with the Data Privacy Act of 2012.</p>
-            <p style={{ marginTop: '0.5rem' }}>We use this data solely to communicate with you regarding your booking inquiry, provide accurate estimates, and deliver our photography services.</p>
-            <p style={{ marginTop: '0.5rem' }}>Your information will be securely stored within our internal system and will not be shared, sold, or distributed to any third parties without your explicit, written consent.</p>
-            <br/><br/><br/>
-            <p style={{ color: 'var(--c-gray)' }}><em>Please scroll to the bottom to acknowledge and enable the agreement checkbox.</em></p>
-          </div>
-
-          <label 
-            className="checkbox-row" 
-            htmlFor="privacy_agreed" 
-            style={{ 
-              marginTop: 12, 
-              marginBottom: 24, 
-              cursor: isScrolledToBottom ? 'pointer' : 'not-allowed',
-              opacity: isScrolledToBottom ? 1 : 0.6 
-            }}
-          >
-            <input 
-              id="privacy_agreed" 
-              type="checkbox" 
-              disabled={!isScrolledToBottom}
-              checked={form.privacy_agreed} 
-              onChange={update('privacy_agreed')} 
-            />
-            <span>
-              I have read and agree to the Data Privacy Policy.
-              {!isScrolledToBottom && (
-                <span style={{ display: 'block', fontSize: '0.75rem', marginTop: '4px', color: '#dc2626' }}>
-                  (Please scroll through the policy above to enable this checkbox)
+            <h4 className="fieldset-title display">Data Privacy Agreement</h4>
+            <div className="field">
+              <div className="booking-privacy-policy">
+                <strong>Data Privacy Policy</strong>
+                <p>By submitting this form, you consent to the collection and processing of your personal information in accordance with the Data Privacy Act of 2012.</p>
+                <p>We use this data solely to communicate with you regarding your booking inquiry, provide accurate estimates, and deliver our photography services.</p>
+                <p>Your information will be securely stored within our internal system and will not be shared, sold, or distributed to any third parties without your explicit, written consent.</p>
+              </div>
+              <label className="checkbox-row booking-privacy-consent" htmlFor="privacy_agreed">
+                <input id="privacy_agreed" type="checkbox" checked={form.privacy_agreed} onChange={update('privacy_agreed')} />
+                <span>
+                  I have read and agree to the Data Privacy Policy.
+                  {errors.privacy_agreed && <span className="field-error">{errors.privacy_agreed}</span>}
                 </span>
-              )}
-              {errors.privacy_agreed && (
-                <span className="field-error" style={{ display: 'block', marginTop: '4px' }}>
-                  {errors.privacy_agreed}
-                </span>
-              )}
-            </span>
-          </label>
-        </div>
+              </label>
+            </div>
 
-        <button type="submit" className="btn btn--primary" disabled={submitting}>
-          {submitting ? 'Saving Request…' : 'Send Booking Request'}
-        </button>
-        {submissionNote && <p className="booking-submit-note" role="status" aria-live="polite">{submissionNote}</p>}
+            <button type="submit" className="btn btn--primary">Review Your Request</button>
+            <p className="booking-draft-note" role="status">Your unfinished details are saved temporarily in this browser tab.</p>
+          </>
+        )}
       </form>
 
       <aside className="booking-summary-card">
         <h4>Your Estimate</h4>
         <div>
-            {estimate.service && (
-              <div className="estimate-summary__line" style={{ color: '#1A1A1A', borderColor: 'var(--c-hairline)' }}>
-                <span>{estimate.service.name}</span><span>{peso(estimate.service.price)}</span>
-              </div>
-            )}
-            {estimate.hours && (
-              <div className="estimate-summary__line" style={{ color: '#1A1A1A', borderColor: 'var(--c-hairline)' }}>
-                <span>{estimate.hours.label} coverage</span><span>{Number(estimate.hours.price || 0) > 0 ? `+${peso(estimate.hours.price)}` : 'Included'}</span>
-              </div>
-            )}
-            {estimate.addons && estimate.addons.map((a) => (
-              <div className="estimate-summary__line" style={{ color: '#1A1A1A', borderColor: 'var(--c-hairline)' }} key={a.label}>
-                <span>{Number(a.quantity || 1) > 1 ? `${a.quantity}× ` : ''}{a.label}</span><span>{peso(a.total ?? a.price)}</span>
-              </div>
-            ))}
-            <div className="estimate-summary__total" style={{ color: '#0A0A0A' }}>
-              <span>Total</span><strong style={{ color: '#0A0A0A' }}>{peso(estimate.total)}</strong>
+          {estimateLines.map((line) => (
+            <div className="estimate-summary__line" key={line.label}>
+              <span>{line.label}</span><span>{line.value}</span>
             </div>
-            <p className="booking-summary-card__note">
-              This is a preliminary estimate. The studio will review it before confirming the final quotation.
-            </p>
+          ))}
+          <div className="estimate-summary__total">
+            <span>Total</span><strong>{peso(estimate.total)}</strong>
           </div>
+          <p className="booking-summary-card__note">This is a preliminary estimate. The studio will review it before confirming the final quotation.</p>
+        </div>
       </aside>
     </div>
   )
