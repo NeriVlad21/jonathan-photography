@@ -746,8 +746,15 @@ html.public-scroll-theme::-webkit-scrollbar-button { display: none; width: 0; he
   padding: 28px;
   border-radius: var(--radius);
   position: sticky; top: 100px;
+  align-self: start;
 }
 .booking-summary-card h4 { font-family: var(--font-display); font-size: 1.15rem; margin-bottom: 16px; }
+.booking-summary-card .estimate-summary__line {
+  color: var(--c-dark);
+  border-bottom-color: var(--c-hairline);
+}
+.booking-summary-card .estimate-summary__line span:last-child { color: var(--c-black); font-weight: 650; }
+.booking-summary-card .estimate-summary__total { margin-top: 12px; padding-top: 12px; }
 .booking-summary-card__note { color: var(--c-gray); font-size: 0.85rem; line-height: 1.6; margin-top: 18px; }
 .field-help-link { display: inline-block; padding: 0; border: 0; background: transparent; color: var(--c-black); cursor: pointer; font: inherit; font-size: 0.82rem; font-weight: 700; margin-top: 8px; text-decoration: underline; text-underline-offset: 3px; }
 .combined-booking-estimator { display: grid; gap: 24px; }
