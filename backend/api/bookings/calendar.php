@@ -51,7 +51,7 @@ if ($method === 'GET') {
                 ce.location,
                 ce.notes AS message,
                 b.estimate_total,
-                CAST(JSON_UNQUOTE(JSON_EXTRACT(b.agreed_details, \'$.total\')) AS DECIMAL(10,2)) AS agreed_total,
+                CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(b.agreed_details, \'$.client_total\')), JSON_UNQUOTE(JSON_EXTRACT(b.agreed_details, \'$.total\'))) AS DECIMAL(10,2)) AS agreed_total,
                 COALESCE(pay.total_paid,0) AS total_paid,
                 ce.status,
                 ce.created_at,

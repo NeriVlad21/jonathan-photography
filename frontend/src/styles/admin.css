@@ -424,6 +424,11 @@
 .booking-payment-record { margin-top: 22px; }
 .booking-payment-record { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px; background: var(--admin-soft); border-radius: 10px; flex-wrap: wrap; }
 .booking-fee-preview { padding: 14px; background: #fff8cc; border-left: 3px solid var(--c-yellow); color: var(--admin-muted); }
+.booking-fee-choice { display: flex; flex-wrap: wrap; gap: 10px 22px; margin: 0; padding: 12px 14px; border: 1px solid var(--admin-line); border-radius: 8px; }
+.booking-fee-choice legend { padding: 0 6px; font-weight: 700; }
+.booking-action-form .booking-fee-choice label { display: inline-flex; align-items: center; gap: 8px; }
+.booking-fee-choice small { flex-basis: 100%; color: var(--admin-muted); }
+.booking-action-form .booking-fee-choice input[type=radio] { width: auto; padding: 0; margin: 0; accent-color: var(--c-yellow); }
 .booking-stage-timeline { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-top: 24px; }
 .booking-stage-timeline span { display: flex; align-items: center; gap: 7px; color: var(--admin-muted); font-size: .75rem; }
 .booking-stage-timeline i { width: 10px; height: 10px; border: 1px solid var(--admin-muted); border-radius: 50%; }

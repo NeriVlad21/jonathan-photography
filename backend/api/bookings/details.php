@@ -48,10 +48,19 @@ $booking['invoices'] = array_map(static function(array $invoice): array {
     $invoice['snapshot'] = json_decode((string)$invoice['snapshot'], true);
     return $invoice;
 }, $invoiceStmt->fetchAll(PDO::FETCH_ASSOC));
-$agreedTotal = (float) ($booking['agreed_details']['total'] ?? 0);
 $booking['total_paid'] = round(array_sum(array_map(fn($payment)=>(float)$payment['amount'], $booking['payments'])), 2);
-$booking['balance_due'] = max(0, round($agreedTotal - $booking['total_paid'], 2));
-$booking['platform_fee'] = $agreedTotal > 0 ? platform_fee_values($pdo, $agreedTotal) : null;
+$booking['financials'] = null;
+$booking['balance_due'] = 0;
+$booking['platform_fee'] = null;
+if (is_array($booking['agreed_details'] ?? null)) {
+    $money = booking_balance($pdo, $booking['agreed_details'], $id);
+    $booking['financials'] = $money;
+    $booking['balance_due'] = $money['balance_due'];
+    $booking['platform_fee'] = ['rate' => $money['fee_rate'], 'amount' => $money['fee_amount'], 'responsibility' => $money['fee_responsibility'], 'settings' => billing_settings($pdo)];
+} else {
+    // Settings let the agreed-details form preview the fee before the first save.
+    $booking['platform_fee'] = ['rate' => null, 'amount' => null, 'responsibility' => null, 'settings' => billing_settings($pdo)];
+}
 $ledgerStmt = $pdo->prepare('SELECT id, fee_rate, fee_amount, accrued_at, voided_at FROM platform_fee_ledger WHERE booking_id=:id');
 $ledgerStmt->execute(['id'=>$id]);
 $booking['platform_fee_record'] = $ledgerStmt->fetch(PDO::FETCH_ASSOC) ?: null;

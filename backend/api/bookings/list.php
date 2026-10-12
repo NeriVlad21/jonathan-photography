@@ -68,10 +68,10 @@ if (!empty($_GET['timeframe']) && $_GET['timeframe'] !== 'all') {
 }
 
 $sql = "SELECT b.id,b.reference_code,b.name,b.email,b.phone,b.shoot_type,b.preferred_date,b.preferred_time,b.location,b.estimate_total,b.status,b.created_at,
-        CAST(JSON_UNQUOTE(JSON_EXTRACT(b.agreed_details,'$.total')) AS DECIMAL(10,2)) agreed_total,
+        CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(b.agreed_details,'$.client_total')),JSON_UNQUOTE(JSON_EXTRACT(b.agreed_details,'$.total'))) AS DECIMAL(10,2)) agreed_total,
         JSON_UNQUOTE(JSON_EXTRACT(b.agreed_details,'$.date')) agreed_date,
         COALESCE(p.total_paid,0) total_paid,
-        GREATEST(COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(b.agreed_details,'$.total')) AS DECIMAL(10,2)),0)-COALESCE(p.total_paid,0),0) balance_due,
+        GREATEST(COALESCE(CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(b.agreed_details,'$.client_total')),JSON_UNQUOTE(JSON_EXTRACT(b.agreed_details,'$.total'))) AS DECIMAL(10,2)),0)-COALESCE(p.total_paid,0),0) balance_due,
         (SELECT sent_at FROM invoices i WHERE i.booking_id=b.id AND i.voided_at IS NULL ORDER BY i.id DESC LIMIT 1) latest_invoice_sent_at
         FROM bookings b LEFT JOIN (SELECT booking_id,SUM(amount) total_paid FROM booking_payments GROUP BY booking_id) p ON p.booking_id=b.id";
 

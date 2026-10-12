@@ -14,8 +14,11 @@ require_admin(); require_csrf();
 $input=json_input();
 $v=new Validator($input); $v->required('id')->positiveInteger('id','booking id')->required('payment_type')->inList('payment_type',['DOWN_PAYMENT','FINAL_PAYMENT'])->required('amount')->required('date')->date('date',false)->string('note','Note')->maxLength('note',500);
 if($v->fails()) json_error('Please correct the payment details.',422,$v->errors());
-$id=positive_integer_input($input['id']??null); $amount=money_input($input['amount']??null); $type=(string)$input['payment_type'];
-if($amount===null||$amount<=0) json_error('Payment amount must be greater than zero.',422);
+$id=positive_integer_input($input['id']??null); $type=(string)$input['payment_type'];
+// Payments are recorded in whole pesos; fractions, signs, and malformed values are rejected.
+$wholeAmount=whole_peso_input($input['amount']??null);
+if($wholeAmount===null||$wholeAmount<=0) json_error('Enter the amount received as a whole peso amount greater than zero, e.g. 900.',422,['amount'=>'Use a whole peso amount, e.g. 900.']);
+$amount=(float)$wholeAmount;
 $pdo=Database::connect();
 try {
   $pdo->beginTransaction();
@@ -23,15 +26,23 @@ try {
   if(!$booking){$pdo->rollBack();json_error('Booking not found.',404);}
   if($booking['status']!=='CONFIRMED'||empty($booking['agreed_details'])){$pdo->rollBack();json_error('Confirm the booking and save agreed details before recording payments.',409);}
   $booking['agreed_details']=json_decode((string)$booking['agreed_details'],true,512,JSON_THROW_ON_ERROR);
-  $payments=booking_payments($pdo,$id); $paid=round(array_sum(array_map(fn($p)=>(float)$p['amount'],$payments)),2); $total=(float)$booking['agreed_details']['total']; $remaining=round($total-$paid,2);
-  if($amount>$remaining){$pdo->rollBack();json_error('Payment cannot exceed the remaining balance.',422);}
-  if($type==='DOWN_PAYMENT' && $amount >= $remaining){$pdo->rollBack();json_error('The down payment must be less than the agreed total so a final payment and paid-in-full receipt can follow.',422);}
+  $payments=booking_payments($pdo,$id); $paid=round(array_sum(array_map(fn($p)=>(float)$p['amount'],$payments)),2);
+  $money=booking_financials($pdo,$booking['agreed_details']); $total=$money['client_total']; $remaining=round($total-$paid,2);
+  if($amount>$remaining){$pdo->rollBack();json_error('Payment cannot exceed the remaining balance of ₱'.number_format($remaining).'.',422);}
+  if($type==='DOWN_PAYMENT'){
+    // The required down payment is 50% of the client total. The recorded
+    // amount is what was actually received, so it may be higher, but it
+    // must leave a balance for the final payment and paid-in-full receipt.
+    if($amount<$money['required_down_payment']){$pdo->rollBack();json_error('The down payment must be at least the required 50% (₱'.number_format($money['required_down_payment']).').',422,['amount'=>'Minimum ₱'.number_format($money['required_down_payment']).'.']);}
+    if($amount>=$remaining){$pdo->rollBack();json_error('The down payment must be less than the client total so a final payment and paid-in-full receipt can follow.',422);}
+  }
   if($type==='FINAL_PAYMENT'){
     if(!array_filter($payments,fn($p)=>$p['payment_type']==='DOWN_PAYMENT')){$pdo->rollBack();json_error('Record the down payment first.',409);}
     $downInvoice=$pdo->prepare("SELECT id FROM invoices WHERE booking_id=:id AND invoice_type='DOWN_PAYMENT' AND voided_at IS NULL AND sent_at IS NOT NULL ORDER BY id DESC LIMIT 1");
     $downInvoice->execute(['id'=>$id]);
     if(!$downInvoice->fetchColumn()){$pdo->rollBack();json_error('Send the active down-payment invoice before recording the final payment.',409);}
-    if(abs($amount-$remaining)>0.009){$pdo->rollBack();json_error('Final payment must equal the remaining balance.',422);}
+    if(!is_whole_peso($remaining)){$pdo->rollBack();json_error('This booking has a fractional balance from before whole-peso pricing. Re-save the agreed details in whole pesos, then record the final payment.',409);}
+    if(abs($amount-$remaining)>0.009){$pdo->rollBack();json_error('Final payment must equal the remaining balance of ₱'.number_format($remaining).'.',422);}
   }
   $insert=$pdo->prepare('INSERT INTO booking_payments (booking_id,payment_type,amount,received_at,note) VALUES (:booking,:type,:amount,:date,:note)');
   $insert->execute(['booking'=>$id,'type'=>$type,'amount'=>$amount,'date'=>$input['date'],'note'=>clean_string($input['note']??'')]);
@@ -48,7 +59,7 @@ try {
     $invoice['sent_at']=date('Y-m-d H:i:s');
   }
   $allPayments=booking_payments($pdo,$id); $totalPaid=round(array_sum(array_map(fn($p)=>(float)$p['amount'],$allPayments)),2);
-  json_success(['payment'=>end($allPayments),'payments'=>$allPayments,'invoice'=>$invoice,'invoice_sent'=>$sent,'total_paid'=>$totalPaid,'balance_due'=>max(0,round($total-$totalPaid,2)),'message'=>$sent?'Payment recorded and invoice sent.':'Payment recorded and invoice saved as a draft. Send it again after checking email settings.']);
+  json_success(['payment'=>end($allPayments),'payments'=>$allPayments,'invoice'=>$invoice,'invoice_sent'=>$sent,'total_paid'=>$totalPaid,'balance_due'=>max(0,round($total-$totalPaid,2)),'financials'=>booking_balance($pdo,$booking['agreed_details'],$id),'message'=>$sent?'Payment recorded and invoice sent.':'Payment recorded and invoice saved as a draft. Send it again after checking email settings.']);
 } catch(PDOException $e){
   if($pdo->inTransaction())$pdo->rollBack();
   if($e->getCode()==='23000') json_error('That payment stage is already recorded.',409);

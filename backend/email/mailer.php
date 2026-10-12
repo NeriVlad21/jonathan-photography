@@ -116,9 +116,14 @@ function add_studio_reply_to(PHPMailer $mail, ?array $config = null): void
     }
 }
 
+/**
+ * Formats pesos as whole numbers (₱1,500). An amount that is not a whole
+ * peso (older records) keeps its centavos so the display never hides money.
+ */
 function peso(float $amount): string
 {
-    return '₱' . number_format($amount, 0);
+    $whole = abs($amount - round($amount)) < 0.005;
+    return '₱' . number_format($amount, $whole ? 0 : 2);
 }
 
 /**
@@ -346,6 +351,27 @@ function send_stored_invoice(array $invoice, array $booking): bool
             $paymentRows .= "<tr><td style='padding:7px 0'>{$safe($label)} ({$safe($payment['received_at'])})</td><td style='padding:7px 0;text-align:right'>−{$money($payment['amount'])}</td></tr>";
         }
         $fee = $snapshot['platform_fee'] ?? [];
+        $clientPaysFee = !empty($fee['charged_to_client']);
+        $feeLabel = 'Platform service fee (' . rtrim(rtrim(number_format(((float) ($fee['rate'] ?? 0)) * 100, 2), '0'), '.') . '%)';
+        $summaryRows = '';
+        if (isset($snapshot['service_total'])) {
+            $summaryRows .= "<tr><td style='padding:7px 0'>Agreed service price</td><td style='padding:7px 0;text-align:right'>{$money($snapshot['service_total'])}</td></tr>";
+            if ($clientPaysFee) {
+                $summaryRows .= "<tr><td style='padding:7px 0'>{$safe($feeLabel)}</td><td style='padding:7px 0;text-align:right'>{$money($fee['amount'] ?? 0)}</td></tr>";
+            }
+        }
+        $totalLabel = isset($snapshot['service_total']) ? 'Total payable' : 'Agreed total';
+        $downRow = isset($snapshot['required_down_payment']) && ($snapshot['invoice_type'] ?? '') === 'DOWN_PAYMENT'
+            ? "<tr><td style='padding:7px 0'>Required down payment (50%)</td><td style='padding:7px 0;text-align:right'>{$money($snapshot['required_down_payment'])}</td></tr>"
+            : '';
+        if (!isset($snapshot['service_total'])) {
+            $feeNote = 'The agreed package price includes a platform service fee of ' . $money($fee['amount'] ?? 0) . '. It is already included and is not charged separately.';
+        } elseif ($clientPaysFee) {
+            $feeNote = 'As agreed, the platform service fee is included in the total payable above.';
+        } else {
+            $feeNote = '';
+        }
+        $feeNoteHtml = $feeNote !== '' ? "<p style='color:#666;font-size:13px'>{$safe($feeNote)}</p>" : '';
         $studio = $snapshot['studio'] ?? [];
         $mail = make_mailer();
         if (!$mail) return false;
@@ -357,14 +383,18 @@ function send_stored_invoice(array $invoice, array $booking): bool
           <h2 style='border-bottom:3px solid #F5D000;padding-bottom:10px'>{$safe($studio['name'] ?? 'Jonathan Photography')}</h2>
           <p><strong>Invoice:</strong> {$safe($invoice['invoice_number'])}<br><strong>Status:</strong> {$safe($snapshot['status_label'] ?? '')}<br><strong>Booking:</strong> {$safe($snapshot['booking']['reference_code'] ?? '')}<br><strong>Client:</strong> {$safe($snapshot['client']['name'] ?? '')}</p>
           <table style='width:100%;border-collapse:collapse;font-size:14px'>{$rows}
-            <tr><td style='padding:10px 0;font-weight:bold'>Agreed total</td><td style='padding:10px 0;text-align:right;font-weight:bold'>{$money($snapshot['agreed_total'] ?? 0)}</td></tr>
+            {$summaryRows}
+            <tr><td style='padding:10px 0;font-weight:bold'>{$totalLabel}</td><td style='padding:10px 0;text-align:right;font-weight:bold'>{$money($snapshot['agreed_total'] ?? 0)}</td></tr>
+            {$downRow}
             {$paymentRows}
             <tr><td style='padding:12px 0;border-top:2px solid #111;font-weight:bold'>Balance due</td><td style='padding:12px 0;border-top:2px solid #111;text-align:right;font-weight:bold'>{$money($snapshot['balance_due'] ?? 0)}</td></tr>
           </table>
-          <p style='color:#666;font-size:13px'>The agreed package price includes a platform service fee of {$money($fee['amount'] ?? 0)} ({$safe(number_format(((float)($fee['rate'] ?? 0))*100, 1))}%). It is already included and is not charged separately.</p>
+          {$feeNoteHtml}
           <p>{$safe($studio['email'] ?? '')}<br>{$safe($studio['phone'] ?? '')}<br>{$safe($studio['address'] ?? '')}</p>
         </div>";
-        $mail->AltBody = "Invoice {$invoice['invoice_number']}\n{$snapshot['status_label']}\nAgreed total: {$money($snapshot['agreed_total'])}\nPaid: {$money($snapshot['total_paid'])}\nBalance: {$money($snapshot['balance_due'])}\nThe price includes a platform service fee; it is not charged separately.";
+        $mail->AltBody = "Invoice {$invoice['invoice_number']}\n{$snapshot['status_label']}\n{$totalLabel}: {$money($snapshot['agreed_total'])}\n"
+            . (isset($snapshot['required_down_payment']) && ($snapshot['invoice_type'] ?? '') === 'DOWN_PAYMENT' ? "Required down payment (50%): {$money($snapshot['required_down_payment'])}\n" : '')
+            . "Paid: {$money($snapshot['total_paid'])}\nBalance: {$money($snapshot['balance_due'])}\n{$feeNote}";
         send_mail_with_retry($mail, 'Stored booking invoice');
         return true;
     } catch (Throwable $e) {

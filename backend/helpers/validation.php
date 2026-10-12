@@ -168,6 +168,25 @@ function money_input($value, float $max = 9999999.99): ?float
 }
 
 /**
+ * Parses a whole-peso amount (integer number or digit string, e.g. 900 or
+ * "1500"). Fractions such as 900.50, signs, exponents, and blanks are
+ * rejected. Returns null when invalid or outside 0..$max.
+ */
+function whole_peso_input($value, int $max = 9999999): ?int
+{
+    if (is_float($value) && is_finite($value) && floor($value) === $value) {
+        $value = (int) $value;
+    }
+    if (is_string($value)) {
+        $value = trim($value);
+        if (!preg_match('/^\d{1,9}$/', $value)) return null;
+        $value = (int) $value;
+    }
+    if (!is_int($value) || $value < 0 || $value > $max) return null;
+    return $value;
+}
+
+/**
  * True when a public link is safe to render as an href: either no scheme
  * (e.g. "facebook.com/studio") or an allow-listed one. Blocks javascript:,
  * data:, vbscript: and similar, including variants hidden with whitespace or

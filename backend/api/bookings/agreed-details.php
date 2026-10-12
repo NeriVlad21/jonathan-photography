@@ -17,9 +17,11 @@ $v->required('id')->positiveInteger('id', 'booking id')->required('total')->requ
   ->string('notes', 'Notes')->maxLength('notes', 2000);
 if ($v->fails()) json_error('Please correct the agreed booking details.', 422, $v->errors());
 $id = positive_integer_input($input['id'] ?? null);
-$total = money_input($input['total'] ?? null);
+$total = whole_peso_input($input['total'] ?? null);
 $hours = $input['hours'] ?? null;
-if ($total === null || $total <= 0) json_error('Agreed price must be greater than zero.', 422);
+if ($total === null || $total <= 0) json_error('Enter the agreed price as a whole peso amount greater than zero.', 422, ['total' => 'Use a whole peso amount, e.g. 25000.']);
+$feeResponsibility = is_string($input['fee_responsibility'] ?? null) ? strtoupper(trim($input['fee_responsibility'])) : '';
+if (!in_array($feeResponsibility, FEE_RESPONSIBILITIES, true)) json_error('Choose who pays the platform fee.', 422, ['fee_responsibility' => 'Select "Client pays platform fee" or "Studio absorbs platform fee".']);
 if ($hours !== null && $hours !== '' && (!is_numeric($hours) || (float) $hours <= 0 || (float) $hours > 24)) json_error('Coverage hours must be between 0 and 24.', 422);
 $addonsInput = $input['addons'] ?? [];
 if (!is_array($addonsInput) || count($addonsInput) > 50) json_error('Add-ons must be a valid list.', 422);
@@ -27,12 +29,12 @@ $addons = [];
 foreach ($addonsInput as $index => $addon) {
     if (!is_array($addon)) json_error('Each add-on must be valid.', 422);
     $label = clean_string($addon['label'] ?? '');
-    $amount = money_input($addon['amount'] ?? 0);
+    $amount = whole_peso_input($addon['amount'] ?? 0);
     $quantity = positive_integer_input($addon['quantity'] ?? 1);
     if ($label === '' || mb_strlen($label) > 120 || $amount === null || $quantity < 1 || $quantity > 99) json_error('Please correct add-on ' . ($index + 1) . '.', 422);
     $addons[] = ['label' => $label, 'amount' => $amount, 'quantity' => $quantity];
 }
-$details = ['total' => $total, 'coverage' => clean_string($input['coverage'] ?? ''), 'hours' => $hours === null || $hours === '' ? null : round((float) $hours, 2), 'addons' => $addons, 'date' => (string) $input['date'], 'location' => clean_string($input['location'] ?? ''), 'notes' => clean_string($input['notes'] ?? '')];
+$details = ['total' => $total, 'fee_responsibility' => $feeResponsibility, 'coverage' => clean_string($input['coverage'] ?? ''), 'hours' => $hours === null || $hours === '' ? null : round((float) $hours, 2), 'addons' => $addons, 'date' => (string) $input['date'], 'location' => clean_string($input['location'] ?? ''), 'notes' => clean_string($input['notes'] ?? '')];
 
 $pdo = Database::connect();
 try {
@@ -45,8 +47,21 @@ try {
     $paymentSummary->execute(['id'=>$id]);
     $paymentState = $paymentSummary->fetch(PDO::FETCH_ASSOC);
     $paid = (float) ($paymentState['paid'] ?? 0);
-    if ($total < $paid) { $pdo->rollBack(); json_error('Agreed total cannot be lower than payments already received.', 422); }
-    if (!empty($paymentState['has_final']) && abs($total - $paid) > 0.009) { $pdo->rollBack(); json_error('The final payment is already recorded. The agreed total must continue to match the total received.', 409); }
+    // The fee and client total are always derived here from the configured
+    // rates; any totals or fee amounts sent by the browser are ignored.
+    $fee = platform_fee_values($pdo, (float) $total);
+    $details['platform_fee'] = ['rate' => (float) $fee['rate'], 'amount' => whole_peso((float) $total * (float) $fee['rate'])];
+    $money = booking_financials($pdo, $details);
+    $details['client_total'] = $money['client_total'];
+    $details['required_down_payment'] = $money['required_down_payment'];
+    $clientTotal = $money['client_total'];
+    // Changing the price or fee responsibility after payments follows the
+    // invoice revision workflow below. Recorded payments are never changed:
+    // before the final payment the client total must stay above what was
+    // received (so a final payment can still settle it); after the final
+    // payment it must keep matching the total received.
+    if (!empty($paymentState['has_final']) && abs($clientTotal - $paid) > 0.009) { $pdo->rollBack(); json_error('The final payment is already recorded. The client total must continue to match the total received.', 409); }
+    if (empty($paymentState['has_final']) && $paid > 0 && $clientTotal <= $paid) { $pdo->rollBack(); json_error('The client total must stay above the ₱' . number_format($paid) . ' already received so the final payment can be recorded.', 422); }
     $conflict = $pdo->prepare("SELECT id FROM calendar_events WHERE event_date=:date AND (booking_id IS NULL OR booking_id<>:id) AND status IN ('REQUESTED','BOOKED','COMPLETED') LIMIT 1");
     $conflict->execute(['date'=>$details['date'],'id'=>$id]);
     if ($conflict->fetch()) { $pdo->rollBack(); json_error('The agreed date conflicts with another active booking.', 409); }
@@ -61,10 +76,13 @@ try {
         $pdo->prepare('UPDATE invoices SET voided_at=NOW() WHERE id=:id')->execute(['id'=>$old['id']]);
         $revisions[] = create_invoice_record($pdo, $booking, $old['invoice_type'], $old['payment_id'] ? (int)$old['payment_id'] : null, (int)$old['id']);
     }
-    $fee = platform_fee_values($pdo, $total);
-    $pdo->prepare('UPDATE platform_fee_ledger SET agreed_total=:total, fee_rate=:rate, fee_amount=:amount WHERE booking_id=:id AND voided_at IS NULL')->execute(['total'=>$total,'rate'=>$fee['rate'],'amount'=>$fee['amount'],'id'=>$id]);
+    // Keep an accrued (unsettled) fee in step with the new price. Fees in a
+    // cycle already marked PAID are historical and are not rewritten.
+    $pdo->prepare("UPDATE platform_fee_ledger pfl JOIN fee_cycles fc ON fc.id=pfl.cycle_id SET pfl.agreed_total=:total, pfl.fee_rate=:rate, pfl.fee_amount=:amount WHERE pfl.booking_id=:id AND pfl.voided_at IS NULL AND fc.status<>'PAID'")
+        ->execute(['total'=>$total,'rate'=>$money['fee_rate'],'amount'=>$money['fee_amount'],'id'=>$id]);
     $pdo->commit();
-    json_success(['agreed_details'=>$details,'agreed_details_updated_at'=>date('Y-m-d H:i:s'),'platform_fee'=>$fee,'revised_invoices'=>$revisions]);
+    $balance = booking_balance($pdo, $details, (int) $id);
+    json_success(['agreed_details'=>$details,'agreed_details_updated_at'=>date('Y-m-d H:i:s'),'platform_fee'=>['rate'=>$money['fee_rate'],'amount'=>$money['fee_amount'],'settings'=>$fee['settings']],'financials'=>$balance,'total_paid'=>$balance['total_paid'],'balance_due'=>$balance['balance_due'],'revised_invoices'=>$revisions]);
 } catch (Throwable $e) {
     if ($pdo->inTransaction()) $pdo->rollBack(); log_server_error('BOOKING_AGREED_DETAILS',$e); json_error('Unable to save the agreed details.',500);
 }

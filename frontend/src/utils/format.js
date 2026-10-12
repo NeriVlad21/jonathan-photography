@@ -1,6 +1,9 @@
+// Whole pesos (₱1,500). Amounts that are not whole pesos (older records)
+// keep their centavos so the display never hides money.
 export function peso(amount) {
   const n = Number(amount || 0)
-  return '₱' + n.toLocaleString('en-PH', { maximumFractionDigits: 0 })
+  const whole = Math.abs(n - Math.round(n)) < 0.005
+  return '₱' + n.toLocaleString('en-PH', whole ? { maximumFractionDigits: 0 } : { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 export function formatDate(dateStr) {

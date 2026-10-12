@@ -16,7 +16,7 @@ if($method==='GET'){
   refresh_fee_cycle_statuses($pdo);
   $settings=billing_settings($pdo);
   $cycles=$pdo->query("SELECT fc.*, COALESCE(SUM(CASE WHEN pfl.voided_at IS NULL THEN pfl.fee_amount ELSE 0 END),0) total_owed, COUNT(CASE WHEN pfl.voided_at IS NULL THEN 1 END) booking_count FROM fee_cycles fc LEFT JOIN platform_fee_ledger pfl ON pfl.cycle_id=fc.id GROUP BY fc.id ORDER BY fc.cycle_start DESC")->fetchAll(PDO::FETCH_ASSOC);
-  $ledger=$pdo->query("SELECT pfl.*, b.reference_code,b.name,b.status booking_status,i.invoice_number,fc.cycle_start,fc.cycle_end,fc.due_date,fc.status cycle_status FROM platform_fee_ledger pfl JOIN bookings b ON b.id=pfl.booking_id JOIN invoices i ON i.id=pfl.invoice_id JOIN fee_cycles fc ON fc.id=pfl.cycle_id ORDER BY pfl.accrued_at DESC")->fetchAll(PDO::FETCH_ASSOC);
+  $ledger=$pdo->query("SELECT pfl.*, b.reference_code,b.name,b.status booking_status,COALESCE(JSON_UNQUOTE(JSON_EXTRACT(b.agreed_details,'$.fee_responsibility')),'STUDIO') fee_responsibility,i.invoice_number,fc.cycle_start,fc.cycle_end,fc.due_date,fc.status cycle_status FROM platform_fee_ledger pfl JOIN bookings b ON b.id=pfl.booking_id JOIN invoices i ON i.id=pfl.invoice_id JOIN fee_cycles fc ON fc.id=pfl.cycle_id ORDER BY pfl.accrued_at DESC")->fetchAll(PDO::FETCH_ASSOC);
   $due=(float)$pdo->query("SELECT COALESCE(SUM(pfl.fee_amount),0) FROM platform_fee_ledger pfl JOIN fee_cycles fc ON fc.id=pfl.cycle_id WHERE pfl.voided_at IS NULL AND fc.status<>'PAID'")->fetchColumn();
   json_success(['settings'=>$settings,'cycles'=>$cycles,'ledger'=>$ledger,'total_due'=>$due]);
 }
