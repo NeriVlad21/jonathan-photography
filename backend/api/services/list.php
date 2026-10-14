@@ -22,7 +22,7 @@ if (isset($_GET['all'])) {
     require_admin();
     $stmt = $pdo->query('SELECT ' . SERVICE_COLUMNS . ' FROM services ORDER BY category ASC, sort_order ASC, id ASC');
 } else {
-    $stmt = $pdo->query('SELECT ' . SERVICE_COLUMNS . ' FROM services WHERE visible = 1 ORDER BY category ASC, sort_order ASC, id ASC');
+    $stmt = $pdo->query("SELECT " . SERVICE_COLUMNS . " FROM services s WHERE visible = 1 AND NOT EXISTS (SELECT 1 FROM content_moderation cm WHERE cm.entity_type='SERVICE' AND cm.entity_key=CAST(s.id AS CHAR) AND cm.status='HIDDEN') ORDER BY category ASC, sort_order ASC, id ASC");
 }
 
 json_success(array_map('present_service', $stmt->fetchAll(PDO::FETCH_ASSOC)));

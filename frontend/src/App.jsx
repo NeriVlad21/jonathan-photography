@@ -5,6 +5,7 @@ import { AdminAuthProvider } from './context/AdminAuthContext.jsx'
 
 import PublicLayout from './layouts/PublicLayout.jsx'
 import ProtectedRoute from './admin/ProtectedRoute.jsx'
+import RoleRoute from './admin/RoleRoute.jsx'
 
 const Home = lazy(() => import('./pages/Home.jsx'))
 const Portfolio = lazy(() => import('./pages/Portfolio.jsx'))
@@ -30,6 +31,11 @@ const AdminProfile = lazy(() => import('./admin/AdminProfile.jsx'))
 const AdminBookingCalendar = lazy(() => import('./admin/AdminBookingCalendar.jsx'))
 const SiteContentManager = lazy(() => import('./admin/SiteContentManager.jsx'))
 const PlatformFees = lazy(() => import('./admin/PlatformFees.jsx'))
+const SuperAdminOverview = lazy(() => import('./admin/SuperAdminOverview.jsx'))
+const SupportReports = lazy(() => import('./admin/SupportReports.jsx'))
+const AdminHome = lazy(() => import('./admin/AdminHome.jsx'))
+const SuperAdminArchives = lazy(() => import('./admin/SuperAdminArchives.jsx'))
+const ContentOversight = lazy(() => import('./admin/ContentOversight.jsx'))
 
 function NotFound() {
   return (
@@ -92,25 +98,29 @@ export default function App() {
           {/* Protected Admin */}
           <Route element={<ProtectedRoute />}>
             <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="bookings" element={<ClientRequests />} />
-              <Route path="bookings/:id" element={<BookingDetails />} />
-              <Route path="calendar" element={<AdminBookingCalendar />} />
+              <Route index element={<AdminHome />} />
+              <Route path="dashboard" element={<RoleRoute roles={['OWNER']}><Dashboard /></RoleRoute>} />
+              <Route path="bookings" element={<RoleRoute roles={['OWNER']}><ClientRequests /></RoleRoute>} />
+              <Route path="bookings/:id" element={<RoleRoute roles={['OWNER']}><BookingDetails /></RoleRoute>} />
+              <Route path="calendar" element={<RoleRoute roles={['OWNER']}><AdminBookingCalendar /></RoleRoute>} />
               <Route path="leads" element={<Navigate to="/admin/bookings?view=estimates" replace />} />
-              <Route path="portfolio" element={<PortfolioManager />} />
-              <Route path="site-content" element={<SiteContentManager />} />
-              <Route path="services" element={<ServicesManager />} />
+              <Route path="portfolio" element={<RoleRoute roles={['OWNER']}><PortfolioManager /></RoleRoute>} />
+              <Route path="site-content" element={<RoleRoute roles={['OWNER']}><SiteContentManager /></RoleRoute>} />
+              <Route path="services" element={<RoleRoute roles={['OWNER']}><ServicesManager /></RoleRoute>} />
               <Route
                 path="estimator-settings"
-                element={<EstimatorSettings />}
+                element={<RoleRoute roles={['OWNER']}><EstimatorSettings /></RoleRoute>}
               />
-              <Route path="contacts" element={<ContactManager />} />
+              <Route path="contacts" element={<RoleRoute roles={['OWNER']}><ContactManager /></RoleRoute>} />
               <Route path="profile" element={<AdminProfile />} />
               <Route path="platform-fees" element={<PlatformFees />} />
+              <Route path="super-admin" element={<RoleRoute roles={['SUPER_ADMIN']}><SuperAdminOverview /></RoleRoute>} />
+              <Route path="super-archives" element={<RoleRoute roles={['SUPER_ADMIN']}><SuperAdminArchives /></RoleRoute>} />
+              <Route path="content-oversight" element={<RoleRoute roles={['SUPER_ADMIN']}><ContentOversight /></RoleRoute>} />
+              <Route path="support" element={<SupportReports />} />
 
               {/* Archive */}
-              <Route path="archive" element={<Archive />} />
+              <Route path="archive" element={<RoleRoute roles={['OWNER']}><Archive /></RoleRoute>} />
             </Route>
           </Route>
           </Routes>

@@ -30,6 +30,9 @@ A full-stack portfolio, service estimator, and booking-request management system
 - Coverage-hour and add-on configuration
 - Public website content and contact-link management
 - Archived records and activity views
+- Separate owner and Super Admin roles with server-side authorization
+- Super Admin oversight for platform dues, ownership transfer, credential recovery, booking-notification routing, and read-only website-content warnings
+- Owner-to-Super-Admin support reports with status tracking and an audit trail
 
 ## Technology Stack
 
@@ -111,6 +114,22 @@ The seed file resets the application tables and must not be imported into a data
 For an existing installation, review and execute the applicable files in `database/migrations/` instead of recreating the database.
 
 Existing installations must run `database/migrations/2026_09_28_service_package_details.sql` before using this version; it adds the service package-detail columns and moves the estimator range margin into `site_settings`. Existing services keep working and simply show no extra detail sections until they are filled in from **Admin → Services**.
+
+Existing installations must also run `database/migrations/2026_10_14_super_admin_oversight.sql` before using role-based administration. The migration preserves existing administrators as active owners and does not create a known Super Admin password.
+
+Run `database/migrations/2026_10_15_super_admin_archives_and_moderation.sql` after it to add reversible Super Admin archives, read-only content-review warnings, and active/archive separation for billing and support records.
+
+Create the first Super Admin from the command line after the migration:
+
+```powershell
+$env:ADMIN_USERNAME='platform-admin'
+$env:ADMIN_EMAIL='platform@example.com'
+$env:ADMIN_PASSWORD='replace-with-a-unique-12-character-password'
+$env:ADMIN_ROLE='SUPER_ADMIN'
+php backend/scripts/create_admin.php
+```
+
+Do not share the Super Admin account with the studio owner. The owner retains the booking and website-management workspace, while the Super Admin controls billing oversight, ownership recovery or transfer, and the destination for new-booking notification emails.
 
 ### 4. Configure the backend
 

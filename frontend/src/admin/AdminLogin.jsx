@@ -34,7 +34,7 @@ export default function AdminLogin() {
   if (admin) {
     return (
       <Navigate
-        to="/admin/dashboard"
+        to={admin.role === 'SUPER_ADMIN' ? '/admin/super-admin' : '/admin/dashboard'}
         replace
       />
     )
@@ -55,13 +55,13 @@ export default function AdminLogin() {
     setSubmitting(true)
 
     try {
-      await login(
+      const result = await login(
         username.trim(),
         password
       )
 
       navigate(
-        '/admin/dashboard'
+        result.admin?.role === 'SUPER_ADMIN' ? '/admin/super-admin' : '/admin/dashboard'
       )
     } catch (err) {
       setError(

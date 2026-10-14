@@ -30,8 +30,10 @@ if (
     json_success(['authenticated' => false, 'expired' => true]);
 }
 
+$admin = require_admin();
+
 json_success([
     'authenticated' => true,
-    'admin' => ['id' => $_SESSION['admin_id'], 'username' => $_SESSION['admin_username'] ?? ''],
+    'admin' => $admin,
     'csrf_token' => issue_csrf_token(),
 ]);

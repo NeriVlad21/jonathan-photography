@@ -32,7 +32,7 @@ if ($method === 'GET') {
         require_admin();
         $stmt = $pdo->query('SELECT * FROM portfolio_categories ORDER BY sort_order ASC, id ASC');
     } else {
-        $stmt = $pdo->query('SELECT * FROM portfolio_categories WHERE visible = 1 ORDER BY sort_order ASC, id ASC');
+        $stmt = $pdo->query("SELECT * FROM portfolio_categories c WHERE visible = 1 AND NOT EXISTS (SELECT 1 FROM content_moderation cm WHERE cm.entity_type='PORTFOLIO_CATEGORY' AND cm.entity_key=CAST(c.id AS CHAR) AND cm.status='HIDDEN') ORDER BY sort_order ASC, id ASC");
     }
     json_success($stmt->fetchAll());
 }

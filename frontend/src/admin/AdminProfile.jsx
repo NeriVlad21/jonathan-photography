@@ -80,7 +80,7 @@ export default function AdminProfile() {
           <div>
             <span className="admin-profile-eyebrow">Account / Security</span>
             <h2>Studio profile</h2>
-            <p>Manage your sign-in details and the studio email used for booking notifications and client replies.</p>
+            <p>Manage your personal sign-in details. Booking-alert routing is controlled separately by the Super Admin.</p>
           </div>
           <div className="admin-profile-avatar" aria-hidden="true">
             {(profile.username || 'A').charAt(0).toUpperCase()}
@@ -94,7 +94,7 @@ export default function AdminProfile() {
             <a href={`mailto:${profile.email}`}>{profile.email}</a>
             <div className="admin-profile-summary__meta">
               <ShieldCheck size={17} />
-              <span>Administrator<br />Member since {formatDate(profile.created_at)}</span>
+              <span>{profile.role === 'SUPER_ADMIN' ? 'Super Administrator' : 'Studio Owner'}<br />Member since {formatDate(profile.created_at)}</span>
             </div>
           </aside>
 
@@ -116,12 +116,12 @@ export default function AdminProfile() {
                 </div>
               </label>
               <label>
-                <span>Studio notification email</span>
+                <span>Account email</span>
                 <div className="admin-profile-input-wrap">
                   <Mail size={16} />
                   <input type="email" name="email" value={form.email} onChange={updateField} required maxLength={160} />
                 </div>
-                <small className="admin-profile-field-help">New booking alerts are sent here, and replies to client emails return to this address.</small>
+                <small className="admin-profile-field-help">Used to identify and contact this account. Changing it does not redirect booking notifications.</small>
               </label>
             </div>
 

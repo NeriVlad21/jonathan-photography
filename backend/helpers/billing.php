@@ -174,7 +174,7 @@ function cycle_for_date(PDO $pdo, string $date): int
     $start = $origin->modify("+{$offset} days");
     $end = $start->modify('+29 days');
     $due = $end->modify('+' . $settings['due_days'] . ' days');
-    $pdo->prepare('INSERT INTO fee_cycles (cycle_start, cycle_end, due_date) VALUES (:start, :end, :due) ON DUPLICATE KEY UPDATE due_date = VALUES(due_date)')
+    $pdo->prepare('INSERT INTO fee_cycles (cycle_start, cycle_end, due_date) VALUES (:start, :end, :due) ON DUPLICATE KEY UPDATE due_date = VALUES(due_date), archived_at = NULL, archived_by_admin_id = NULL')
         ->execute(['start' => $start->format('Y-m-d'), 'end' => $end->format('Y-m-d'), 'due' => $due->format('Y-m-d')]);
     $stmt = $pdo->prepare('SELECT id FROM fee_cycles WHERE cycle_start = :start AND cycle_end = :end');
     $stmt->execute(['start' => $start->format('Y-m-d'), 'end' => $end->format('Y-m-d')]);
@@ -188,7 +188,7 @@ function accrue_platform_fee(PDO $pdo, array $booking, int $invoiceId): void
     $total = $money['service_total'];
     $fee = ['rate' => $money['fee_rate'], 'amount' => $money['fee_amount']];
     $cycleId = cycle_for_date($pdo, date('Y-m-d'));
-    $stmt = $pdo->prepare('INSERT INTO platform_fee_ledger (booking_id, invoice_id, cycle_id, agreed_total, fee_rate, fee_amount, accrued_at, voided_at) VALUES (:booking, :invoice, :cycle, :total, :rate, :amount, NOW(), NULL) ON DUPLICATE KEY UPDATE invoice_id=VALUES(invoice_id), cycle_id=VALUES(cycle_id), agreed_total=VALUES(agreed_total), fee_rate=VALUES(fee_rate), fee_amount=VALUES(fee_amount), voided_at=NULL');
+    $stmt = $pdo->prepare('INSERT INTO platform_fee_ledger (booking_id, invoice_id, cycle_id, agreed_total, fee_rate, fee_amount, accrued_at, voided_at) VALUES (:booking, :invoice, :cycle, :total, :rate, :amount, NOW(), NULL) ON DUPLICATE KEY UPDATE invoice_id=VALUES(invoice_id), cycle_id=VALUES(cycle_id), agreed_total=VALUES(agreed_total), fee_rate=VALUES(fee_rate), fee_amount=VALUES(fee_amount), voided_at=NULL, archived_at=NULL, archived_by_admin_id=NULL');
     $stmt->execute(['booking' => $booking['id'], 'invoice' => $invoiceId, 'cycle' => $cycleId, 'total' => $total, 'rate' => $fee['rate'], 'amount' => $fee['amount']]);
 }
 

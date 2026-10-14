@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ImageUp, Plus, Save, Trash2 } from 'lucide-react'
+import { AlertTriangle, ImageUp, Plus, Save, Trash2 } from 'lucide-react'
 import { assetUrl, portfolioApi, siteContentApi } from '../services/api.js'
 import { DEFAULT_SITE_CONTENT, mergeSiteContent } from '../content/defaultSiteContent.js'
 import { useToast } from '../context/ToastContext.jsx'
@@ -31,18 +31,20 @@ export default function SiteContentManager() {
   const [homePanel, setHomePanel] = useState('hero')
   const [pagePanel, setPagePanel] = useState('portfolio')
   const [loaded, setLoaded] = useState(false)
+  const [warnings, setWarnings] = useState({})
   const savedContentRef = useRef(JSON.stringify(mergeSiteContent(DEFAULT_SITE_CONTENT)))
 
   const serializedContent = useMemo(() => JSON.stringify(content), [content])
   const hasChanges = loaded && serializedContent !== savedContentRef.current
 
   useEffect(() => {
-    Promise.all([siteContentApi.get(), portfolioApi.categories(true)])
-      .then(([data, rows]) => {
+    Promise.all([siteContentApi.get(), portfolioApi.categories(true), siteContentApi.warnings()])
+      .then(([data, rows, warningData]) => {
         const nextContent = mergeSiteContent(data?.content)
         savedContentRef.current = JSON.stringify(nextContent)
         setContent(nextContent)
         setCategories(rows || [])
+        setWarnings(warningData?.warnings || {})
         setLoaded(true)
       })
       .catch(() => showToast('Some website content could not be loaded.', 'error'))
@@ -90,12 +92,24 @@ export default function SiteContentManager() {
   }
   const removeItem = (path, index) => set(path, path.split('.').reduce((obj, part) => obj[part], content).filter((_, i) => i !== index))
 
+  const activeWarnings = (CONTENT_TABS.find((tab) => tab.id === activeTab)?.id === 'home'
+    ? ['brand', 'navigation', 'hero', 'introduction', 'about', 'selectedWork', 'servicesHome', 'estimatorCta']
+    : activeTab === 'music' ? ['music']
+      : activeTab === 'faq' ? ['faq']
+        : activeTab === 'services' ? ['servicesPage']
+          : activeTab === 'contact' ? ['contactPage', 'footer']
+            : ['portfolioPage', 'bookingPage'])
+    .map((key) => ({ key, ...warnings[key] }))
+    .filter((warning) => warning.reason)
+
   return <div className={`cms-page cms-page--${activeTab}`}>
     <nav className="cms-tabs" aria-label="Website content sections">
       <span className="cms-tabs__title">Choose a section</span>
       {CONTENT_TABS.map((tab) => <button key={tab.id} type="button" className={activeTab === tab.id ? 'is-active' : ''} onClick={() => setActiveTab(tab.id)} aria-current={activeTab === tab.id ? 'page' : undefined}><strong>{tab.label}</strong><small>{tab.description}</small></button>)}
       <button type="button" className="cms-tabs__save" onClick={save} disabled={!hasChanges || saving} title={!hasChanges ? 'No unsaved changes' : 'Publish changes to the public website'}><Save size={15} /> {saving ? 'Saving…' : hasChanges ? 'Save changes' : 'Saved'}</button>
     </nav>
+
+    {activeWarnings.length > 0 && <aside className="cms-review-warning" role="status"><AlertTriangle size={20} /><div><strong>Super Admin review warning</strong>{activeWarnings.map((warning) => <p key={warning.key}>{warning.reason}</p>)}<small>You can continue editing normally. Save the corrected content when it is ready for another review.</small></div></aside>}
 
     <style>{`
       .cms-page[class*="cms-page--"]{width:100%;max-width:1440px;margin:0 auto;padding:clamp(20px,2.6vw,36px)}
@@ -107,12 +121,13 @@ export default function SiteContentManager() {
       .cms-tabs button.is-active{background:#111;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.14)}
       .cms-tabs .cms-tabs__save{display:inline-flex;align-items:center;justify-content:center;gap:7px;margin-top:8px;background:#f5cf00;color:#111;text-align:center;font-weight:800}
       .cms-tabs .cms-tabs__save:disabled{cursor:not-allowed;background:#e8e4da;color:#8b867d;box-shadow:none;opacity:1}
+      .cms-review-warning{grid-column:2;display:flex;gap:12px;padding:15px 17px;border:1px solid #e0a51b;border-left:4px solid #c38300;border-radius:12px;background:#fff8df;color:#5e4300}.cms-review-warning svg{flex:0 0 auto}.cms-review-warning strong,.cms-review-warning small{display:block}.cms-review-warning p{margin:5px 0}.cms-review-warning small{margin-top:7px;color:#705f37}
       .cms-card{display:none}
       .cms-card.is-active{display:block}
       .cms-subtabs{display:flex;gap:6px;padding:6px;background:#e9e6dd;border-radius:14px}.cms-subtabs button{flex:1;border:0;border-radius:10px;background:transparent;padding:10px 12px;font:inherit;font-weight:750;color:#706b62;cursor:pointer}.cms-subtabs button.is-active{background:#fff;color:#111;box-shadow:0 3px 10px rgba(30,27,20,.08)}
       .cms-page .cms-card{padding:24px;border-radius:16px}.cms-page .cms-card h2{margin-bottom:16px}.cms-page .cms-grid{gap:14px}.cms-page .cms-field{gap:5px}.cms-page .cms-field input,.cms-page .cms-field textarea{padding:10px 12px}.cms-page .cms-upload{margin-top:16px}
       @media(min-width:1000px){.cms-page[class*="cms-page--"]{grid-template-columns:250px minmax(0,1fr);align-items:start;gap:24px}.cms-page .cms-tabs{grid-column:1;grid-row:1/span 20}.cms-page .cms-card,.cms-page .cms-subtabs{grid-column:2}.cms-page .cms-card{max-height:none;overflow:visible}}
-      @media(max-width:999px){.cms-page[class*="cms-page--"]{padding:20px}.cms-tabs{top:72px;flex-direction:row;overflow-x:auto;padding:9px}.cms-tabs__title{display:none}.cms-tabs button{flex:0 0 auto;padding:10px 13px;white-space:nowrap}.cms-tabs button small{display:none}.cms-tabs .cms-tabs__save{margin:0 0 0 auto}.cms-page .cms-card{max-height:none;overflow:visible}}
+      @media(max-width:999px){.cms-page[class*="cms-page--"]{padding:20px}.cms-tabs{top:72px;flex-direction:row;overflow-x:auto;padding:9px}.cms-tabs__title{display:none}.cms-tabs button{flex:0 0 auto;padding:10px 13px;white-space:nowrap}.cms-tabs button small{display:none}.cms-tabs .cms-tabs__save{margin:0 0 0 auto}.cms-review-warning{grid-column:1}.cms-page .cms-card{max-height:none;overflow:visible}}
       @media(min-width:761px) and (max-width:900px){.cms-page .cms-grid,.cms-page .cms-repeat__row,.cms-page .cms-repeat__row--faq{grid-template-columns:1fr}.cms-page .cms-repeat__row>button{margin:0}}
       @media(max-width:600px){.cms-page[class*="cms-page--"]{padding:14px 14px 92px;gap:14px}.cms-tabs{top:70px;margin-inline:-4px}.cms-tabs .cms-tabs__save{position:fixed;right:14px;bottom:14px;z-index:100;margin:0;padding:14px 18px;box-shadow:0 10px 30px rgba(17,17,15,.25)}.cms-subtabs{overflow-x:auto}.cms-subtabs button{flex:0 0 auto;min-width:max-content}.cms-page .cms-card{padding:18px}.cms-page .cms-card h2{font-size:1.25rem}.cms-page .cms-grid{gap:12px}}
     `}</style>

@@ -14,7 +14,7 @@ $adminId = (int) $adminSession['id'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $stmt = $pdo->prepare(
-        'SELECT id, username, email, created_at, updated_at
+        'SELECT id, username, email, role, created_at, updated_at
          FROM admins WHERE id = :id LIMIT 1'
     );
     $stmt->execute(['id' => $adminId]);
@@ -129,7 +129,8 @@ json_success([
     'admin' => [
         'id' => $adminId,
         'username' => $username,
-        'email' => $email
+        'email' => $email,
+        'role' => $adminSession['role']
     ],
     'password_changed' => $newPassword !== '',
     'message' => 'Profile updated successfully.'

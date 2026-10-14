@@ -34,7 +34,7 @@ function fetch_shoot_images(PDO $pdo, int $shootId, bool $includeHidden = false)
     $columns = $includeHidden
         ? '*'
         : 'id, shoot_id, image_path, title, caption, sort_order, is_cover, visible, created_at, updated_at';
-    $sql = 'SELECT ' . $columns . ' FROM portfolio_images WHERE shoot_id = :id' . ($includeHidden ? '' : ' AND visible = 1') . ' ORDER BY sort_order ASC, id ASC';
+    $sql = 'SELECT ' . $columns . ' FROM portfolio_images pi WHERE shoot_id = :id' . ($includeHidden ? '' : " AND visible = 1 AND NOT EXISTS (SELECT 1 FROM content_moderation cm WHERE cm.entity_type='PORTFOLIO_IMAGE' AND cm.entity_key=CAST(pi.id AS CHAR) AND cm.status='HIDDEN')") . ' ORDER BY sort_order ASC, id ASC';
     $stmt = $pdo->prepare($sql);
     $stmt->execute(['id' => $shootId]);
     return $stmt->fetchAll();
@@ -78,14 +78,16 @@ if ($method === 'GET') {
 
     if (isset($_GET['category']) && isset($_GET['shoot'])) {
         $stmt = $pdo->prepare(
-            'SELECT s.*, c.name AS category_name, c.slug AS category_slug
+            "SELECT s.*, c.name AS category_name, c.slug AS category_slug
              FROM portfolio_shoots s
              JOIN portfolio_categories c ON c.id = s.category_id
              WHERE c.slug = :cat
                AND s.slug = :shoot
                AND s.visible = 1
                AND c.visible = 1
-             LIMIT 1'
+               AND NOT EXISTS (SELECT 1 FROM content_moderation cm WHERE cm.entity_type='PORTFOLIO_SHOOT' AND cm.entity_key=CAST(s.id AS CHAR) AND cm.status='HIDDEN')
+               AND NOT EXISTS (SELECT 1 FROM content_moderation cm WHERE cm.entity_type='PORTFOLIO_CATEGORY' AND cm.entity_key=CAST(c.id AS CHAR) AND cm.status='HIDDEN')
+             LIMIT 1"
         );
 
         $stmt->execute([
@@ -117,7 +119,7 @@ if ($method === 'GET') {
      */
     if (isset($_GET['category']) && isset($_GET['images'])) {
         $stmt = $pdo->prepare(
-            'SELECT
+            "SELECT
                 pi.id,
                 pi.shoot_id,
                 pi.image_path,
@@ -143,11 +145,14 @@ if ($method === 'GET') {
                AND c.visible = 1
                AND s.visible = 1
                AND pi.visible = 1
+               AND NOT EXISTS (SELECT 1 FROM content_moderation cm WHERE cm.entity_type='PORTFOLIO_IMAGE' AND cm.entity_key=CAST(pi.id AS CHAR) AND cm.status='HIDDEN')
+               AND NOT EXISTS (SELECT 1 FROM content_moderation cm WHERE cm.entity_type='PORTFOLIO_SHOOT' AND cm.entity_key=CAST(s.id AS CHAR) AND cm.status='HIDDEN')
+               AND NOT EXISTS (SELECT 1 FROM content_moderation cm WHERE cm.entity_type='PORTFOLIO_CATEGORY' AND cm.entity_key=CAST(c.id AS CHAR) AND cm.status='HIDDEN')
              ORDER BY
                 s.sort_order ASC,
                 s.id ASC,
                 pi.sort_order ASC,
-                pi.id ASC'
+                pi.id ASC"
         );
 
         $stmt->execute([
@@ -159,7 +164,7 @@ if ($method === 'GET') {
 
     if (isset($_GET['category'])) {
         $stmt = $pdo->prepare(
-            'SELECT s.*,
+            "SELECT s.*,
                     (SELECT image_path
                      FROM portfolio_images pi
                      WHERE pi.shoot_id = s.id
@@ -171,7 +176,9 @@ if ($method === 'GET') {
              WHERE c.slug = :cat
                AND s.visible = 1
                AND c.visible = 1
-             ORDER BY s.sort_order ASC, s.id ASC'
+               AND NOT EXISTS (SELECT 1 FROM content_moderation cm WHERE cm.entity_type='PORTFOLIO_SHOOT' AND cm.entity_key=CAST(s.id AS CHAR) AND cm.status='HIDDEN')
+               AND NOT EXISTS (SELECT 1 FROM content_moderation cm WHERE cm.entity_type='PORTFOLIO_CATEGORY' AND cm.entity_key=CAST(c.id AS CHAR) AND cm.status='HIDDEN')
+             ORDER BY s.sort_order ASC, s.id ASC"
         );
 
         $stmt->execute([

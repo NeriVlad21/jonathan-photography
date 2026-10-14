@@ -23,16 +23,42 @@ import {
   User,
   ChevronRight,
   PanelsTopLeft,
-  WalletCards
+  WalletCards,
+  LifeBuoy,
+  ShieldCheck,
+  ArchiveRestore,
+  ScanSearch
 } from 'lucide-react'
 
 import { useAdminAuth } from '../context/AdminAuthContext.jsx'
-import { searchApi } from '../services/api.js'
+import { searchApi, superSearchApi } from '../services/api.js'
 import EditorialDoodles from '../components/EditorialDoodles.jsx'
 
 const NAV = [
   {
+    section: 'Platform',
+    roles: ['SUPER_ADMIN'],
+    links: [
+      {
+        to: '/admin/super-admin',
+        label: 'Super Admin',
+        icon: ShieldCheck
+      },
+      {
+        to: '/admin/content-oversight',
+        label: 'Content Oversight',
+        icon: ScanSearch
+      },
+      {
+        to: '/admin/super-archives',
+        label: 'Archives',
+        icon: ArchiveRestore
+      }
+    ]
+  },
+  {
     section: 'Overview',
+    roles: ['OWNER'],
     links: [
       {
         to: '/admin/dashboard',
@@ -43,6 +69,7 @@ const NAV = [
   },
   {
     section: 'Requests',
+    roles: ['OWNER'],
     links: [
       {
         to: '/admin/bookings',
@@ -58,6 +85,7 @@ const NAV = [
   },
   {
     section: 'Content',
+    roles: ['OWNER'],
     links: [
       {
         to: '/admin/site-content',
@@ -78,6 +106,7 @@ const NAV = [
   },
   {
     section: 'Configuration',
+    roles: ['OWNER'],
     links: [
       {
         to: '/admin/estimator-settings',
@@ -102,7 +131,19 @@ const NAV = [
     ]
   },
   {
+    section: 'Support',
+    links: [
+      {
+        to: '/admin/support',
+        label: 'Support Reports',
+        ownerLabel: 'Report a Problem',
+        icon: LifeBuoy
+      }
+    ]
+  },
+  {
     section: 'Storage',
+    roles: ['OWNER'],
     links: [
       {
         to: '/admin/archive',
@@ -125,6 +166,8 @@ export default function AdminLayout() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isNavOpen, setIsNavOpen] = useState(false)
 
+  const visibleNav = NAV.filter((group) => !group.roles || group.roles.includes(admin?.role))
+
   const searchRef = useRef(null)
 
   useEffect(() => {
@@ -142,10 +185,12 @@ export default function AdminLayout() {
   */
 
   const showSearch =
-    location.pathname === '/admin' ||
-    location.pathname === '/admin/dashboard' ||
-    location.pathname.startsWith('/admin/bookings') ||
-    location.pathname.startsWith('/admin/archive')
+    admin?.role === 'SUPER_ADMIN' || (admin?.role === 'OWNER' && (
+      location.pathname === '/admin' ||
+      location.pathname === '/admin/dashboard' ||
+      location.pathname.startsWith('/admin/bookings') ||
+      location.pathname.startsWith('/admin/archive')
+    ))
 
   /*
   ============================================================
@@ -153,20 +198,13 @@ export default function AdminLayout() {
   ============================================================
   */
 
-  const currentPage =
-    location.pathname === '/admin/profile'
-      ? 'Profile'
-      : NAV
-      .flatMap((group) => group.links)
-      .find((link) => {
-        if (location.pathname === link.to) {
-          return true
-        }
+  const currentLink = visibleNav
+    .flatMap((group) => group.links)
+    .find((link) => location.pathname === link.to || location.pathname.startsWith(`${link.to}/`))
 
-        return location.pathname.startsWith(
-          `${link.to}/`
-        )
-      })?.label || 'Dashboard'
+  const currentPage = location.pathname === '/admin/profile'
+    ? 'Profile'
+    : (admin?.role === 'OWNER' && currentLink?.ownerLabel ? currentLink.ownerLabel : currentLink?.label) || 'Dashboard'
 
   /*
   ============================================================
@@ -198,21 +236,15 @@ export default function AdminLayout() {
 
     const delay = setTimeout(async () => {
       try {
-        const results =
-          await searchApi.global(query)
+        const results = admin?.role === 'SUPER_ADMIN'
+          ? await superSearchApi.global(query)
+          : await searchApi.global(query)
 
-        setSearchResults({
-          bookings:
-            results?.bookings || [],
-
-          leads:
-            results?.leads || []
-        })
+        setSearchResults(admin?.role === 'SUPER_ADMIN'
+          ? { superResults: results?.results || [] }
+          : { bookings: results?.bookings || [], leads: results?.leads || [] })
       } catch {
-        setSearchResults({
-          bookings: [],
-          leads: []
-        })
+        setSearchResults(admin?.role === 'SUPER_ADMIN' ? { superResults: [] } : { bookings: [], leads: [] })
       } finally {
         setIsSearching(false)
       }
@@ -221,7 +253,7 @@ export default function AdminLayout() {
     return () => {
       clearTimeout(delay)
     }
-  }, [searchQuery])
+  }, [searchQuery, admin?.role])
 
   /*
   ============================================================
@@ -1355,7 +1387,7 @@ export default function AdminLayout() {
 
         <nav className="admin-sidebar__nav">
 
-          {NAV.map((group) => (
+          {visibleNav.map((group) => (
             <div
               key={group.section}
               className="admin-sidebar__group"
@@ -1387,7 +1419,7 @@ export default function AdminLayout() {
                     </span>
 
                     <span>
-                      {link.label}
+                      {admin?.role === 'OWNER' && link.ownerLabel ? link.ownerLabel : link.label}
                     </span>
 
                   </NavLink>
@@ -1420,7 +1452,7 @@ export default function AdminLayout() {
             <div className="admin-sidebar__profile-copy">
 
               <span className="admin-sidebar__profile-label">
-                Workspace
+                {admin?.role === 'SUPER_ADMIN' ? 'Platform oversight' : 'Studio workspace'}
               </span>
 
               <div className="admin-sidebar__profile-name">
@@ -1492,7 +1524,7 @@ export default function AdminLayout() {
                 <input
                   type="text"
                   className="admin-search__input"
-                  placeholder="Search clients, emails, or bookings..."
+                  placeholder={admin?.role === 'SUPER_ADMIN' ? 'Search fees, support, or website content…' : 'Search clients, emails, or bookings...'}
                   value={searchQuery}
                   onFocus={() => {
                     if (
@@ -1545,6 +1577,27 @@ export default function AdminLayout() {
                     {!isSearching &&
                       searchResults && (
                         <>
+
+                          {searchResults.superResults?.length > 0 && (
+                            <div className="admin-search__group">
+                              <div className="admin-search__group-label">Platform results</div>
+                              {searchResults.superResults.map((result, index) => (
+                                <button
+                                  type="button"
+                                  key={`${result.type}-${result.label}-${index}`}
+                                  className="admin-search__result"
+                                  onMouseDown={(event) => event.preventDefault()}
+                                  onClick={() => { navigate(result.to); clearSearch() }}
+                                >
+                                  <div className="admin-search__result-copy">
+                                    <div className="admin-search__result-name">{result.label}</div>
+                                    <div className="admin-search__result-meta">{result.type} · {result.meta}</div>
+                                  </div>
+                                  <ChevronRight size={15} className="admin-search__result-arrow" />
+                                </button>
+                              ))}
+                            </div>
+                          )}
 
                           {/* BOOKINGS */}
 
@@ -1673,7 +1726,8 @@ export default function AdminLayout() {
                           {/* NO RESULTS */}
 
                           {!searchResults.bookings?.length &&
-                            !searchResults.leads?.length && (
+                            !searchResults.leads?.length &&
+                            !searchResults.superResults?.length && (
                               <div className="admin-search__state">
                                 No results found for "{searchQuery}".
                               </div>

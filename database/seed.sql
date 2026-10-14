@@ -69,6 +69,15 @@ ALTER TABLE estimator_addons AUTO_INCREMENT = 1;
 DELETE FROM contact_platforms;
 ALTER TABLE contact_platforms AUTO_INCREMENT = 1;
 
+DELETE FROM admin_audit_log;
+ALTER TABLE admin_audit_log AUTO_INCREMENT = 1;
+
+DELETE FROM content_moderation;
+ALTER TABLE content_moderation AUTO_INCREMENT = 1;
+
+DELETE FROM support_reports;
+ALTER TABLE support_reports AUTO_INCREMENT = 1;
+
 DELETE FROM admins;
 ALTER TABLE admins AUTO_INCREMENT = 1;
 
@@ -181,6 +190,7 @@ INSERT INTO site_settings (setting_key, setting_value) VALUES
 ('business_phone', '0963-332-7847'),
 ('business_phone_alt', '0927-776-3101'),
 ('business_email', 'mereziko@gmail.com'),
+('booking_notification_email', 'mereziko@gmail.com'),
 ('estimator_range_margin', '15'),
 ('platform_fee_threshold', '10000'),
 ('platform_fee_low_rate', '0.005'),

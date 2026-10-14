@@ -44,8 +44,8 @@ $newBookings = (int) $pdo->query("SELECT COUNT(*) FROM bookings WHERE $timeCondi
 $estimatorUses = (int) $pdo->query("SELECT COUNT(*) FROM estimator_leads WHERE $timeCondition")->fetchColumn();
 $avgEstimate = (float) $pdo->query("SELECT COALESCE(AVG(total),0) FROM estimator_leads WHERE $timeCondition")->fetchColumn();
 refresh_fee_cycle_statuses($pdo);
-$platformFeesDue = (float) $pdo->query("SELECT COALESCE(SUM(pfl.fee_amount),0) FROM platform_fee_ledger pfl JOIN fee_cycles fc ON fc.id=pfl.cycle_id WHERE pfl.voided_at IS NULL AND fc.status<>'PAID'")->fetchColumn();
-$overdueFeeCycles = (int) $pdo->query("SELECT COUNT(*) FROM fee_cycles WHERE status='DUE'")->fetchColumn();
+$platformFeesDue = (float) $pdo->query("SELECT COALESCE(SUM(pfl.fee_amount),0) FROM platform_fee_ledger pfl JOIN fee_cycles fc ON fc.id=pfl.cycle_id WHERE pfl.voided_at IS NULL AND pfl.archived_at IS NULL AND fc.archived_at IS NULL AND fc.status<>'PAID'")->fetchColumn();
+$overdueFeeCycles = (int) $pdo->query("SELECT COUNT(*) FROM fee_cycles WHERE archived_at IS NULL AND status='DUE'")->fetchColumn();
 
 // Conversion Rate
 $lCondition = str_replace('created_at', 'l.created_at', $timeCondition);

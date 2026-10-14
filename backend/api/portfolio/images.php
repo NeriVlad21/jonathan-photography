@@ -21,7 +21,7 @@ if ($method === 'GET' && isset($_GET['id'])) {
     
     // Using LEFT JOIN to guarantee the image returns even if the shoot/category linkage is imperfect.
     $stmt = $pdo->prepare(
-        'SELECT pi.id, pi.shoot_id, pi.image_path, pi.title, pi.caption,
+        "SELECT pi.id, pi.shoot_id, pi.image_path, pi.title, pi.caption,
                 pi.sort_order, pi.is_cover, pi.visible, pi.created_at, pi.updated_at,
                 s.title AS shoot_title, s.slug AS shoot_slug, s.location, s.shoot_date,
                 c.name AS category_name, c.slug AS category_slug
@@ -32,7 +32,10 @@ if ($method === 'GET' && isset($_GET['id'])) {
            AND pi.visible = 1
            AND (s.id IS NULL OR s.visible = 1)
            AND (c.id IS NULL OR c.visible = 1)
-         LIMIT 1'
+           AND NOT EXISTS (SELECT 1 FROM content_moderation cm WHERE cm.entity_type='PORTFOLIO_IMAGE' AND cm.entity_key=CAST(pi.id AS CHAR) AND cm.status='HIDDEN')
+           AND (s.id IS NULL OR NOT EXISTS (SELECT 1 FROM content_moderation cm WHERE cm.entity_type='PORTFOLIO_SHOOT' AND cm.entity_key=CAST(s.id AS CHAR) AND cm.status='HIDDEN'))
+           AND (c.id IS NULL OR NOT EXISTS (SELECT 1 FROM content_moderation cm WHERE cm.entity_type='PORTFOLIO_CATEGORY' AND cm.entity_key=CAST(c.id AS CHAR) AND cm.status='HIDDEN'))
+         LIMIT 1"
     );
     $stmt->execute(['id' => $id]);
     $image = $stmt->fetch();
@@ -48,9 +51,10 @@ if ($method === 'GET' && isset($_GET['id'])) {
     if (!empty($image['shoot_id'])) {
         // FIXED: Split :so into :so1 and :so2 to satisfy PDO parameter counting
         $prev = $pdo->prepare(
-            'SELECT id FROM portfolio_images WHERE shoot_id = :sid AND visible = 1
+            "SELECT id FROM portfolio_images pi WHERE shoot_id = :sid AND visible = 1
+             AND NOT EXISTS (SELECT 1 FROM content_moderation cm WHERE cm.entity_type='PORTFOLIO_IMAGE' AND cm.entity_key=CAST(pi.id AS CHAR) AND cm.status='HIDDEN')
              AND (sort_order < :so1 OR (sort_order = :so2 AND id < :id))
-             ORDER BY sort_order DESC, id DESC LIMIT 1'
+             ORDER BY sort_order DESC, id DESC LIMIT 1"
         );
         $prev->execute([
             'sid' => $image['shoot_id'], 
@@ -61,9 +65,10 @@ if ($method === 'GET' && isset($_GET['id'])) {
         $prevId = $prev->fetchColumn() ?: null;
 
         $next = $pdo->prepare(
-            'SELECT id FROM portfolio_images WHERE shoot_id = :sid AND visible = 1
+            "SELECT id FROM portfolio_images pi WHERE shoot_id = :sid AND visible = 1
+             AND NOT EXISTS (SELECT 1 FROM content_moderation cm WHERE cm.entity_type='PORTFOLIO_IMAGE' AND cm.entity_key=CAST(pi.id AS CHAR) AND cm.status='HIDDEN')
              AND (sort_order > :so1 OR (sort_order = :so2 AND id > :id))
-             ORDER BY sort_order ASC, id ASC LIMIT 1'
+             ORDER BY sort_order ASC, id ASC LIMIT 1"
         );
         $next->execute([
             'sid' => $image['shoot_id'], 

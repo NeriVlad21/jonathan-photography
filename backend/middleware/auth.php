@@ -93,11 +93,50 @@ function require_admin(): array
     if (empty($_SESSION['admin_id'])) {
         json_error('You must be logged in to do that.', 401);
     }
+
+    // Re-check the account on every protected request. This immediately
+    // invalidates an old owner's session after a Super Admin transfers
+    // ownership or deactivates the account.
+    require_once __DIR__ . '/../config/database.php';
+    $pdo = Database::connect();
+    $stmt = $pdo->prepare(
+        'SELECT id, username, role, is_active, session_version FROM admins WHERE id = :id LIMIT 1'
+    );
+    $stmt->execute(['id' => (int) $_SESSION['admin_id']]);
+    $account = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (
+        !$account ||
+        (int) $account['is_active'] !== 1 ||
+        (int) $account['session_version'] !== (int) ($_SESSION['admin_session_version'] ?? 0)
+    ) {
+        clear_admin_session();
+        json_error('This administrator account is no longer active.', 401);
+    }
+
+    $_SESSION['admin_username'] = (string) $account['username'];
+    $_SESSION['admin_role'] = (string) $account['role'];
     $_SESSION['_last_activity'] = $now;
     return [
-        'id'       => $_SESSION['admin_id'],
-        'username' => $_SESSION['admin_username'] ?? '',
+        'id'       => (int) $account['id'],
+        'username' => (string) $account['username'],
+        'role'     => (string) $account['role'],
     ];
+}
+
+/** Blocks the request unless the current account has the required role. */
+function require_role(string $role): array
+{
+    $admin = require_admin();
+    if (($admin['role'] ?? '') !== $role) {
+        json_error('You do not have permission to perform this action.', 403);
+    }
+    return $admin;
+}
+
+function require_super_admin(): array
+{
+    return require_role('SUPER_ADMIN');
 }
 
 /** Issues a CSRF token for the current session (called by /api/auth/check.php). */

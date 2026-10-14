@@ -41,9 +41,9 @@ $password = (string) $input['password'];
 
 $pdo = Database::connect();
 $stmt = $pdo->prepare(
-    'SELECT id, username, password_hash 
+    'SELECT id, username, password_hash, role, is_active, session_version
      FROM admins 
-     WHERE username = :username OR email = :email 
+     WHERE (username = :username OR email = :email) AND is_active = 1
      LIMIT 1'
 );
 
@@ -66,11 +66,13 @@ if (password_needs_rehash($admin['password_hash'], PASSWORD_DEFAULT)) {
 session_regenerate_id(true);
 $_SESSION['admin_id'] = $admin['id'];
 $_SESSION['admin_username'] = $admin['username'];
+$_SESSION['admin_role'] = $admin['role'];
+$_SESSION['admin_session_version'] = (int) $admin['session_version'];
 $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 $_SESSION['_absolute_started_at'] = time();
 $_SESSION['_last_activity'] = time();
 
 json_success([
-    'admin' => ['id' => $admin['id'], 'username' => $admin['username']],
+    'admin' => ['id' => $admin['id'], 'username' => $admin['username'], 'role' => $admin['role']],
     'csrf_token' => $_SESSION['csrf_token'],
 ]);

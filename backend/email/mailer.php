@@ -70,10 +70,7 @@ function send_mail_with_retry(PHPMailer $mail, string $context): void
     throw new RuntimeException("{$context} failed after a retry.", 0, $lastError);
 }
 
-/**
- * The most recently maintained admin profile is the studio's notification
- * address. Fall back to the environment setting during setup or recovery.
- */
+/** Booking alerts are routed by a Super Admin-controlled setting. */
 function studio_profile_email(?array $config = null): string
 {
     static $resolvedEmail = null;
@@ -89,12 +86,17 @@ function studio_profile_email(?array $config = null): string
         require_once __DIR__ . '/../config/database.php';
         $pdo = Database::connect();
         $stmt = $pdo->query(
-            "SELECT email FROM admins
-             WHERE email IS NOT NULL AND TRIM(email) <> ''
-             ORDER BY updated_at DESC, id ASC
-             LIMIT 1"
+            "SELECT setting_value FROM site_settings
+             WHERE setting_key = 'booking_notification_email' LIMIT 1"
         );
         $profileEmail = trim((string) ($stmt->fetchColumn() ?: ''));
+        if ($profileEmail === '') {
+            $profileEmail = trim((string) ($pdo->query(
+                "SELECT email FROM admins
+                 WHERE role = 'OWNER' AND is_active = 1
+                 ORDER BY updated_at DESC, id DESC LIMIT 1"
+            )->fetchColumn() ?: ''));
+        }
         Database::disconnect();
 
         if ($profileEmail !== '' && filter_var($profileEmail, FILTER_VALIDATE_EMAIL)) {
@@ -106,6 +108,53 @@ function studio_profile_email(?array $config = null): string
     }
 
     return $resolvedEmail = $fallback;
+}
+
+/** Resolves the active Super Admin support inbox. */
+function super_admin_email(?array $config = null): string
+{
+    $config ??= require __DIR__ . '/../config/config.php';
+    try {
+        require_once __DIR__ . '/../config/database.php';
+        $pdo = Database::connect();
+        $email = trim((string) ($pdo->query(
+            "SELECT email FROM admins
+             WHERE role = 'SUPER_ADMIN' AND is_active = 1
+             ORDER BY updated_at DESC, id DESC LIMIT 1"
+        )->fetchColumn() ?: ''));
+        if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) return $email;
+    } catch (Throwable $e) {
+        error_log('[MAILER] Unable to resolve Super Admin email: ' . $e->getMessage());
+    }
+    return trim((string) ($config['smtp']['admin_email'] ?? ''));
+}
+
+/** Sends an owner support report without allowing email failure to lose it. */
+function send_support_report_email(array $report, array $owner): bool
+{
+    try {
+        $mail = make_mailer();
+        $recipient = super_admin_email();
+        if (!$mail || $recipient === '') return false;
+        $safe = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+        $mail->addAddress($recipient);
+        if (!empty($owner['email'])) $mail->addReplyTo((string) $owner['email'], (string) $owner['username']);
+        $mail->isHTML(true);
+        $mail->Subject = sprintf('[%s] Support report #%d — %s', $report['priority'], $report['id'], $report['subject']);
+        $mail->Body = '<div style="font-family:Arial,sans-serif;max-width:620px">'
+            . '<h2>Owner support report</h2>'
+            . '<p><strong>From:</strong> ' . $safe($owner['username']) . ' (' . $safe($owner['email']) . ')</p>'
+            . '<p><strong>Category:</strong> ' . $safe($report['category']) . '<br><strong>Priority:</strong> ' . $safe($report['priority']) . '</p>'
+            . '<h3>' . $safe($report['subject']) . '</h3>'
+            . '<p style="white-space:pre-wrap">' . nl2br($safe($report['description'])) . '</p>'
+            . '<p>Open the Super Admin support area to review and respond.</p></div>';
+        $mail->AltBody = "Support report #{$report['id']}\nFrom: {$owner['username']} ({$owner['email']})\nCategory: {$report['category']}\nPriority: {$report['priority']}\n\n{$report['subject']}\n{$report['description']}";
+        send_mail_with_retry($mail, 'Support report email');
+        return true;
+    } catch (Throwable $e) {
+        error_log('[MAILER] Support report notification failed: ' . $e->getMessage());
+        return false;
+    }
 }
 
 function add_studio_reply_to(PHPMailer $mail, ?array $config = null): void

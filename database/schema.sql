@@ -20,8 +20,68 @@ CREATE TABLE admins (
   username VARCHAR(60) NOT NULL UNIQUE,
   email VARCHAR(160) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
+  role ENUM('OWNER','SUPER_ADMIN') NOT NULL DEFAULT 'OWNER',
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  session_version INT UNSIGNED NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_admins_role_active (role, is_active),
+  CONSTRAINT chk_admins_active CHECK (is_active IN (0, 1))
+) ENGINE=InnoDB;
+
+-- ------------------------------------------------------------
+-- support_reports (owner-to-platform support channel)
+-- ------------------------------------------------------------
+DROP TABLE IF EXISTS support_reports;
+CREATE TABLE support_reports (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  submitted_by_admin_id INT UNSIGNED NOT NULL,
+  subject VARCHAR(160) NOT NULL,
+  category ENUM('TECHNICAL','BILLING','ACCOUNT','OTHER') NOT NULL DEFAULT 'TECHNICAL',
+  priority ENUM('NORMAL','URGENT') NOT NULL DEFAULT 'NORMAL',
+  description TEXT NOT NULL,
+  status ENUM('OPEN','IN_PROGRESS','RESOLVED','CLOSED') NOT NULL DEFAULT 'OPEN',
+  super_admin_reply TEXT NULL,
+  resolved_at DATETIME NULL,
+  archived_at DATETIME NULL,
+  archived_by_admin_id INT UNSIGNED NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_support_status_created (status, created_at),
+  INDEX idx_support_submitter_created (submitted_by_admin_id, created_at),
+  INDEX idx_support_archived (archived_at, status),
+  CONSTRAINT fk_support_submitter FOREIGN KEY (submitted_by_admin_id) REFERENCES admins(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_support_archived_by FOREIGN KEY (archived_by_admin_id) REFERENCES admins(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- Security-sensitive Super Admin actions are retained for accountability.
+DROP TABLE IF EXISTS admin_audit_log;
+CREATE TABLE admin_audit_log (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  actor_admin_id INT UNSIGNED NULL,
+  target_admin_id INT UNSIGNED NULL,
+  action VARCHAR(80) NOT NULL,
+  metadata JSON NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_admin_audit_created (created_at),
+  INDEX idx_admin_audit_actor (actor_admin_id, created_at),
+  CONSTRAINT fk_admin_audit_actor FOREIGN KEY (actor_admin_id) REFERENCES admins(id) ON DELETE SET NULL,
+  CONSTRAINT fk_admin_audit_target FOREIGN KEY (target_admin_id) REFERENCES admins(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+DROP TABLE IF EXISTS content_moderation;
+CREATE TABLE content_moderation (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  entity_type ENUM('SERVICE','PORTFOLIO_CATEGORY','PORTFOLIO_SHOOT','PORTFOLIO_IMAGE','CONTACT','SITE_COPY') NOT NULL,
+  entity_key VARCHAR(120) NOT NULL,
+  status ENUM('FLAGGED','HIDDEN') NOT NULL DEFAULT 'FLAGGED',
+  reason VARCHAR(500) NOT NULL,
+  moderated_by_admin_id INT UNSIGNED NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_content_moderation_entity (entity_type, entity_key),
+  INDEX idx_content_moderation_status (status, updated_at),
+  CONSTRAINT fk_content_moderator FOREIGN KEY (moderated_by_admin_id) REFERENCES admins(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------
@@ -267,10 +327,14 @@ CREATE TABLE fee_cycles (
   status ENUM('OPEN','DUE','PAID') NOT NULL DEFAULT 'OPEN',
   paid_at DATE NULL,
   payment_note VARCHAR(500) NULL,
+  archived_at DATETIME NULL,
+  archived_by_admin_id INT UNSIGNED NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uq_fee_cycle_dates (cycle_start, cycle_end),
-  INDEX idx_fee_cycles_status_due (status, due_date)
+  INDEX idx_fee_cycles_status_due (status, due_date),
+  INDEX idx_fee_cycles_archived (archived_at, status),
+  CONSTRAINT fk_fee_cycle_archived_by FOREIGN KEY (archived_by_admin_id) REFERENCES admins(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 DROP TABLE IF EXISTS platform_fee_ledger;
@@ -284,11 +348,15 @@ CREATE TABLE platform_fee_ledger (
   fee_amount DECIMAL(10,2) NOT NULL,
   accrued_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   voided_at DATETIME NULL,
+  archived_at DATETIME NULL,
+  archived_by_admin_id INT UNSIGNED NULL,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_fee_ledger_cycle_active (cycle_id, voided_at),
+  INDEX idx_fee_ledger_archived (archived_at, cycle_id),
   CONSTRAINT fk_fee_booking FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE,
   CONSTRAINT fk_fee_invoice FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE RESTRICT,
   CONSTRAINT fk_fee_cycle FOREIGN KEY (cycle_id) REFERENCES fee_cycles(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_fee_ledger_archived_by FOREIGN KEY (archived_by_admin_id) REFERENCES admins(id) ON DELETE SET NULL,
   CONSTRAINT chk_fee_values CHECK (agreed_total >= 0 AND fee_rate >= 0 AND fee_amount >= 0)
 ) ENGINE=InnoDB;
 

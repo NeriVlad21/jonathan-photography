@@ -715,6 +715,31 @@ export const feesApi = {
   markCyclePaid: (data) => post('/fees/index.php', data)
 }
 
+export const superAdminApi = {
+  overview: () => get('/super-admin/overview.php'),
+  update: (data) => put('/super-admin/overview.php', data)
+}
+
+export const superArchiveApi = {
+  list: () => get('/super-admin/archives.php'),
+  update: (data) => put('/super-admin/archives.php', data)
+}
+
+export const contentOversightApi = {
+  list: () => get('/super-admin/content-oversight.php'),
+  update: (data) => put('/super-admin/content-oversight.php', data)
+}
+
+export const superSearchApi = {
+  global: (query) => get(`/super-admin/search.php?q=${encodeURIComponent(query)}`)
+}
+
+export const supportApi = {
+  list: () => get('/support/reports.php'),
+  create: (data) => post('/support/reports.php', data),
+  update: (data) => put('/support/reports.php', data)
+}
+
 // ============================================================
 // GLOBAL SEARCH
 // ============================================================
@@ -781,6 +806,7 @@ export const contactsApi = {
 
 export const siteContentApi = {
   get: () => get('/site/content.php'),
+  warnings: () => get('/site/moderation-warnings.php'),
   update: (content) => put('/site/content.php', { content }),
   uploadImage: (formData) => uploadForm('/site/upload.php', formData)
 }
