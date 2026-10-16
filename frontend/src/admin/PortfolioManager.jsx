@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useReasonDialog } from './useReasonDialog.jsx'
 import {
   Plus,
   Trash2,
@@ -476,8 +477,10 @@ export default function PortfolioManager({ readOnly = false }) {
         !!image.visible
     ).length || 0
 
+  const [askReason, reasonDialog] = useReasonDialog()
+
   const flagItem = async (entityType, entityId) => {
-    const reason = window.prompt('Reason for this advisory warning (required):')?.trim()
+    const reason = await askReason({ title: 'Flag this portfolio item' })
     if (!reason) return
     const key = `${entityType}-${entityId}`
     setFlaggingKey(key)
@@ -492,6 +495,7 @@ export default function PortfolioManager({ readOnly = false }) {
 
   return (
     <>
+      {reasonDialog}
       <style>{`
 
         /*
@@ -729,6 +733,21 @@ export default function PortfolioManager({ readOnly = false }) {
 
         .portfolio-admin__list-item-icon {
           flex: 0 0 auto;
+        }
+
+        .portfolio-admin__list-item-open {
+          display: grid;
+          flex: 0 0 auto;
+          place-items: center;
+          width: 32px;
+          height: 32px;
+          margin: -6px 0 -6px -6px;
+          padding: 0;
+          border: 0;
+          border-radius: 4px;
+          background: transparent;
+          color: inherit;
+          cursor: pointer;
         }
 
         .portfolio-admin__list-item input {
@@ -1592,9 +1611,9 @@ export default function PortfolioManager({ readOnly = false }) {
               Content Management
             </span>
 
-            <h1 className="display">
+            <h2 className="display">
               {readOnly ? 'Portfolio Oversight' : 'Portfolio'}
-            </h1>
+            </h2>
           </div>
 
           <div className="portfolio-admin__stats">
@@ -1668,36 +1687,35 @@ export default function PortfolioManager({ readOnly = false }) {
                 <div className="portfolio-admin__list">
 
                   {categories.map(
-                    (category) => (
-                      <button
+                    (category) => {
+                      const isActive = activeCategoryId === category.id
+                      const select = () => setActiveCategoryId(category.id)
+                      // A row, not a button: the rename field cannot live inside a <button>.
+                      return (
+                      <div
                         key={category.id}
-                        type="button"
-                        className={`
-                          portfolio-admin__list-item
-                          ${
-                            activeCategoryId ===
-                            category.id
-                              ? 'active'
-                              : ''
-                          }
-                        `}
-                        onClick={() =>
-                          setActiveCategoryId(
-                            category.id
-                          )
-                        }
+                        className={`portfolio-admin__list-item ${isActive ? 'active' : ''}`}
+                        onClick={select}
                       >
 
                         <span className="portfolio-admin__list-item-main">
 
-                          <FolderOpen
-                            size={14}
-                          />
+                          <button
+                            type="button"
+                            className="portfolio-admin__list-item-open"
+                            onClick={(e) => { e.stopPropagation(); select() }}
+                            aria-pressed={isActive}
+                            aria-label={`Show shoots in ${category.name}`}
+                          >
+                            <FolderOpen size={14} aria-hidden="true" />
+                          </button>
 
                           {readOnly ? <span>{category.name}</span> : <input
+                            aria-label={`Category name: ${category.name}`}
                             value={
                               category.name
                             }
+                            onFocus={select}
                             onClick={(e) =>
                               e.stopPropagation()
                             }
@@ -1717,15 +1735,16 @@ export default function PortfolioManager({ readOnly = false }) {
                           </span>
                         )}
 
-                        {activeCategoryId ===
-                          category.id && (
+                        {isActive && (
                           <ChevronRight
                             size={14}
+                            aria-hidden="true"
                           />
                         )}
 
-                      </button>
-                    )
+                      </div>
+                      )
+                    }
                   )}
 
                 </div>
@@ -1738,6 +1757,7 @@ export default function PortfolioManager({ readOnly = false }) {
 
               <input
                 type="text"
+                aria-label="New category name"
                 placeholder="New category"
                 value={newCategoryName}
                 onChange={(e) =>
@@ -1751,6 +1771,7 @@ export default function PortfolioManager({ readOnly = false }) {
                 type="submit"
                 className="btn btn--sm btn--primary"
                 title="Add category"
+                aria-label="Add category"
               >
                 <Plus size={14} />
               </button>
@@ -1970,7 +1991,7 @@ export default function PortfolioManager({ readOnly = false }) {
               PHOTO WORKSPACE
           ===================================================== */}
 
-          <main className="portfolio-admin__main">
+          <div className="portfolio-admin__main">
 
             {!activeShoot && (
               <div className="portfolio-admin__placeholder">
@@ -2341,7 +2362,7 @@ export default function PortfolioManager({ readOnly = false }) {
               </>
             )}
 
-          </main>
+          </div>
 
         </div>
 

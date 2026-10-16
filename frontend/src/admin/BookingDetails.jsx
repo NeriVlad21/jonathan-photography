@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { useDialog } from '../components/useDialog.js'
+import { useReasonDialog } from './useReasonDialog.jsx'
 import {
   useNavigate,
   useParams,
@@ -76,6 +78,7 @@ export default function BookingDetails({ readOnly = false }) {
   const [savingPayment, setSavingPayment] = useState(false)
   const [sendingInvoice, setSendingInvoice] = useState(false)
   const [previewInvoice, setPreviewInvoice] = useState(null)
+  const invoiceDialogRef = useDialog(Boolean(previewInvoice), () => { if (!savingPayment) setPreviewInvoice(null) })
   const [flagging, setFlagging] = useState(false)
   const [revealingContact, setRevealingContact] = useState(false)
   const [detailsForm, setDetailsForm] = useState({ total: '', fee_responsibility: '', pass_platform_fee_to_client: null, coverage: '', hours: '', date: '', location: '', notes: '', addonsText: '' })
@@ -114,8 +117,10 @@ export default function BookingDetails({ readOnly = false }) {
     finally { setRevealingContact(false) }
   }
 
+  const [askReason, reasonDialog] = useReasonDialog()
+
   const flagBooking = async () => {
-    const reason = window.prompt('Reason for this advisory warning (required):')?.trim()
+    const reason = await askReason({ title: 'Flag this booking' })
     if (!reason) return
     setFlagging(true)
     try {
@@ -394,6 +399,7 @@ export default function BookingDetails({ readOnly = false }) {
 
   return (
     <>
+      {reasonDialog}
       <style>{`
 
         /*
@@ -1413,7 +1419,7 @@ export default function BookingDetails({ readOnly = false }) {
 
           {previewInvoice && (
             <div className="invoice-preview-modal" role="presentation" onMouseDown={() => !savingPayment && setPreviewInvoice(null)}>
-              <section role="dialog" aria-modal="true" aria-label="Invoice preview" onMouseDown={(event) => event.stopPropagation()}>
+              <section ref={invoiceDialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Invoice preview" onMouseDown={(event) => event.stopPropagation()}>
                 <span className="booking-details-panel__title">Invoice preview</span>
                 <h2>{previewInvoice.draftPayment ? (previewInvoice.payment_type === 'FINAL_PAYMENT' ? 'PAID IN FULL receipt' : 'Down payment invoice') : `${previewInvoice.invoice_number}${previewInvoice.voided_at ? ' — VOID' : ''}`}</h2>
                 {(() => {
@@ -1461,11 +1467,13 @@ export default function BookingDetails({ readOnly = false }) {
 
                 </div>
 
-                {readOnly && booking.contact_masked && <button type="button" className="btn btn--secondary" disabled={revealingContact} onClick={revealContact}>{revealingContact ? 'Revealing…' : 'Reveal contact details'}</button>}
+                {readOnly && booking.contact_masked && <button type="button" className="btn btn--secondary" aria-describedby="contact-reveal-note" disabled={revealingContact} onClick={revealContact}>{revealingContact ? 'Revealing…' : 'Reveal contact details'}</button>}
 
               </div>
 
               <div className="booking-details-panel__body">
+
+                {readOnly && booking.contact_masked && <p className="contact-reveal-note" id="contact-reveal-note">Contact details are masked. Revealing them is recorded in the Owner-visible access log.</p>}
 
                 <div className="booking-info-grid">
 

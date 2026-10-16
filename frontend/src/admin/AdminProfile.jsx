@@ -103,7 +103,7 @@ export default function AdminProfile() {
           </div>
         </header>
 
-        {profile.must_change_password && <div className="content-safety-note" role="alert"><KeyRound size={18} /><span><strong>Password change required.</strong> Replace the temporary password below to unlock the navigation. After saving, you will continue to the section you selected.</span></div>}
+        {Boolean(Number(profile.must_change_password)) && <div className="content-safety-note" role="alert"><KeyRound size={18} /><span><strong>Password change required.</strong> Replace the temporary password below to unlock the navigation. After saving, you will continue to the section you selected.</span></div>}
 
         <div className="admin-profile-grid">
           <aside className="admin-profile-summary">

@@ -62,11 +62,23 @@ export default function BookingForm({ estimate, onChangeEstimate, onReviewChange
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) {
       showToast('Please complete the highlighted required fields.', 'error')
+      // Take keyboard and screen-reader users straight to the first problem.
+      const firstField = ['preferred_date', 'name', 'email', 'phone', 'facebook', 'privacy_agreed'].find((key) => nextErrors[key])
+      window.requestAnimationFrame(() => {
+        const target = firstField === 'preferred_date' ? document.querySelector('.availability-picker') : document.getElementById(firstField)
+        target?.scrollIntoView({ block: 'center' })
+        const focusTarget = firstField === 'preferred_date' ? target?.querySelector('button:not([disabled])') : target
+        focusTarget?.focus({ preventScroll: true })
+      })
       return
     }
     setReviewing(true)
     onReviewChange?.(true)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    // Land on the review itself so "Send Booking Request" is in view.
+    window.requestAnimationFrame(() => {
+      document.querySelector('.booking-review')?.scrollIntoView({ block: 'start' })
+      document.getElementById('booking-review-title')?.focus({ preventScroll: true })
+    })
   }
 
   const editDetails = () => {
@@ -145,7 +157,7 @@ export default function BookingForm({ estimate, onChangeEstimate, onReviewChange
               <CheckCircle2 size={28} aria-hidden="true" />
               <div>
                 <span className="eyebrow">Final check</span>
-                <h3 className="display" id="booking-review-title">Review Your Request</h3>
+                <h3 className="display" id="booking-review-title" tabIndex={-1}>Review Your Request</h3>
                 <p>Nothing is sent until you select “Send Booking Request.”</p>
               </div>
             </div>
@@ -238,23 +250,23 @@ export default function BookingForm({ estimate, onChangeEstimate, onReviewChange
             <div className="grid-2">
               <div className="field">
                 <label htmlFor="name">Full Name</label>
-                <input id="name" autoComplete="name" className={errors.name ? 'has-error' : ''} value={form.name} onChange={update('name')} />
-                {errors.name && <span className="field-error">{errors.name}</span>}
+                <input id="name" autoComplete="name" className={errors.name ? 'has-error' : ''} aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? 'name-error' : undefined} value={form.name} onChange={update('name')} />
+                {errors.name && <span className="field-error" id="name-error">{errors.name}</span>}
               </div>
               <div className="field">
                 <label htmlFor="email">Email</label>
-                <input id="email" type="email" autoComplete="email" className={errors.email ? 'has-error' : ''} value={form.email} onChange={update('email')} />
-                {errors.email && <span className="field-error">{errors.email}</span>}
+                <input id="email" type="email" autoComplete="email" className={errors.email ? 'has-error' : ''} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'email-error' : undefined} value={form.email} onChange={update('email')} />
+                {errors.email && <span className="field-error" id="email-error">{errors.email}</span>}
               </div>
               <div className="field">
                 <label htmlFor="phone">Phone Number</label>
-                <input id="phone" type="tel" autoComplete="tel" className={errors.phone ? 'has-error' : ''} value={form.phone} onChange={update('phone')} />
-                {errors.phone && <span className="field-error">{errors.phone}</span>}
+                <input id="phone" type="tel" autoComplete="tel" className={errors.phone ? 'has-error' : ''} aria-invalid={Boolean(errors.phone)} aria-describedby={errors.phone ? 'phone-error' : undefined} value={form.phone} onChange={update('phone')} />
+                {errors.phone && <span className="field-error" id="phone-error">{errors.phone}</span>}
               </div>
               <div className="field">
                 <label htmlFor="facebook">Facebook Profile Link</label>
-                <input id="facebook" type="url" required className={errors.facebook ? 'has-error' : ''} value={form.facebook} onChange={update('facebook')} placeholder="https://facebook.com/yourname" />
-                {errors.facebook && <span className="field-error">{errors.facebook}</span>}
+                <input id="facebook" type="url" required className={errors.facebook ? 'has-error' : ''} aria-invalid={Boolean(errors.facebook)} aria-describedby={errors.facebook ? 'facebook-error' : undefined} value={form.facebook} onChange={update('facebook')} placeholder="https://facebook.com/yourname" />
+                {errors.facebook && <span className="field-error" id="facebook-error">{errors.facebook}</span>}
               </div>
             </div>
 
@@ -267,10 +279,10 @@ export default function BookingForm({ estimate, onChangeEstimate, onReviewChange
                 <p>Your information is stored in the studio system. Authorized studio personnel and the platform operator may access request and booking records when necessary for service delivery, security, technical support, and accountable platform oversight. Contact details are masked by default during platform oversight and every reveal is logged.</p>
               </div>
               <label className="checkbox-row booking-privacy-consent" htmlFor="privacy_agreed">
-                <input id="privacy_agreed" type="checkbox" checked={form.privacy_agreed} onChange={update('privacy_agreed')} />
+                <input id="privacy_agreed" type="checkbox" checked={form.privacy_agreed} onChange={update('privacy_agreed')} aria-invalid={Boolean(errors.privacy_agreed)} aria-describedby={errors.privacy_agreed ? 'privacy_agreed-error' : undefined} />
                 <span>
                   I have read and agree to the Data Privacy Policy.
-                  {errors.privacy_agreed && <span className="field-error">{errors.privacy_agreed}</span>}
+                  {errors.privacy_agreed && <span className="field-error" id="privacy_agreed-error">{errors.privacy_agreed}</span>}
                 </span>
               </label>
             </div>

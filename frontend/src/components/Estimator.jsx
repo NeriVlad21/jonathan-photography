@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { useDialog } from './useDialog.js'
 import { useNavigate } from 'react-router-dom'
 import { Check, Mail, Plus, Minus, Info } from 'lucide-react'
 import { peso } from '../utils/format.js'
@@ -23,6 +24,7 @@ export default function Estimator({ estimator }) {
   const [leadEmail, setLeadEmail] = useState('')
   const [privacyAgreed, setPrivacyAgreed] = useState(false)
   const [sendingLead, setSendingLead] = useState(false)
+  const emailDialogRef = useDialog(emailModalOpen, () => { if (!sendingLead) setEmailModalOpen(false) })
   // Only the id is kept, so opening/closing details never touches the
   // estimator selections held in useEstimator().
   const [detailsServiceId, setDetailsServiceId] = useState(null)
@@ -296,7 +298,14 @@ export default function Estimator({ estimator }) {
       {/* ========================================================
           ESTIMATE SUMMARY
           ======================================================== */}
-      <div className="estimate-summary">
+      {/* Phones: keep the running total visible while choosing options. */}
+      <a className="estimate-mobile-bar" href="#estimate-summary" aria-label="Jump to your estimate summary">
+        <span>Estimate</span>
+        <strong aria-live="polite">{dynamicTotal > 0 ? `${peso(dynamicTotal)} – ${peso(maxTotal)}` : 'Select options'}</strong>
+        <span className="estimate-mobile-bar__action">Review</span>
+      </a>
+
+      <div className="estimate-summary" id="estimate-summary">
         <h3>Your Estimate</h3>
         {selectedService && (
           <div className="estimate-summary__line">
@@ -347,8 +356,8 @@ export default function Estimator({ estimator }) {
           ======================================================== */}
       {emailModalOpen && (
         <div className="modal-backdrop" onClick={() => setEmailModalOpen(false)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            <h3>Email this estimate</h3>
+          <div ref={emailDialogRef} className="modal-card" role="dialog" aria-modal="true" aria-labelledby="email-estimate-title" onClick={(e) => e.stopPropagation()}>
+            <h3 id="email-estimate-title">Email this estimate</h3>
             <p>We'll send the full breakdown to your inbox — no obligation to book.</p>
             <form onSubmit={handleFormSubmit}>
               <div className="field">

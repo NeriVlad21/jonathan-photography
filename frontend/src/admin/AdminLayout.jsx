@@ -38,129 +38,68 @@ import EditorialDoodles from '../components/EditorialDoodles.jsx'
 
 const NAV = [
   {
-    section: 'Platform',
+    section: 'Oversight',
     roles: ['SUPER_ADMIN'],
     links: [
-      {
-        to: '/admin/super-admin',
-        label: 'Super Admin',
-        icon: ShieldCheck
-      },
+      { to: '/admin/super-admin', label: 'Overview', icon: ShieldCheck },
       { to: '/admin/oversight/bookings', label: 'Client Requests', icon: ClipboardList },
       { to: '/admin/oversight/calendar', label: 'Calendar', icon: CalendarDays },
       { to: '/admin/oversight/portfolio', label: 'Portfolio', icon: Images },
-      {
-        to: '/admin/content-oversight',
-        label: 'Content Oversight',
-        icon: ScanSearch
-      },
-      {
-        to: '/admin/super-archives',
-        label: 'Archives',
-        icon: ArchiveRestore
-      }
+      { to: '/admin/content-oversight', label: 'Content Oversight', icon: ScanSearch }
     ]
-  },
-  {
-    section: 'Transparency',
-    roles: ['OWNER'],
-    links: [{ to: '/admin/oversight-log', label: 'Oversight & Flags', icon: ScrollText }]
   },
   {
     section: 'Overview',
     roles: ['OWNER'],
-    links: [
-      {
-        to: '/admin/dashboard',
-        label: 'Dashboard',
-        icon: LayoutDashboard
-      }
-    ]
+    links: [{ to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard }]
   },
   {
     section: 'Requests',
     roles: ['OWNER'],
     links: [
-      {
-        to: '/admin/bookings',
-        label: 'Client Requests',
-        icon: CalendarCheck
-      },
-      {
-        to: '/admin/calendar',
-        label: 'Calendar',
-        icon: CalendarDays
-      }
+      { to: '/admin/bookings', label: 'Client Requests', icon: CalendarCheck },
+      { to: '/admin/calendar', label: 'Calendar', icon: CalendarDays }
     ]
   },
   {
     section: 'Content',
     roles: ['OWNER'],
     links: [
-      {
-        to: '/admin/site-content',
-        label: 'Website Content',
-        icon: PanelsTopLeft
-      },
-      {
-        to: '/admin/portfolio',
-        label: 'Portfolio',
-        icon: Images
-      },
-      {
-        to: '/admin/services',
-        label: 'Services',
-        icon: Sparkles
-      }
+      { to: '/admin/site-content', label: 'Website Content', icon: PanelsTopLeft },
+      { to: '/admin/portfolio', label: 'Portfolio', icon: Images },
+      { to: '/admin/services', label: 'Services', icon: Sparkles }
     ]
   },
   {
     section: 'Configuration',
     roles: ['OWNER'],
     links: [
-      {
-        to: '/admin/estimator-settings',
-        label: 'Estimator',
-        icon: Calculator
-      },
-      {
-        to: '/admin/contacts',
-        label: 'Contact Links',
-        icon: AtSign
-      }
+      { to: '/admin/estimator-settings', label: 'Estimator', icon: Calculator },
+      { to: '/admin/contacts', label: 'Contact Links', icon: AtSign }
     ]
   },
   {
     section: 'Billing',
     links: [
-      {
-        to: '/admin/platform-fees',
-        label: 'Platform Fees',
-        icon: WalletCards
-      }
+      { to: '/admin/platform-fees', label: 'Platform Fees', icon: WalletCards },
+      { to: '/admin/super-archives', label: 'Financial Archives', icon: ArchiveRestore, roles: ['SUPER_ADMIN'] }
     ]
   },
   {
     section: 'Support',
+    links: [{ to: '/admin/support', label: 'Support Reports', ownerLabel: 'Report a Problem', icon: LifeBuoy }]
+  },
+  {
+    section: 'Records',
+    roles: ['OWNER'],
     links: [
-      {
-        to: '/admin/support',
-        label: 'Support Reports',
-        ownerLabel: 'Report a Problem',
-        icon: LifeBuoy
-      }
+      { to: '/admin/archive', label: 'Archive & Logs', icon: Archive },
+      { to: '/admin/oversight-log', label: 'Oversight & Flags', icon: ScrollText }
     ]
   },
   {
-    section: 'Storage',
-    roles: ['OWNER'],
-    links: [
-      {
-        to: '/admin/archive',
-        label: 'Archive & Logs',
-        icon: Archive
-      }
-    ]
+    section: 'Account',
+    links: [{ to: '/admin/profile', label: 'Profile', icon: User }]
   }
 ]
 
@@ -176,7 +115,9 @@ export default function AdminLayout() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isNavOpen, setIsNavOpen] = useState(false)
 
-  const visibleNav = NAV.filter((group) => !group.roles || group.roles.includes(admin?.role))
+  const visibleNav = NAV
+    .filter((group) => !group.roles || group.roles.includes(admin?.role))
+    .map((group) => ({ ...group, links: group.links.filter((link) => !link.roles || link.roles.includes(admin?.role)) }))
 
   const searchRef = useRef(null)
 
@@ -213,7 +154,7 @@ export default function AdminLayout() {
     .find((link) => location.pathname === link.to || location.pathname.startsWith(`${link.to}/`))
 
   const currentPage = location.pathname === '/admin/profile'
-    ? 'Profile'
+    ? (admin?.role === 'SUPER_ADMIN' ? 'Superadmin profile' : 'Studio profile')
     : (admin?.role === 'OWNER' && currentLink?.ownerLabel ? currentLink.ownerLabel : currentLink?.label) || 'Dashboard'
 
   /*
@@ -332,6 +273,7 @@ export default function AdminLayout() {
 
   return (
     <div className="admin-shell">
+      <a className="admin-skip-link" href="#admin-main">Skip to main content</a>
       <style>{`
 
         /*
@@ -1274,7 +1216,7 @@ export default function AdminLayout() {
 
         }
 
-        @media (max-width: 760px) {
+        @media (max-width: 900px) {
 
           .admin-shell { display: block; }
 
@@ -1327,9 +1269,9 @@ export default function AdminLayout() {
 
           .admin-nav-toggle {
             display: grid;
-            width: 42px;
-            height: 42px;
-            flex: 0 0 42px;
+            width: 44px;
+            height: 44px;
+            flex: 0 0 44px;
             place-items: center;
             border: 1px solid var(--c-hairline, #ddd);
             border-radius: 50%;
@@ -1344,7 +1286,6 @@ export default function AdminLayout() {
             display: block;
             border: 0;
             background: rgba(0,0,0,0.48);
-            backdrop-filter: blur(2px);
           }
 
           .admin-topbar__title { width: auto; flex: 1; font-size: clamp(1.15rem, 5vw, 1.45rem); }
@@ -1391,7 +1332,7 @@ export default function AdminLayout() {
         <div className="admin-sidebar__brand">
           <EditorialDoodles variant="admin" />
           <strong>jonathan</strong>
-          <span>photography / studio</span>
+          <span>{admin?.role === 'SUPER_ADMIN' ? 'platform oversight' : 'photography / studio'}</span>
           <button type="button" className="admin-sidebar__close" onClick={() => setIsNavOpen(false)} aria-label="Close admin navigation">
             <X size={20} />
           </button>
@@ -1534,7 +1475,8 @@ export default function AdminLayout() {
                 />
 
                 <input
-                  type="text"
+                  type="search"
+                  aria-label={admin?.role === 'SUPER_ADMIN' ? 'Search platform records' : 'Search clients and bookings'}
                   className="admin-search__input"
                   placeholder={admin?.role === 'SUPER_ADMIN' ? 'Search fees, support, or website content…' : 'Search clients, emails, or bookings...'}
                   value={searchQuery}
@@ -1757,7 +1699,9 @@ export default function AdminLayout() {
         </header>
 
         {admin?.role === 'SUPER_ADMIN' && (location.pathname.startsWith('/admin/oversight/') || location.pathname === '/admin/platform-fees') && <div className="superadmin-readonly-banner" role="status"><ShieldCheck size={16}/> Read-only: Superadmin oversight. Studio records cannot be changed here.</div>}
-        <Outlet />
+        <main id="admin-main" tabIndex="-1" className="admin-main__content">
+          <Outlet />
+        </main>
 
       </div>
 

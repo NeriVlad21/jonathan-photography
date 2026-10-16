@@ -89,7 +89,7 @@ export default function PhotoView() {
           </h1>
           {photo.caption && <p style={{ color: 'rgba(247,247,245,0.7)', marginTop: 6, maxWidth: '50ch' }}>{photo.caption}</p>}
         </div>
-        <div style={{ textAlign: 'right', color: 'rgba(247,247,245,0.6)', fontSize: '0.88rem' }}>
+        <div className="photo-view__facts">
           {photo.location && <div>{photo.location}</div>}
           {photo.shoot_date && <div>{formatDate(photo.shoot_date)}</div>}
         </div>

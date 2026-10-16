@@ -233,11 +233,6 @@ export default function PortfolioCategory() {
           }
         />
 
-        <span className="portfolio-photo-index">
-          {String(
-            originalIndex + 1
-          ).padStart(2, '0')}
-        </span>
       </article>
     )
   }

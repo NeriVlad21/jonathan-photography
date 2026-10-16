@@ -243,7 +243,6 @@ export default function Portfolio() {
                   loading="lazy"
                 />
                 <span className="work-index__shade" aria-hidden="true" />
-                <span className="work-index__number">{String(index + 1).padStart(2, '0')}</span>
                 <span className="work-index__name">{category.name}</span>
                 <span className="work-index__arrow" aria-hidden="true">↗</span>
               </Link>

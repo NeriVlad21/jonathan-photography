@@ -20,7 +20,7 @@ export default function ContactFilmStrip() {
 
   return (
     <div className="filmstrip">
-      {platforms.map((p, i) => {
+      {platforms.map((p) => {
         const Icon = ICONS[p.icon] || LinkIcon
         return (
           <a
@@ -30,7 +30,6 @@ export default function ContactFilmStrip() {
             rel="noreferrer"
             className="filmstrip__frame"
           >
-            <span className="filmstrip__index">{String(i + 1).padStart(2, '0')}</span>
             <div className="filmstrip__content">
               <div className="filmstrip__copy">
                 <div className="filmstrip__label">
