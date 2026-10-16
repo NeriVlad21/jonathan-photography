@@ -19,6 +19,7 @@ require_once __DIR__ . '/../../helpers/response.php';
 require_once __DIR__ . '/../../helpers/validation.php';
 require_once __DIR__ . '/../../middleware/auth.php';
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../helpers/oversight.php';
 
 $pdo = Database::connect();
 $method = $_SERVER['REQUEST_METHOD'];
@@ -34,6 +35,9 @@ function fetch_shoot_images(PDO $pdo, int $shootId, bool $includeHidden = false)
     $columns = $includeHidden
         ? '*'
         : 'id, shoot_id, image_path, title, caption, sort_order, is_cover, visible, created_at, updated_at';
+    if ($includeHidden) {
+        $columns = "pi.*, (SELECT COUNT(*) FROM entity_flags ef WHERE ef.entity_type='PORTFOLIO_IMAGE' AND ef.entity_id=pi.id AND ef.status='OPEN') open_flag_count, (SELECT reason FROM entity_flags ef WHERE ef.entity_type='PORTFOLIO_IMAGE' AND ef.entity_id=pi.id AND ef.status='OPEN' ORDER BY ef.created_at DESC LIMIT 1) latest_flag_reason";
+    }
     $sql = 'SELECT ' . $columns . ' FROM portfolio_images pi WHERE shoot_id = :id' . ($includeHidden ? '' : " AND visible = 1 AND NOT EXISTS (SELECT 1 FROM content_moderation cm WHERE cm.entity_type='PORTFOLIO_IMAGE' AND cm.entity_key=CAST(pi.id AS CHAR) AND cm.status='HIDDEN')") . ' ORDER BY sort_order ASC, id ASC';
     $stmt = $pdo->prepare($sql);
     $stmt->execute(['id' => $shootId]);
@@ -42,21 +46,24 @@ function fetch_shoot_images(PDO $pdo, int $shootId, bool $includeHidden = false)
 
 if ($method === 'GET') {
     if (isset($_GET['all'])) {
-        require_admin();
+        $admin = require_admin();
 
         $stmt = $pdo->query(
             'SELECT s.*, c.name AS category_name, c.slug AS category_slug,
-                    (SELECT COUNT(*) FROM portfolio_images pi WHERE pi.shoot_id = s.id) AS image_count
+                    (SELECT COUNT(*) FROM portfolio_images pi WHERE pi.shoot_id = s.id) AS image_count,
+                    (SELECT COUNT(*) FROM entity_flags ef WHERE ef.entity_type=\'PORTFOLIO_SHOOT\' AND ef.entity_id=s.id AND ef.status=\'OPEN\') AS open_flag_count,
+                    (SELECT reason FROM entity_flags ef WHERE ef.entity_type=\'PORTFOLIO_SHOOT\' AND ef.entity_id=s.id AND ef.status=\'OPEN\' ORDER BY ef.created_at DESC LIMIT 1) AS latest_flag_reason
              FROM portfolio_shoots s
              JOIN portfolio_categories c ON c.id = s.category_id
              ORDER BY s.sort_order ASC, s.id DESC'
         );
 
+        log_superadmin_access($pdo, $admin, 'PORTFOLIO', 'shoot-list');
         json_success($stmt->fetchAll());
     }
 
     if (isset($_GET['id'])) {
-        require_admin();
+        $admin = require_admin();
 
         $stmt = $pdo->prepare('SELECT * FROM portfolio_shoots WHERE id = :id');
         $stmt->execute(['id' => (int) $_GET['id']]);
@@ -72,6 +79,8 @@ if ($method === 'GET') {
             (int) $shoot['id'],
             true
         );
+        $shoot['flags'] = open_flags_for($pdo, 'PORTFOLIO_SHOOT', (int) $shoot['id']);
+        log_superadmin_access($pdo, $admin, 'PORTFOLIO_SHOOT', (string) $shoot['id']);
 
         json_success($shoot);
     }
@@ -192,7 +201,7 @@ if ($method === 'GET') {
 }
 
 if ($method === 'POST') {
-    require_admin();
+    require_owner();
     require_csrf();
 
     $input = json_input();
@@ -280,7 +289,7 @@ if ($method === 'POST') {
 }
 
 if ($method === 'PUT') {
-    require_admin();
+    require_owner();
     require_csrf();
 
     $input = json_input();
@@ -352,7 +361,7 @@ if ($method === 'PUT') {
 }
 
 if ($method === 'DELETE') {
-    require_admin();
+    require_owner();
     require_csrf();
 
     $id = positive_integer_input($_GET['id'] ?? null);

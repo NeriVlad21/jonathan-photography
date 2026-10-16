@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 $pdo = Database::connect();
 
 if (isset($_GET['all'])) {
-    require_admin();
+    require_owner();
     $stmt = $pdo->query('SELECT * FROM contact_platforms ORDER BY sort_order ASC, id ASC');
 } else {
     $stmt = $pdo->query("SELECT * FROM contact_platforms c WHERE visible = 1 AND NOT EXISTS (SELECT 1 FROM content_moderation cm WHERE cm.entity_type='CONTACT' AND cm.entity_key=CAST(c.id AS CHAR) AND cm.status='HIDDEN') ORDER BY sort_order ASC, id ASC");

@@ -12,7 +12,7 @@ require_once __DIR__ . '/../middleware/auth.php';
 require_once __DIR__ . '/../config/database.php';
 
 // Ensure only logged-in admins can search
-require_admin();
+require_owner();
 
 $pdo = Database::connect();
 $method = $_SERVER['REQUEST_METHOD'];

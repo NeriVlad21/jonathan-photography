@@ -7,7 +7,7 @@ require_once __DIR__ . '/../../helpers/response.php';
 require_once __DIR__ . '/../../middleware/auth.php';
 require_once __DIR__ . '/../../config/database.php';
 
-require_admin();
+require_owner();
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') json_error('Method not allowed.', 405);
 
 $pdo = Database::connect();

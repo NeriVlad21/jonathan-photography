@@ -31,8 +31,10 @@ if ($v->fails()) {
 $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
 $config = require __DIR__ . '/../../config/config.php';
 $normalizedIdentifier = strtolower(trim((string) ($input['username'] ?? '')));
-if (!rate_limit_check('admin_login_ip', $ip, $config['rate_limit']['login_max_per_15_minutes'], 900)
-    || !rate_limit_check('admin_login_identifier', $normalizedIdentifier, $config['rate_limit']['login_identifier_max_per_15_minutes'], 900)) {
+$ipBucket = 'admin_login_ip_v2';
+$identifierBucket = 'admin_login_identifier_v2';
+if (!rate_limit_allowed($ipBucket, $ip, $config['rate_limit']['login_max_per_15_minutes'], 900)
+    || !rate_limit_allowed($identifierBucket, $normalizedIdentifier, $config['rate_limit']['login_identifier_max_per_15_minutes'], 900)) {
     json_error('Too many login attempts. Please try again later.', 429);
 }
 
@@ -41,7 +43,7 @@ $password = (string) $input['password'];
 
 $pdo = Database::connect();
 $stmt = $pdo->prepare(
-    'SELECT id, username, password_hash, role, is_active, session_version
+    'SELECT id, username, password_hash, role, is_active, session_version, must_change_password
      FROM admins 
      WHERE (username = :username OR email = :email) AND is_active = 1
      LIMIT 1'
@@ -55,8 +57,17 @@ $admin = $stmt->fetch();
 
 $hashToVerify = $admin['password_hash'] ?? '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.';
 if (!password_verify($password, $hashToVerify) || !$admin) {
+    $ipRecorded = rate_limit_check($ipBucket, $ip, $config['rate_limit']['login_max_per_15_minutes'], 900);
+    $identifierRecorded = rate_limit_check($identifierBucket, $normalizedIdentifier, $config['rate_limit']['login_identifier_max_per_15_minutes'], 900);
+    if (!$ipRecorded || !$identifierRecorded) {
+        json_error('Too many login attempts. Please try again later.', 429);
+    }
     json_error('Incorrect username or password.', 401);
 }
+
+// A valid sign-in clears earlier failures for this address and account.
+rate_limit_reset($ipBucket, $ip);
+rate_limit_reset($identifierBucket, $normalizedIdentifier);
 
 if (password_needs_rehash($admin['password_hash'], PASSWORD_DEFAULT)) {
     $pdo->prepare('UPDATE admins SET password_hash = :hash WHERE id = :id')
@@ -73,6 +84,6 @@ $_SESSION['_absolute_started_at'] = time();
 $_SESSION['_last_activity'] = time();
 
 json_success([
-    'admin' => ['id' => $admin['id'], 'username' => $admin['username'], 'role' => $admin['role']],
+    'admin' => ['id' => $admin['id'], 'username' => $admin['username'], 'role' => $admin['role'], 'must_change_password' => (bool) $admin['must_change_password']],
     'csrf_token' => $_SESSION['csrf_token'],
 ]);

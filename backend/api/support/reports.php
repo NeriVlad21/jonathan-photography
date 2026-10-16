@@ -41,6 +41,9 @@ require_csrf();
 $input = json_input();
 
 if ($method === 'POST') {
+    // Support reports are submitted by the studio Owner to the platform
+    // operator; a Superadmin must not create reports in the Owner's name.
+    $admin = require_owner();
     $v = new Validator($input);
     $v->required('subject', 'a subject')->string('subject', 'Subject')->maxLength('subject', 160)
       ->required('category', 'a category')->inList('category', ['TECHNICAL','BILLING','ACCOUNT','OTHER'])

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { CalendarDays, Download, Mail, MapPin, Phone, Plus, X } from 'lucide-react'
-import { bookingsApi } from '../services/api.js'
+import { bookingsApi, oversightApi } from '../services/api.js'
 import { formatDate, peso } from '../utils/format.js'
 import MonthCalendar, { addDays, monthBounds, toDateKey } from '../components/MonthCalendar.jsx'
 import LoadingState from '../components/LoadingState.jsx'
@@ -38,7 +38,7 @@ const rangeBounds = (range, month) => {
   return { start: toDateKey(start), end: toDateKey(addDays(start, 6)) }
 }
 
-function CalendarEventDialog({ date, events, onClose, onEventUpdated, returnLocation }) {
+function CalendarEventDialog({ date, events, onClose, onEventUpdated, returnLocation, readOnly = false, onFlag, flaggingId = null }) {
   if (!date) return null
 
   return (
@@ -59,6 +59,7 @@ function CalendarEventDialog({ date, events, onClose, onEventUpdated, returnLoca
                     <h3>{event.name}</h3>
                   </div>
                   <span className={`calendar-progress calendar-progress--${progress.toLowerCase()}`}>{progress}</span>
+                  {Number(event.open_flag_count) > 0 && <span className="status-badge status-badge--PENDING" title={event.latest_flag_reason}>Flagged</span>}
                 </div>
                 <dl>
                   <div><dt>Service</dt><dd>{event.shoot_type || '—'}</dd></div>
@@ -71,8 +72,9 @@ function CalendarEventDialog({ date, events, onClose, onEventUpdated, returnLoca
                 </dl>
                 {event.message && <p>{event.message}</p>}
                 <div className="calendar-event-card__actions">
-                  {event.booking_id && <Link to={`/admin/bookings/${event.booking_id}`} state={{ from: returnLocation }} className="text-link">Open booking request →</Link>}
-                  {event.status === 'REQUESTED' && event.calendar_event_id && (
+                  {event.booking_id && <Link to={`${readOnly ? '/admin/oversight/bookings' : '/admin/bookings'}/${event.booking_id}`} state={{ from: returnLocation }} className="text-link">Open booking request →</Link>}
+                  {readOnly && event.calendar_event_id && <button type="button" className="btn btn--secondary" disabled={flaggingId === event.calendar_event_id || Number(event.open_flag_count) > 0} onClick={() => onFlag(event)}>{flaggingId === event.calendar_event_id ? 'Flagging…' : Number(event.open_flag_count) > 0 ? 'Flagged' : 'Flag calendar entry'}</button>}
+                  {!readOnly && event.status === 'REQUESTED' && event.calendar_event_id && (
                     <div className="calendar-event-card__status-actions">
                       <button type="button" className="calendar-event-confirm" onClick={() => onEventUpdated(event.calendar_event_id, 'BOOKED')}>
                         Confirm booking
@@ -82,7 +84,7 @@ function CalendarEventDialog({ date, events, onClose, onEventUpdated, returnLoca
                       </button>
                     </div>
                   )}
-                  {event.status === 'BOOKED' && event.calendar_event_id && (
+                  {!readOnly && event.status === 'BOOKED' && event.calendar_event_id && (
                     <div className="calendar-event-card__status-actions">
                       <button type="button" className="calendar-event-confirm" onClick={() => onEventUpdated(event.calendar_event_id, 'COMPLETED')}>Mark completed</button>
                       <button type="button" className="calendar-event-cancel" onClick={() => onEventUpdated(event.calendar_event_id, 'CANCELLED')}>Mark event cancelled</button>
@@ -217,7 +219,7 @@ function SchedulePrint({ bounds, events, label }) {
   )
 }
 
-function CalendarWorkspace({ archive = false }) {
+function CalendarWorkspace({ archive = false, readOnly = false }) {
   const { showToast } = useToast()
   const location = useLocation()
   const now = new Date()
@@ -238,6 +240,7 @@ function CalendarWorkspace({ archive = false }) {
   const [requests, setRequests] = useState([])
   const [addDate, setAddDate] = useState(null)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [flaggingId, setFlaggingId] = useState(null)
 
   useEffect(() => {
     let active = true
@@ -279,6 +282,18 @@ function CalendarWorkspace({ archive = false }) {
     }
   }
 
+  const flagEvent = async (event) => {
+    const reason = window.prompt('Reason for this advisory warning (required):')?.trim()
+    if (!reason) return
+    setFlaggingId(event.calendar_event_id)
+    try {
+      const result = await oversightApi.createFlag({ entity_type: 'CALENDAR_EVENT', entity_id: event.calendar_event_id, reason })
+      setEvents((current) => current.map((item) => item.calendar_event_id === event.calendar_event_id ? { ...item, open_flag_count: 1, latest_flag_reason: reason } : item))
+      showToast(result.message)
+    } catch (error) { showToast(error.message || 'Unable to flag this calendar entry.', 'error') }
+    finally { setFlaggingId(null) }
+  }
+
   const exportCalendar = async () => {
     const range = archive ? 'monthly' : exportRange
     const bounds = rangeBounds(range, month)
@@ -315,7 +330,7 @@ function CalendarWorkspace({ archive = false }) {
           <strong>{archive ? 'Calendar archive' : 'Studio booking calendar'}</strong>
         </div>
         <div className="booking-calendar-toolbar__actions">
-          {!archive && (
+          {!archive && !readOnly && (
             <button type="button" className="btn booking-calendar-add" onClick={() => setAddDate(toDateKey(new Date()))}>
               <Plus size={16} /> Add booked work
             </button>
@@ -355,13 +370,16 @@ function CalendarWorkspace({ archive = false }) {
           events={events}
           maximumMonth={archive ? new Date(now.getFullYear(), now.getMonth() - 1, 1) : null}
           onDayClick={(date, dayEvents) => {
-            if (dayEvents.length) setSelectedDay({ date, events: dayEvents })
-            else if (!archive) setAddDate(date)
+            if (dayEvents.length) {
+              setSelectedDay({ date, events: dayEvents })
+              if (readOnly) dayEvents.forEach((event) => event.calendar_event_id && oversightApi.logAccess('CALENDAR_EVENT', event.calendar_event_id).catch(() => {}))
+            }
+            else if (!archive && !readOnly) setAddDate(date)
           }}
         />
       )}
 
-      {!archive && <Link to="/admin/archive" className="booking-calendar-archive-link">Browse past monthly calendars →</Link>}
+      {!archive && !readOnly && <Link to="/admin/archive" className="booking-calendar-archive-link">Browse past monthly calendars →</Link>}
 
       <div className="booking-calendar-print-host" aria-hidden="true">
         <SchedulePrint {...printData} />
@@ -372,9 +390,12 @@ function CalendarWorkspace({ archive = false }) {
         events={selectedDay?.events || []}
         onClose={() => setSelectedDay(null)}
         onEventUpdated={eventUpdated}
+        readOnly={readOnly}
+        onFlag={flagEvent}
+        flaggingId={flaggingId}
         returnLocation={{ ...location, state: { ...(location.state || {}), calendarView: { month: `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`, exportRange }, scrollY: window.scrollY } }}
       />
-      {addDate && (
+      {!readOnly && addDate && (
         <AddScheduleDialog
           initialDate={addDate}
           requests={requests}
@@ -394,7 +415,7 @@ export function CalendarArchivePanel() {
   return <CalendarWorkspace archive />
 }
 
-export default function AdminBookingCalendar() {
+export default function AdminBookingCalendar({ readOnly = false }) {
   useEffect(() => { document.title = 'Admin — Booking Calendar' }, [])
 
   return (
@@ -404,11 +425,11 @@ export default function AdminBookingCalendar() {
           <div>
             <span>Bookings / Schedule</span>
             <h2>Calendar</h2>
-            <p>New requests, confirmed work, manual bookings, and cancellations in one synchronized view.</p>
+            <p>{readOnly ? 'Review the studio schedule without changing bookings or calendar records.' : 'New requests, confirmed work, manual bookings, and cancellations in one synchronized view.'}</p>
           </div>
           <CalendarDays size={34} />
         </header>
-        <CalendarWorkspace />
+        <CalendarWorkspace readOnly={readOnly} />
       </div>
     </section>
   )

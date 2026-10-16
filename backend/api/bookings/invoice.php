@@ -10,7 +10,7 @@ require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../email/mailer.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') json_error('Method not allowed.',405);
-require_admin(); require_csrf();
+require_owner(); require_csrf();
 $input=json_input(); $invoiceId=positive_integer_input($input['invoice_id']??null);
 if(!$invoiceId) json_error('Invalid invoice id.',422);
 $pdo=Database::connect();

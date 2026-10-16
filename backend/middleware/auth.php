@@ -100,7 +100,7 @@ function require_admin(): array
     require_once __DIR__ . '/../config/database.php';
     $pdo = Database::connect();
     $stmt = $pdo->prepare(
-        'SELECT id, username, role, is_active, session_version FROM admins WHERE id = :id LIMIT 1'
+        'SELECT id, username, role, is_active, session_version, must_change_password FROM admins WHERE id = :id LIMIT 1'
     );
     $stmt->execute(['id' => (int) $_SESSION['admin_id']]);
     $account = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -117,11 +117,26 @@ function require_admin(): array
     $_SESSION['admin_username'] = (string) $account['username'];
     $_SESSION['admin_role'] = (string) $account['role'];
     $_SESSION['_last_activity'] = $now;
-    return [
+    $authenticated = [
         'id'       => (int) $account['id'],
         'username' => (string) $account['username'],
         'role'     => (string) $account['role'],
+        'must_change_password' => (bool) $account['must_change_password'],
     ];
+
+    // A temporary credential may establish a session only long enough to
+    // inspect that session and replace the password. This is enforced here,
+    // not just by the React redirect, so direct API calls cannot bypass it.
+    if ($authenticated['must_change_password']) {
+        $script = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? ''));
+        $passwordChangeRoutes = ['/api/auth/check.php', '/api/auth/profile.php'];
+        $allowed = array_filter($passwordChangeRoutes, static fn(string $route): bool => str_ends_with($script, $route));
+        if (!$allowed) {
+            json_error('Change your temporary password before using administrator features.', 403);
+        }
+    }
+
+    return $authenticated;
 }
 
 /** Blocks the request unless the current account has the required role. */
@@ -137,6 +152,18 @@ function require_role(string $role): array
 function require_super_admin(): array
 {
     return require_role('SUPER_ADMIN');
+}
+
+/** Owner-only mutations must never be available to the platform operator. */
+function require_owner(): array
+{
+    return require_role('OWNER');
+}
+
+/** Spelling used by the platform-oversight endpoints. */
+function require_superadmin(): array
+{
+    return require_super_admin();
 }
 
 /** Issues a CSRF token for the current session (called by /api/auth/check.php). */

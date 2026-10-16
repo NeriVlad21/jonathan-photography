@@ -152,10 +152,13 @@ export default function PrivacyModal({ isOpen, onClose, onAccept }) {
 
           <p>
             Your personal information will be securely
-            stored within our internal system and will not
-            be shared, sold, or distributed to third parties
-            without your lawful consent, except where
-            disclosure is required by law.
+            stored within our internal system. Authorized studio
+            personnel and the platform operator may access request
+            and booking records when necessary for service delivery,
+            security, technical support, and accountable platform
+            oversight. Platform oversight access is logged, and client
+            contact details are masked by default until deliberately revealed.
+            Information is not sold or used for unrelated advertising.
           </p>
 
           <p>

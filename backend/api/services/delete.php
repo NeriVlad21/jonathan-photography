@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
     json_error('Method not allowed.', 405);
 }
 
-require_admin();
+require_owner();
 require_csrf();
 
 $id = positive_id($_GET['id'] ?? null);

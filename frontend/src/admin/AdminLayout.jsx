@@ -28,6 +28,8 @@ import {
   ShieldCheck,
   ArchiveRestore,
   ScanSearch
+  ,ClipboardList
+  ,ScrollText
 } from 'lucide-react'
 
 import { useAdminAuth } from '../context/AdminAuthContext.jsx'
@@ -44,6 +46,9 @@ const NAV = [
         label: 'Super Admin',
         icon: ShieldCheck
       },
+      { to: '/admin/oversight/bookings', label: 'Client Requests', icon: ClipboardList },
+      { to: '/admin/oversight/calendar', label: 'Calendar', icon: CalendarDays },
+      { to: '/admin/oversight/portfolio', label: 'Portfolio', icon: Images },
       {
         to: '/admin/content-oversight',
         label: 'Content Oversight',
@@ -55,6 +60,11 @@ const NAV = [
         icon: ArchiveRestore
       }
     ]
+  },
+  {
+    section: 'Transparency',
+    roles: ['OWNER'],
+    links: [{ to: '/admin/oversight-log', label: 'Oversight & Flags', icon: ScrollText }]
   },
   {
     section: 'Overview',
@@ -798,6 +808,8 @@ export default function AdminLayout() {
           flex:
             1;
         }
+
+        .superadmin-readonly-banner { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; gap: 9px; padding: 10px 40px; color: #111; background: #fff6bf; border-bottom: 1px solid #e6c900; font-size: 13px; font-weight: 800; letter-spacing: .04em; }
 
         /*
         ============================================================
@@ -1744,6 +1756,7 @@ export default function AdminLayout() {
 
         </header>
 
+        {admin?.role === 'SUPER_ADMIN' && (location.pathname.startsWith('/admin/oversight/') || location.pathname === '/admin/platform-fees') && <div className="superadmin-readonly-banner" role="status"><ShieldCheck size={16}/> Read-only: Superadmin oversight. Studio records cannot be changed here.</div>}
         <Outlet />
 
       </div>

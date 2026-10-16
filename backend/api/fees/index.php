@@ -7,6 +7,7 @@ require_once __DIR__ . '/../../helpers/validation.php';
 require_once __DIR__ . '/../../helpers/billing.php';
 require_once __DIR__ . '/../../middleware/auth.php';
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../helpers/oversight.php';
 
 $admin = require_admin();
 $pdo=Database::connect();
@@ -18,12 +19,20 @@ if($method==='GET'){
   $cycles=$pdo->query("SELECT fc.*, COALESCE(SUM(CASE WHEN pfl.voided_at IS NULL AND pfl.archived_at IS NULL THEN pfl.fee_amount ELSE 0 END),0) total_owed, COUNT(CASE WHEN pfl.voided_at IS NULL AND pfl.archived_at IS NULL THEN 1 END) booking_count FROM fee_cycles fc LEFT JOIN platform_fee_ledger pfl ON pfl.cycle_id=fc.id WHERE fc.archived_at IS NULL GROUP BY fc.id ORDER BY fc.cycle_start DESC")->fetchAll(PDO::FETCH_ASSOC);
   $ledger=$pdo->query("SELECT pfl.*, b.reference_code,b.name,b.status booking_status,COALESCE(JSON_UNQUOTE(JSON_EXTRACT(b.agreed_details,'$.fee_responsibility')),'STUDIO') fee_responsibility,i.invoice_number,fc.cycle_start,fc.cycle_end,fc.due_date,fc.status cycle_status FROM platform_fee_ledger pfl JOIN bookings b ON b.id=pfl.booking_id JOIN invoices i ON i.id=pfl.invoice_id JOIN fee_cycles fc ON fc.id=pfl.cycle_id WHERE pfl.archived_at IS NULL AND fc.archived_at IS NULL ORDER BY pfl.accrued_at DESC")->fetchAll(PDO::FETCH_ASSOC);
   $due=(float)$pdo->query("SELECT COALESCE(SUM(pfl.fee_amount),0) FROM platform_fee_ledger pfl JOIN fee_cycles fc ON fc.id=pfl.cycle_id WHERE pfl.voided_at IS NULL AND pfl.archived_at IS NULL AND fc.archived_at IS NULL AND fc.status<>'PAID'")->fetchColumn();
-  json_success(['settings'=>$settings,'cycles'=>$cycles,'ledger'=>$ledger,'total_due'=>$due,'can_manage'=>$admin['role']==='SUPER_ADMIN']);
+  log_superadmin_access($pdo, $admin, 'LEDGER', 'active');
+  json_success(['settings'=>$settings,'cycles'=>$cycles,'ledger'=>$ledger,'total_due'=>$due,'can_manage'=>$admin['role']==='OWNER']);
 }
 
-require_super_admin();
+require_owner();
 require_csrf(); $input=json_input();
 if($method==='PUT'){
+  if (array_key_exists('pass_platform_fee_to_client_default', $input)) {
+    $v=new Validator($input); $v->required('pass_platform_fee_to_client_default')->boolean('pass_platform_fee_to_client_default');
+    if($v->fails())json_error('Choose a valid platform-fee default.',422,$v->errors());
+    $enabled=boolean_input($input['pass_platform_fee_to_client_default']);
+    $pdo->prepare("INSERT INTO site_settings(setting_key,setting_value) VALUES('pass_platform_fee_to_client_default',:value) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value)")->execute(['value'=>$enabled ? '1' : '0']);
+    json_success(['pass_platform_fee_to_client_default'=>(bool)$enabled,'message'=>'Platform-fee default updated. Existing bookings and invoice snapshots were not changed.']);
+  }
   $v=new Validator($input); $v->required('cycle_start_date')->date('cycle_start_date',false);
   if($v->fails())json_error('Choose a valid billing-cycle start date.',422,$v->errors());
   $pdo->prepare("INSERT INTO site_settings(setting_key,setting_value) VALUES('platform_fee_cycle_start_date',:value) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value)")->execute(['value'=>$input['cycle_start_date']]);

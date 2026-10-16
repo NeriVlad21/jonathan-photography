@@ -10,12 +10,13 @@ require_once __DIR__ . '/../../middleware/cors.php';
 require_once __DIR__ . '/../../helpers/response.php';
 require_once __DIR__ . '/../../middleware/auth.php';
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../helpers/oversight.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     json_error('Method not allowed.', 405);
 }
 
-require_admin();
+$admin = require_admin();
 $id = (int) ($_GET['id'] ?? 0);
 if (!$id) json_error('Missing booking id.', 422);
 
@@ -25,6 +26,20 @@ $stmt = $pdo->prepare('SELECT * FROM bookings WHERE id = :id');
 $stmt->execute(['id' => $id]);
 $booking = $stmt->fetch();
 if (!$booking) json_error('Booking not found.', 404);
+
+if (($admin['role'] ?? '') === 'SUPER_ADMIN') {
+    $revealContact = filter_var($_GET['reveal_contact'] ?? false, FILTER_VALIDATE_BOOLEAN);
+    log_superadmin_access($pdo, $admin, $revealContact ? 'CONTACT_REVEAL' : 'BOOKING', (string) $id, $revealContact ? 'REVEAL' : 'VIEW');
+    if (!$revealContact) {
+        $booking['email'] = mask_email_address((string) ($booking['email'] ?? ''));
+        $booking['phone'] = mask_phone_number((string) ($booking['phone'] ?? ''));
+        if (!empty($booking['facebook'])) $booking['facebook'] = 'Hidden until revealed';
+        $booking['contact_masked'] = true;
+    } else {
+        $booking['contact_masked'] = false;
+    }
+}
+$booking['flags'] = open_flags_for($pdo, 'BOOKING', $id);
 
 $addons = $pdo->prepare('SELECT label, price FROM booking_addons WHERE booking_id = :id');
 $addons->execute(['id' => $id]);

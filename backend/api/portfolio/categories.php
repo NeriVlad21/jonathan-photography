@@ -38,7 +38,7 @@ if ($method === 'GET') {
 }
 
 if ($method === 'POST') {
-    require_admin();
+    require_owner();
     require_csrf();
     $input = json_input();
 
@@ -77,7 +77,7 @@ if ($method === 'POST') {
 }
 
 if ($method === 'PUT') {
-    require_admin();
+    require_owner();
     require_csrf();
     $input = json_input();
 
@@ -113,7 +113,7 @@ if ($method === 'PUT') {
 }
 
 if ($method === 'DELETE') {
-    require_admin();
+    require_owner();
     require_csrf();
     $id = positive_integer_input($_GET['id'] ?? null);
     if (!$id) {

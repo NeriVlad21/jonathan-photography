@@ -11,14 +11,14 @@ import {
   Image as ImageIcon,
   ChevronRight
 } from 'lucide-react'
-import { portfolioApi } from '../services/api.js'
+import { oversightApi, portfolioApi } from '../services/api.js'
 import { useToast } from '../context/ToastContext.jsx'
 import { imageUrl } from '../utils/format.js'
 import LoadingState from '../components/LoadingState.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import Modal from '../components/Modal.jsx'
 
-export default function PortfolioManager() {
+export default function PortfolioManager({ readOnly = false }) {
   const { showToast } = useToast()
 
   const [categories, setCategories] = useState(null)
@@ -40,6 +40,7 @@ export default function PortfolioManager() {
   const fileInputRef = useRef(null)
 
   const [confirmDelete, setConfirmDelete] = useState(null)
+  const [flaggingKey, setFlaggingKey] = useState('')
 
   useEffect(() => {
     document.title = 'Admin — Portfolio'
@@ -474,6 +475,20 @@ export default function PortfolioManager() {
       (image) =>
         !!image.visible
     ).length || 0
+
+  const flagItem = async (entityType, entityId) => {
+    const reason = window.prompt('Reason for this advisory warning (required):')?.trim()
+    if (!reason) return
+    const key = `${entityType}-${entityId}`
+    setFlaggingKey(key)
+    try {
+      const result = await oversightApi.createFlag({ entity_type: entityType, entity_id: entityId, reason })
+      if (entityType === 'PORTFOLIO_SHOOT') setShoots((current) => current.map((item) => item.id === entityId ? { ...item, open_flag_count: 1, latest_flag_reason: reason } : item))
+      if (entityType === 'PORTFOLIO_IMAGE') setImages((current) => current.map((item) => item.id === entityId ? { ...item, open_flag_count: 1, latest_flag_reason: reason } : item))
+      showToast(result.message)
+    } catch (error) { showToast(error.message || 'Unable to create this warning.', 'error') }
+    finally { setFlaggingKey('') }
+  }
 
   return (
     <>
@@ -1578,7 +1593,7 @@ export default function PortfolioManager() {
             </span>
 
             <h1 className="display">
-              Portfolio
+              {readOnly ? 'Portfolio Oversight' : 'Portfolio'}
             </h1>
           </div>
 
@@ -1679,7 +1694,7 @@ export default function PortfolioManager() {
                             size={14}
                           />
 
-                          <input
+                          {readOnly ? <span>{category.name}</span> : <input
                             value={
                               category.name
                             }
@@ -1687,12 +1702,12 @@ export default function PortfolioManager() {
                               e.stopPropagation()
                             }
                             onChange={(e) =>
-                              renameCategory(
+                              !readOnly && renameCategory(
                                 category,
                                 e.target.value
                               )
                             }
-                          />
+                          />}
 
                         </span>
 
@@ -1716,7 +1731,7 @@ export default function PortfolioManager() {
                 </div>
               )}
 
-            <form
+            {!readOnly && <form
               onSubmit={addCategory}
               className="portfolio-admin__add"
             >
@@ -1740,7 +1755,7 @@ export default function PortfolioManager() {
                 <Plus size={14} />
               </button>
 
-            </form>
+            </form>}
 
           </aside>
 
@@ -1849,6 +1864,8 @@ export default function PortfolioManager() {
                               </>
                             )}
 
+                            {Number(shoot.open_flag_count) > 0 && <><span>·</span><strong title={shoot.latest_flag_reason}>Flagged</strong></>}
+
                           </span>
 
                         </span>
@@ -1863,7 +1880,7 @@ export default function PortfolioManager() {
                 </div>
               )}
 
-            {activeCategory && (
+            {activeCategory && !readOnly && (
               <div className="portfolio-admin__shoot-form">
 
                 <h3 className="portfolio-admin__form-title">
@@ -2025,7 +2042,9 @@ export default function PortfolioManager() {
 
                   <div className="portfolio-admin__controls">
 
-                    <label
+                    {readOnly && <button type="button" className="portfolio-admin__control-button" disabled={flaggingKey === `PORTFOLIO_SHOOT-${activeShoot.id}` || Number(activeShoot.open_flag_count) > 0} onClick={() => flagItem('PORTFOLIO_SHOOT', activeShoot.id)}>{flaggingKey === `PORTFOLIO_SHOOT-${activeShoot.id}` ? 'Flagging…' : Number(activeShoot.open_flag_count) > 0 ? 'Flagged' : 'Flag shoot'}</button>}
+
+                    {!readOnly && <label
                       className="portfolio-admin__control-button"
                       title="Publish or hide shoot"
                     >
@@ -2063,9 +2082,9 @@ export default function PortfolioManager() {
                           : 'Hidden'}
                       </span>
 
-                    </label>
+                    </label>}
 
-                    <button
+                    {!readOnly && <button
                       type="button"
                       className="
                         portfolio-admin__control-button
@@ -2086,7 +2105,7 @@ export default function PortfolioManager() {
                       />
 
                       Delete
-                    </button>
+                    </button>}
 
                   </div>
 
@@ -2116,7 +2135,7 @@ export default function PortfolioManager() {
 
                 </div>
 
-                <div
+                {!readOnly && <div
                   className="portfolio-admin__upload"
                   onClick={() =>
                     fileInputRef.current?.click()
@@ -2159,7 +2178,7 @@ export default function PortfolioManager() {
                     }
                   />
 
-                </div>
+                </div>}
 
                 {images === null && (
                   <div
@@ -2227,11 +2246,15 @@ export default function PortfolioManager() {
                                 </span>
                               )}
 
+                              {Number(image.open_flag_count) > 0 && <span className="portfolio-admin__image-cover" title={image.latest_flag_reason}>Flagged</span>}
+
                               <div />
 
                               <div className="portfolio-admin__image-actions">
 
-                                <button
+                                {readOnly && <button type="button" className="portfolio-admin__image-action" disabled={flaggingKey === `PORTFOLIO_IMAGE-${image.id}` || Number(image.open_flag_count) > 0} onClick={() => flagItem('PORTFOLIO_IMAGE', image.id)}>{flaggingKey === `PORTFOLIO_IMAGE-${image.id}` ? 'Flagging…' : Number(image.open_flag_count) > 0 ? 'Flagged' : 'Flag photo'}</button>}
+
+                                {!readOnly && <button
                                   type="button"
                                   className="portfolio-admin__image-action"
                                   onClick={() =>
@@ -2244,9 +2267,9 @@ export default function PortfolioManager() {
                                   <Star
                                     size={12}
                                   />
-                                </button>
+                                </button>}
 
-                                <button
+                                {!readOnly && <button
                                   type="button"
                                   className="portfolio-admin__image-action"
                                   onClick={() =>
@@ -2279,9 +2302,9 @@ export default function PortfolioManager() {
                                       Show
                                     </>
                                   )}
-                                </button>
+                                </button>}
 
-                                <button
+                                {!readOnly && <button
                                   type="button"
                                   className="
                                     portfolio-admin__image-action
@@ -2302,7 +2325,7 @@ export default function PortfolioManager() {
                                   <Trash2
                                     size={12}
                                   />
-                                </button>
+                                </button>}
 
                               </div>
 

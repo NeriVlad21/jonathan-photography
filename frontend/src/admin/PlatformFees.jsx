@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Archive, Download, Search, WalletCards } from 'lucide-react'
-import { feesApi, superArchiveApi } from '../services/api.js'
+import { feesApi, oversightApi, superArchiveApi } from '../services/api.js'
 import { peso, formatDate } from '../utils/format.js'
 import { FEE_RESPONSIBILITY_LABELS, formatRate } from '../utils/billing.js'
 import { useToast } from '../context/ToastContext.jsx'
@@ -17,11 +17,12 @@ export default function PlatformFees() {
   const { showToast } = useToast()
   const { admin } = useAdminAuth()
   const [data, setData] = useState(null)
-  const canManage = data?.can_manage ?? admin?.role === 'SUPER_ADMIN'
+  const canManage = data?.can_manage ?? admin?.role === 'OWNER'
   const [paying, setPaying] = useState(null)
   const [saving, setSaving] = useState(false)
   const [settingsSaving, setSettingsSaving] = useState(false)
-  const [filters, setFilters] = useState(INITIAL_FILTERS)
+  const [exportingKey, setExportingKey] = useState('')
+  const [filters, setFilters] = useState(() => ({ ...INITIAL_FILTERS, ...(location.state?.feeFilters || {}) }))
   const [payment, setPayment] = useState({ paid_at: new Date().toISOString().slice(0, 10), note: '' })
 
   const load = () => feesApi.list().then(setData).catch((error) => showToast(error.message || 'Unable to load platform fees.', 'error'))
@@ -50,6 +51,14 @@ export default function PlatformFees() {
     catch (error) { showToast(error.message || 'Unable to update cycle settings.', 'error') }
     finally { setSettingsSaving(false) }
   }
+  const updatePassThrough = async (event) => {
+    const enabled = event.target.checked
+    if (!window.confirm(`${enabled ? 'Enable' : 'Disable'} passing the platform fee to clients by default? Existing bookings and issued invoices will not change.`)) return
+    setSettingsSaving(true)
+    try { const result = await feesApi.updatePassThroughDefault(enabled); setData((current) => ({ ...current, settings: { ...current.settings, pass_platform_fee_to_client_default: result.pass_platform_fee_to_client_default } })); showToast(result.message) }
+    catch (error) { showToast(error.message || 'Unable to update the platform-fee default.', 'error') }
+    finally { setSettingsSaving(false) }
+  }
   const archiveRecord = async (entity, id) => {
     if (!window.confirm('Move this settled record to Super Admin Archives?')) return
     try { const result = await superArchiveApi.update({ entity, id, operation: 'archive' }); showToast(result.message); await load() }
@@ -57,6 +66,8 @@ export default function PlatformFees() {
   }
 
   const exportCycle = async (cycle) => {
+    if (exportingKey) return
+    setExportingKey(`cycle-${cycle.id}`)
     const rows = (data.ledger || []).filter((entry) => Number(entry.cycle_id) === Number(cycle.id) && !entry.voided_at)
     const totalAgreed = rows.reduce((sum, entry) => sum + Number(entry.agreed_total || 0), 0)
     const totalFees = rows.reduce((sum, entry) => sum + Number(entry.fee_amount || 0), 0)
@@ -84,16 +95,29 @@ export default function PlatformFees() {
       <section style="margin-top:20px;padding:14px;border:1px solid #ccc"><strong>Payment record</strong><br>${cycle.paid_at ? `Paid ${escape(formatDate(cycle.paid_at))}` : `Payment due ${escape(formatDate(cycle.due_date))}`}${cycle.payment_note ? `<br>Note: ${escape(cycle.payment_note)}` : ''}</section>
       <footer style="margin-top:28px;padding-top:12px;border-top:1px solid #bbb;color:#666">This statement summarizes platform fees recorded for the stated billing cycle. Booking payments occur outside the website. Keep this document with the corresponding invoices and payment evidence for reconciliation.</footer>`
     document.body.appendChild(root)
-    try { const { default: html2pdf } = await import('html2pdf.js'); await html2pdf().set({ margin:.42, filename:`Platform_Fee_Statement_${cycle.cycle_start}_${cycle.cycle_end}.pdf`, html2canvas:{scale:2}, jsPDF:{unit:'in',format:'letter',orientation:'portrait'}, pagebreak:{mode:['avoid-all','css','legacy']} }).from(root).save() } finally { root.remove() }
+    try { const { default: html2pdf } = await import('html2pdf.js'); await html2pdf().set({ margin:.42, filename:`Platform_Fee_Statement_${cycle.cycle_start}_${cycle.cycle_end}.pdf`, html2canvas:{scale:2}, jsPDF:{unit:'in',format:'letter',orientation:'portrait'}, pagebreak:{mode:['avoid-all','css','legacy']} }).from(root).save(); if (admin?.role === 'SUPER_ADMIN') await oversightApi.logAccess('LEDGER_EXPORT', `cycle-${cycle.id}`); showToast('Statement downloaded.') }
+    catch (error) { showToast(error.message || 'Unable to export the statement.', 'error') }
+    finally { root.remove(); setExportingKey('') }
+  }
+
+  const exportLedger = async () => {
+    if (!filteredLedger.length || exportingKey) return
+    setExportingKey('ledger')
+    const escape = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[char]))
+    const root = document.createElement('div')
+    root.style.cssText = 'font-family:Arial,sans-serif;padding:30px;color:#111;background:#fff;font-size:11px'
+    root.innerHTML = `<h1>Platform Fee Ledger</h1><p>${escape(filters.from || 'Beginning')} to ${escape(filters.to || 'Present')} · Generated ${escape(new Date().toLocaleString('en-PH'))}</p><table style="width:100%;border-collapse:collapse"><thead><tr><th>Accrued</th><th>Reference</th><th>Client</th><th>Agreed total</th><th>Rate</th><th>Fee</th><th>Cycle status</th></tr></thead><tbody>${filteredLedger.map((entry) => `<tr><td>${escape(entry.accrued_at || '')}</td><td>${escape(entry.reference_code)}</td><td>${escape(entry.name)}</td><td>${escape(peso(entry.agreed_total))}</td><td>${escape(formatRate(entry.fee_rate))}</td><td>${escape(peso(entry.fee_amount))}</td><td>${escape(entry.cycle_status)}</td></tr>`).join('')}</tbody></table>`
+    document.body.appendChild(root)
+    try { const { default: html2pdf } = await import('html2pdf.js'); await html2pdf().set({ margin:.4, filename:`Platform_Fee_Ledger_${filters.from || 'start'}_${filters.to || 'present'}.pdf`, html2canvas:{scale:2}, jsPDF:{unit:'in',format:'letter',orientation:'landscape'} }).from(root).save(); if (admin?.role === 'SUPER_ADMIN') await oversightApi.logAccess('LEDGER_EXPORT', `${filters.from || 'start'}:${filters.to || 'present'}`); showToast('Ledger export downloaded.') } catch (error) { showToast(error.message || 'Unable to export the ledger.', 'error') } finally { root.remove(); setExportingKey('') }
   }
 
   if (!data) return <LoadingState label="Loading platform fees…" />
   return <section className="platform-fees-page"><div className="admin-content">
-    <header className="platform-fees-hero"><div><span>Billing / Commission</span><h2>Platform Fees</h2><p>{canManage ? 'Oversee fees owed on agreed bookings, reconcile settled cycles, and archive completed records.' : 'Review fees owed on agreed bookings. Payment records and billing-cycle settings are managed by the Super Admin.'}</p></div><WalletCards size={34} /></header>
-    <div className="platform-fees-summary"><div><span>Total currently due</span><strong>{peso(data.total_due)}</strong></div><label>30-day cycles begin<input type="date" disabled={!canManage || settingsSaving} value={data.settings.cycle_start_date} onChange={updateStart} /></label></div>
+    <header className="platform-fees-hero"><div><span>Billing / Commission</span><h2>Platform Fees</h2><p>{canManage ? 'Manage client pass-through defaults and record externally settled billing cycles.' : 'Read-only ledger oversight. Only the Owner can change settings or mark a cycle paid.'}</p></div><WalletCards size={34} /></header>
+    <div className="platform-fees-summary"><div><span>Total currently due</span><strong>{peso(data.total_due)}</strong></div><label>30-day cycles begin<input type="date" disabled={!canManage || settingsSaving} value={data.settings.cycle_start_date} onChange={updateStart} /></label>{canManage && <label className="platform-fee-toggle"><input type="checkbox" disabled={settingsSaving} checked={Boolean(data.settings.pass_platform_fee_to_client_default)} onChange={updatePassThrough}/> Pass platform fee to client by default</label>}</div>
     <div className="super-filterbar"><label><Search size={16}/><input value={filters.q} onChange={(e)=>setFilters({...filters,q:e.target.value})} placeholder="Search reference, client, invoice, cycle…"/></label><select value={filters.status} onChange={(e)=>setFilters({...filters,status:e.target.value})}><option value="ALL">All statuses</option><option value="OPEN">Open</option><option value="DUE">Due</option><option value="PAID">Paid</option></select><input type="date" aria-label="From date" value={filters.from} onChange={(e)=>setFilters({...filters,from:e.target.value})}/><input type="date" aria-label="To date" value={filters.to} onChange={(e)=>setFilters({...filters,to:e.target.value})}/>{Object.values(filters).some(Boolean)&&<button className="btn btn--secondary" onClick={()=>setFilters(INITIAL_FILTERS)}>Clear</button>}</div>
-    <section className="platform-fees-panel"><h3>Active billing cycles <small>{filteredCycles.length}</small></h3><div className="platform-cycle-grid">{filteredCycles.length ? filteredCycles.map((cycle) => <article key={cycle.id} className={`platform-cycle platform-cycle--${cycle.status.toLowerCase()}`}><div><span>{formatDate(cycle.cycle_start)} – {formatDate(cycle.cycle_end)}</span><strong>{peso(cycle.total_owed)}</strong><small>{cycle.booking_count} booking(s) · Due {formatDate(cycle.due_date)} · {cycle.status}</small></div><div><button className="btn btn--secondary" type="button" onClick={() => exportCycle(cycle)}><Download size={15}/> Statement</button>{canManage && cycle.status !== 'PAID' && <button className="btn btn--primary" type="button" onClick={() => setPaying(cycle)}>Mark Paid</button>}{canManage && cycle.status === 'PAID' && <button className="btn btn--secondary" onClick={()=>archiveRecord('cycle',cycle.id)}><Archive size={15}/>Archive</button>}</div></article>) : <p>No active billing cycles match these filters.</p>}</div></section>
-    <section className="platform-fees-panel"><h3>Active fee ledger <small>{filteredLedger.length}</small></h3><div className="platform-fee-ledger">{filteredLedger.length ? filteredLedger.map((entry) => { const content=<><span>{entry.reference_code}<small>{entry.name} · {entry.invoice_number}</small></span><span>{peso(entry.agreed_total)}<small>{formatRate(entry.fee_rate)} rate · {entry.fee_responsibility === 'CLIENT' ? 'Client pays' : 'Studio absorbs'}</small></span><strong>{peso(entry.fee_amount)}</strong><em>{entry.voided_at ? 'Voided' : entry.cycle_status}</em></>; return canManage ? <div key={entry.id} className={entry.voided_at ? 'is-voided' : ''}>{content}{(entry.voided_at||entry.cycle_status==='PAID')&&<button className="icon-btn" title="Archive fee record" onClick={()=>archiveRecord('ledger',entry.id)}><Archive size={15}/></button>}</div> : <Link key={entry.id} to={`/admin/bookings/${entry.booking_id}`} state={{ from: { ...location, state: { ...(location.state || {}), scrollY: window.scrollY } } }} className={entry.voided_at ? 'is-voided' : ''}>{content}</Link> }) : <p>No active fee records match these filters.</p>}</div></section>
+    <section className="platform-fees-panel"><h3>Active billing cycles <small>{filteredCycles.length}</small></h3><div className="platform-cycle-grid">{filteredCycles.length ? filteredCycles.map((cycle) => <article key={cycle.id} className={`platform-cycle platform-cycle--${cycle.status.toLowerCase()}`}><div><span>{formatDate(cycle.cycle_start)} – {formatDate(cycle.cycle_end)}</span><strong>{peso(cycle.total_owed)}</strong><small>{cycle.booking_count} booking(s) · Due {formatDate(cycle.due_date)} · {cycle.status}</small></div><div><button className="btn btn--secondary" type="button" disabled={Boolean(exportingKey)} onClick={() => exportCycle(cycle)}><Download size={15}/>{exportingKey === `cycle-${cycle.id}` ? 'Preparing…' : 'Statement'}</button>{canManage && cycle.status !== 'PAID' && <button className="btn btn--primary" type="button" onClick={() => setPaying(cycle)}>Mark Paid</button>}{canManage && cycle.status === 'PAID' && <button className="btn btn--secondary" onClick={()=>archiveRecord('cycle',cycle.id)}><Archive size={15}/>Archive</button>}</div></article>) : <p>No active billing cycles match these filters.</p>}</div></section>
+    <section className="platform-fees-panel"><h3>Active fee ledger <small>{filteredLedger.length}</small><button type="button" className="btn btn--secondary" disabled={!filteredLedger.length || Boolean(exportingKey)} onClick={exportLedger}><Download size={15}/>{exportingKey === 'ledger' ? 'Preparing…' : 'Export range'}</button></h3><div className="platform-fee-ledger">{filteredLedger.length ? filteredLedger.map((entry) => { const content=<><span>{entry.reference_code}<small>{entry.name} · {entry.invoice_number}</small></span><span>{peso(entry.agreed_total)}<small>{formatRate(entry.fee_rate)} rate · {entry.fee_responsibility === 'CLIENT' ? 'Client pays' : 'Studio absorbs'}</small></span><strong>{peso(entry.fee_amount)}</strong><em>{entry.voided_at ? 'Voided' : entry.cycle_status}</em></>; return canManage ? <div key={entry.id} className={entry.voided_at ? 'is-voided' : ''}>{content}{(entry.voided_at||entry.cycle_status==='PAID')&&<button className="icon-btn" title="Archive fee record" onClick={()=>archiveRecord('ledger',entry.id)}><Archive size={15}/></button>}</div> : <Link key={entry.id} to={`/admin/oversight/bookings/${entry.booking_id}`} state={{ from: { ...location, state: { ...(location.state || {}), feeFilters: filters, scrollY: window.scrollY } } }} className={entry.voided_at ? 'is-voided' : ''}>{content}</Link> }) : <p>No active fee records match these filters.</p>}</div></section>
     {paying && <div className="invoice-preview-modal" onMouseDown={() => !saving && setPaying(null)}><form onSubmit={markPaid} onMouseDown={(event) => event.stopPropagation()}><h2>Mark cycle paid</h2><p>{formatDate(paying.cycle_start)} – {formatDate(paying.cycle_end)} · {peso(paying.total_owed)}</p><label>Date paid<input type="date" required value={payment.paid_at} onChange={(e)=>setPayment({...payment,paid_at:e.target.value})}/></label><label>Note<textarea maxLength="500" rows="3" value={payment.note} onChange={(e)=>setPayment({...payment,note:e.target.value})}/></label><div className="booking-action-form__actions"><button type="button" className="btn btn--secondary" onClick={()=>setPaying(null)}>Cancel</button><button type="submit" className="btn btn--primary" disabled={saving}>{saving?'Saving…':'Confirm paid'}</button></div><small>{cycleEntries.length} fee record(s) in this statement.</small></form></div>}
   </div></section>
 }

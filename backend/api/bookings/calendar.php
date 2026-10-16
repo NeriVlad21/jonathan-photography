@@ -8,6 +8,7 @@ require_once __DIR__ . '/../../helpers/validation.php';
 require_once __DIR__ . '/../../middleware/auth.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../helpers/billing.php';
+require_once __DIR__ . '/../../helpers/oversight.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 $admin = require_admin();
@@ -55,6 +56,8 @@ if ($method === 'GET') {
                 COALESCE(pay.total_paid,0) AS total_paid,
                 ce.status,
                 ce.created_at,
+                (SELECT COUNT(*) FROM entity_flags ef WHERE ef.entity_type=\'CALENDAR_EVENT\' AND ef.entity_id=ce.id AND ef.status=\'OPEN\') AS open_flag_count,
+                (SELECT reason FROM entity_flags ef WHERE ef.entity_type=\'CALENDAR_EVENT\' AND ef.entity_id=ce.id AND ef.status=\'OPEN\' ORDER BY ef.created_at DESC LIMIT 1) AS latest_flag_reason,
                 \'schedule\' AS source
          FROM calendar_events ce
          LEFT JOIN bookings b ON b.id = ce.booking_id
@@ -63,9 +66,20 @@ if ($method === 'GET') {
          ORDER BY ce.event_date ASC, ce.created_at ASC'
     );
     $stmt->execute(['start' => $start, 'end' => $end]);
-    json_success($stmt->fetchAll(PDO::FETCH_ASSOC));
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if (($admin['role'] ?? '') === 'SUPER_ADMIN') {
+        log_superadmin_access($pdo, $admin, 'CALENDAR', $start . ':' . $end, 'VIEW', ['start' => $start, 'end' => $end]);
+        foreach ($rows as &$row) {
+            $row['email'] = mask_email_address((string) ($row['email'] ?? ''));
+            $row['phone'] = mask_phone_number((string) ($row['phone'] ?? ''));
+            $row['contact_masked'] = true;
+        }
+        unset($row);
+    }
+    json_success($rows);
 }
 
+require_owner();
 require_csrf();
 $input = json_input();
 

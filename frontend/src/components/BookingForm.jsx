@@ -264,7 +264,7 @@ export default function BookingForm({ estimate, onChangeEstimate, onReviewChange
                 <strong>Data Privacy Policy</strong>
                 <p>By submitting this form, you consent to the collection and processing of your personal information in accordance with the Data Privacy Act of 2012.</p>
                 <p>We use this data solely to communicate with you regarding your booking inquiry, provide accurate estimates, and deliver our photography services.</p>
-                <p>Your information will be securely stored within our internal system and will not be shared, sold, or distributed to any third parties without your explicit, written consent.</p>
+                <p>Your information is stored in the studio system. Authorized studio personnel and the platform operator may access request and booking records when necessary for service delivery, security, technical support, and accountable platform oversight. Contact details are masked by default during platform oversight and every reveal is logged.</p>
               </div>
               <label className="checkbox-row booking-privacy-consent" htmlFor="privacy_agreed">
                 <input id="privacy_agreed" type="checkbox" checked={form.privacy_agreed} onChange={update('privacy_agreed')} />

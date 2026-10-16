@@ -9,19 +9,17 @@ require_once __DIR__ . '/../../middleware/auth.php';
 require_once __DIR__ . '/../../config/database.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'PUT') json_error('Method not allowed.', 405);
-require_admin(); require_csrf();
+require_owner(); require_csrf();
 $input = json_input();
 $v = new Validator($input);
 $v->required('id')->positiveInteger('id', 'booking id')->required('total')->required('date')->date('date', false)
   ->string('coverage', 'Coverage')->maxLength('coverage', 160)->string('location', 'Location')->maxLength('location', 200)
-  ->string('notes', 'Notes')->maxLength('notes', 2000);
+  ->string('notes', 'Notes')->maxLength('notes', 2000)->boolean('pass_platform_fee_to_client');
 if ($v->fails()) json_error('Please correct the agreed booking details.', 422, $v->errors());
 $id = positive_integer_input($input['id'] ?? null);
 $total = whole_peso_input($input['total'] ?? null);
 $hours = $input['hours'] ?? null;
 if ($total === null || $total <= 0) json_error('Enter the agreed price as a whole peso amount greater than zero.', 422, ['total' => 'Use a whole peso amount, e.g. 25000.']);
-$feeResponsibility = is_string($input['fee_responsibility'] ?? null) ? strtoupper(trim($input['fee_responsibility'])) : '';
-if (!in_array($feeResponsibility, FEE_RESPONSIBILITIES, true)) json_error('Choose who pays the platform fee.', 422, ['fee_responsibility' => 'Select "Client pays platform fee" or "Studio absorbs platform fee".']);
 if ($hours !== null && $hours !== '' && (!is_numeric($hours) || (float) $hours <= 0 || (float) $hours > 24)) json_error('Coverage hours must be between 0 and 24.', 422);
 $addonsInput = $input['addons'] ?? [];
 if (!is_array($addonsInput) || count($addonsInput) > 50) json_error('Add-ons must be a valid list.', 422);
@@ -34,9 +32,12 @@ foreach ($addonsInput as $index => $addon) {
     if ($label === '' || mb_strlen($label) > 120 || $amount === null || $quantity < 1 || $quantity > 99) json_error('Please correct add-on ' . ($index + 1) . '.', 422);
     $addons[] = ['label' => $label, 'amount' => $amount, 'quantity' => $quantity];
 }
-$details = ['total' => $total, 'fee_responsibility' => $feeResponsibility, 'coverage' => clean_string($input['coverage'] ?? ''), 'hours' => $hours === null || $hours === '' ? null : round((float) $hours, 2), 'addons' => $addons, 'date' => (string) $input['date'], 'location' => clean_string($input['location'] ?? ''), 'notes' => clean_string($input['notes'] ?? '')];
-
 $pdo = Database::connect();
+$settings = billing_settings($pdo);
+$overrideSupplied = array_key_exists('pass_platform_fee_to_client', $input) && $input['pass_platform_fee_to_client'] !== null && $input['pass_platform_fee_to_client'] !== '';
+$passFee = $overrideSupplied ? (bool) boolean_input($input['pass_platform_fee_to_client']) : (bool) $settings['pass_platform_fee_to_client_default'];
+$feeResponsibility = $passFee ? 'CLIENT' : 'STUDIO';
+$details = ['total' => $total, 'fee_responsibility' => $feeResponsibility, 'pass_platform_fee_to_client' => $passFee, 'uses_platform_fee_default' => !$overrideSupplied, 'coverage' => clean_string($input['coverage'] ?? ''), 'hours' => $hours === null || $hours === '' ? null : round((float) $hours, 2), 'addons' => $addons, 'date' => (string) $input['date'], 'location' => clean_string($input['location'] ?? ''), 'notes' => clean_string($input['notes'] ?? '')];
 try {
     $pdo->beginTransaction();
     $stmt = $pdo->prepare('SELECT * FROM bookings WHERE id=:id FOR UPDATE'); $stmt->execute(['id'=>$id]);
@@ -65,7 +66,7 @@ try {
     $conflict = $pdo->prepare("SELECT id FROM calendar_events WHERE event_date=:date AND (booking_id IS NULL OR booking_id<>:id) AND status IN ('REQUESTED','BOOKED','COMPLETED') LIMIT 1");
     $conflict->execute(['date'=>$details['date'],'id'=>$id]);
     if ($conflict->fetch()) { $pdo->rollBack(); json_error('The agreed date conflicts with another active booking.', 409); }
-    $pdo->prepare('UPDATE bookings SET agreed_details=:details, agreed_details_updated_at=NOW() WHERE id=:id')->execute(['details'=>json_encode($details, JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR),'id'=>$id]);
+    $pdo->prepare('UPDATE bookings SET agreed_details=:details, agreed_details_updated_at=NOW(), pass_platform_fee_to_client=:pass_fee WHERE id=:id')->execute(['details'=>json_encode($details, JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR),'pass_fee'=>$overrideSupplied ? (int)$passFee : null,'id'=>$id]);
     $pdo->prepare('UPDATE calendar_events SET event_date=:date, location=:location, notes=:notes WHERE booking_id=:id')->execute(['date'=>$details['date'],'location'=>$details['location'],'notes'=>$details['notes'],'id'=>$id]);
 
     $booking['agreed_details'] = $details;

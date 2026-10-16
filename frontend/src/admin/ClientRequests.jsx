@@ -4,9 +4,9 @@ import { CalendarCheck, ReceiptText } from 'lucide-react'
 import Bookings from './Bookings.jsx'
 import EstimatorLeads from './EstimatorLeads.jsx'
 
-export default function ClientRequests() {
+export default function ClientRequests({ readOnly = false }) {
   const [searchParams, setSearchParams] = useSearchParams()
-  const view = searchParams.get('view') === 'estimates' ? 'estimates' : 'bookings'
+  const view = !readOnly && searchParams.get('view') === 'estimates' ? 'estimates' : 'bookings'
 
   useEffect(() => {
     document.title = 'Admin — Client Requests'
@@ -25,8 +25,8 @@ export default function ClientRequests() {
         <header className="client-requests-hero">
           <div>
             <span className="client-requests-eyebrow">One client journey</span>
-            <h2 className="display">Client Requests</h2>
-            <p>Review saved estimates and complete booking requests without losing where each client is in the process.</p>
+            <h2 className="display">{readOnly ? 'Booking Oversight' : 'Client Requests'}</h2>
+            <p>{readOnly ? 'Review owner-managed booking requests without changing studio records.' : 'Review saved estimates and complete booking requests without losing where each client is in the process.'}</p>
           </div>
 
           <div className="client-requests-legend" aria-label="Request stages">
@@ -36,7 +36,7 @@ export default function ClientRequests() {
           </div>
         </header>
 
-        <div className="client-requests-tabs" role="tablist" aria-label="Client request type">
+        {!readOnly && <div className="client-requests-tabs" role="tablist" aria-label="Client request type">
           <button
             type="button"
             role="tab"
@@ -57,10 +57,10 @@ export default function ClientRequests() {
             <ReceiptText size={18} />
             <span><strong>Saved estimates</strong><small>Potential clients who emailed themselves a package</small></span>
           </button>
-        </div>
+        </div>}
 
         <div className="client-requests-view" role="tabpanel">
-          {view === 'bookings' ? <Bookings /> : <EstimatorLeads />}
+          {view === 'bookings' ? <Bookings readOnly={readOnly} detailBase={readOnly ? '/admin/oversight/bookings' : '/admin/bookings'} /> : <EstimatorLeads />}
         </div>
       </div>
     </section>

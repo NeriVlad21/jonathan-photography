@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { KeyRound, Mail, ShieldCheck, UserRound } from 'lucide-react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { authApi } from '../services/api.js'
 import { useAdminAuth } from '../context/AdminAuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
@@ -17,6 +18,8 @@ const EMPTY_FORM = {
 export default function AdminProfile() {
   const { refresh } = useAdminAuth()
   const { showToast } = useToast()
+  const location = useLocation()
+  const navigate = useNavigate()
   const [profile, setProfile] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
@@ -50,6 +53,7 @@ export default function AdminProfile() {
 
     setSaving(true)
     try {
+      const wasPasswordChangeRequired = Boolean(profile.must_change_password)
       const result = await authApi.updateProfile(form)
       setProfile((current) => ({ ...current, ...result.admin }))
       setForm((current) => ({
@@ -60,6 +64,18 @@ export default function AdminProfile() {
       }))
       await refresh()
       showToast(result.password_changed ? 'Profile and password updated.' : 'Profile updated.')
+      if (wasPasswordChangeRequired && result.password_changed) {
+        const returnTo = location.state?.returnTo
+        const fallback = result.admin?.role === 'SUPER_ADMIN' ? '/admin/super-admin' : '/admin/dashboard'
+        if (returnTo?.pathname) {
+          navigate(
+            { pathname: returnTo.pathname, search: returnTo.search || '', hash: returnTo.hash || '' },
+            { replace: true, state: returnTo.state }
+          )
+        } else {
+          navigate(fallback, { replace: true })
+        }
+      }
     } catch (error) {
       showToast(error?.message || 'Unable to update the profile.', 'error')
     } finally {
@@ -79,13 +95,15 @@ export default function AdminProfile() {
         <header className="admin-profile-hero">
           <div>
             <span className="admin-profile-eyebrow">Account / Security</span>
-            <h2>Studio profile</h2>
-            <p>Manage your personal sign-in details. Booking-alert routing is controlled separately by the Super Admin.</p>
+            <h2>{profile.role === 'SUPER_ADMIN' ? 'Superadmin profile' : 'Studio profile'}</h2>
+            <p>{profile.role === 'SUPER_ADMIN' ? 'Manage your platform sign-in and security details.' : 'Manage your personal sign-in details. Booking-alert routing is controlled separately by the Super Admin.'}</p>
           </div>
           <div className="admin-profile-avatar" aria-hidden="true">
             {(profile.username || 'A').charAt(0).toUpperCase()}
           </div>
         </header>
+
+        {profile.must_change_password && <div className="content-safety-note" role="alert"><KeyRound size={18} /><span><strong>Password change required.</strong> Replace the temporary password below to unlock the navigation. After saving, you will continue to the section you selected.</span></div>}
 
         <div className="admin-profile-grid">
           <aside className="admin-profile-summary">
@@ -127,7 +145,7 @@ export default function AdminProfile() {
 
             <div className="admin-profile-section-head admin-profile-section-head--password">
               <div>
-                <span>Optional</span>
+                <span>{profile.must_change_password ? 'Required before continuing' : 'Optional'}</span>
                 <h3>Change password</h3>
               </div>
               <KeyRound size={20} />
@@ -136,11 +154,11 @@ export default function AdminProfile() {
             <div className="admin-profile-fields admin-profile-fields--password">
               <label>
                 <span>New password</span>
-                <input type="password" name="new_password" value={form.new_password} onChange={updateField} minLength={8} placeholder="Leave blank to keep current" />
+                <input type="password" name="new_password" value={form.new_password} onChange={updateField} minLength={12} required={profile.must_change_password} placeholder={profile.must_change_password ? 'At least 12 characters' : 'Leave blank to keep current'} />
               </label>
               <label>
                 <span>Confirm new password</span>
-                <input type="password" name="confirm_password" value={form.confirm_password} onChange={updateField} minLength={8} placeholder="Repeat new password" />
+                <input type="password" name="confirm_password" value={form.confirm_password} onChange={updateField} minLength={12} required={profile.must_change_password} placeholder="Repeat new password" />
               </label>
             </div>
 
@@ -150,9 +168,9 @@ export default function AdminProfile() {
             </label>
 
             <div className="admin-profile-actions">
-              <p>Your current session stays active after saving.</p>
+              <p>{profile.must_change_password ? 'This one-time security step unlocks the platform workspace.' : 'Your current session stays active after saving.'}</p>
               <button type="submit" className="btn btn--primary" disabled={saving}>
-                {saving ? 'Saving…' : 'Save profile'}
+                {saving ? 'Saving…' : profile.must_change_password ? 'Change password & continue' : 'Save profile'}
               </button>
             </div>
           </form>

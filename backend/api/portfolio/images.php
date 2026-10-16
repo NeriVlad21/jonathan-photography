@@ -10,6 +10,7 @@ require_once __DIR__ . '/../../helpers/response.php';
 require_once __DIR__ . '/../../helpers/validation.php';
 require_once __DIR__ . '/../../middleware/auth.php';
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../helpers/oversight.php';
 
 $pdo = Database::connect();
 $method = $_SERVER['REQUEST_METHOD'];
@@ -87,17 +88,18 @@ if ($method === 'GET' && isset($_GET['id'])) {
 
 // Handle Admin fetching all images for a shoot
 if ($method === 'GET' && isset($_GET['shoot_id'])) {
-    require_admin();
+    $admin = require_admin();
     $shootId = positive_integer_input($_GET['shoot_id']);
     if (!$shootId) json_error('Invalid shoot id.', 422);
-    $stmt = $pdo->prepare('SELECT * FROM portfolio_images WHERE shoot_id = :sid ORDER BY sort_order ASC, id ASC');
+    $stmt = $pdo->prepare("SELECT pi.*, (SELECT COUNT(*) FROM entity_flags ef WHERE ef.entity_type='PORTFOLIO_IMAGE' AND ef.entity_id=pi.id AND ef.status='OPEN') open_flag_count, (SELECT reason FROM entity_flags ef WHERE ef.entity_type='PORTFOLIO_IMAGE' AND ef.entity_id=pi.id AND ef.status='OPEN' ORDER BY ef.created_at DESC LIMIT 1) latest_flag_reason FROM portfolio_images pi WHERE shoot_id = :sid ORDER BY sort_order ASC, id ASC");
     $stmt->execute(['sid' => $shootId]);
+    log_superadmin_access($pdo, $admin, 'PORTFOLIO_SHOOT', (string) $shootId);
     json_success($stmt->fetchAll());
 }
 
 // Handle updates
 if ($method === 'PUT') {
-    require_admin();
+    require_owner();
     require_csrf();
     $input = json_input();
 
@@ -178,7 +180,7 @@ if ($method === 'PUT') {
 
 // Handle deletions
 if ($method === 'DELETE') {
-    require_admin();
+    require_owner();
     require_csrf();
     $id = positive_integer_input($_GET['id'] ?? null);
     if (!$id) json_error('Missing image id.', 422);

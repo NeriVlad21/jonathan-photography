@@ -7,7 +7,7 @@ require_once __DIR__ . '/../../helpers/upload.php';
 require_once __DIR__ . '/../../middleware/auth.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') json_error('Method not allowed.', 405);
-require_admin();
+require_owner();
 require_csrf();
 if (empty($_FILES['image'])) json_error('Please attach an image.', 422);
 

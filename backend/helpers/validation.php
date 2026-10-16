@@ -244,3 +244,60 @@ function rate_limit_check(string $action, string $ip, int $maxHits, int $windowS
         fclose($handle);
     }
 }
+
+/**
+ * Checks a rate-limit bucket without recording a hit. Login uses this before
+ * password verification so successful sign-ins never consume failure quota.
+ */
+function rate_limit_allowed(string $action, string $keyValue, int $maxHits, int $windowSeconds = 3600): bool
+{
+    $dir = sys_get_temp_dir() . '/jp_rate_limit';
+    if (!is_dir($dir) && !@mkdir($dir, 0700, true) && !is_dir($dir)) return false;
+    $key = hash('sha256', $action . '|' . $keyValue);
+    $file = $dir . '/' . $key . '.json';
+    if (!is_file($file)) return true;
+
+    $handle = @fopen($file, 'c+');
+    if ($handle === false) return false;
+    try {
+        if (!flock($handle, LOCK_EX)) return false;
+        rewind($handle);
+        $raw = json_decode((string) stream_get_contents($handle), true);
+        $windowStart = time() - max(60, $windowSeconds);
+        $hits = is_array($raw)
+            ? array_values(array_filter($raw, fn($time) => is_int($time) && $time > $windowStart))
+            : [];
+
+        // Prune expired hits while the file is already locked.
+        ftruncate($handle, 0);
+        rewind($handle);
+        fwrite($handle, json_encode($hits, JSON_THROW_ON_ERROR));
+        fflush($handle);
+        return count($hits) < $maxHits;
+    } finally {
+        flock($handle, LOCK_UN);
+        fclose($handle);
+    }
+}
+
+/** Clears a rate-limit bucket after successful authentication. */
+function rate_limit_reset(string $action, string $keyValue): void
+{
+    $dir = sys_get_temp_dir() . '/jp_rate_limit';
+    $key = hash('sha256', $action . '|' . $keyValue);
+    $file = $dir . '/' . $key . '.json';
+    if (!is_file($file)) return;
+
+    $handle = @fopen($file, 'c+');
+    if ($handle === false) return;
+    try {
+        if (!flock($handle, LOCK_EX)) return;
+        ftruncate($handle, 0);
+        rewind($handle);
+        fwrite($handle, '[]');
+        fflush($handle);
+    } finally {
+        flock($handle, LOCK_UN);
+        fclose($handle);
+    }
+}

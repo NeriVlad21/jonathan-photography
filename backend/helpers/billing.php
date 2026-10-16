@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 function billing_settings(PDO $pdo): array
 {
-    $keys = ['platform_fee_threshold','platform_fee_low_rate','platform_fee_high_rate','platform_fee_cycle_start_date','platform_fee_due_days'];
+    $keys = ['platform_fee_threshold','platform_fee_low_rate','platform_fee_high_rate','platform_fee_cycle_start_date','platform_fee_due_days','pass_platform_fee_to_client_default'];
     $placeholders = implode(',', array_fill(0, count($keys), '?'));
     $stmt = $pdo->prepare("SELECT setting_key, setting_value FROM site_settings WHERE setting_key IN ($placeholders)");
     $stmt->execute($keys);
@@ -14,6 +14,7 @@ function billing_settings(PDO $pdo): array
         'high_rate' => (float) ($values['platform_fee_high_rate'] ?? 0.01),
         'cycle_start_date' => (string) ($values['platform_fee_cycle_start_date'] ?? date('Y-01-01')),
         'due_days' => max(0, min(90, (int) ($values['platform_fee_due_days'] ?? 7))),
+        'pass_platform_fee_to_client_default' => ($values['pass_platform_fee_to_client_default'] ?? '0') === '1',
     ];
 }
 

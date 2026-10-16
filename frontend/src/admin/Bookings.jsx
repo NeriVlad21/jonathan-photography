@@ -71,7 +71,7 @@ const TIMEFRAMES = [
   }
 ]
 
-export default function Bookings() {
+export default function Bookings({ readOnly = false, detailBase = '/admin/bookings' }) {
   const location = useLocation()
   const navigate = useNavigate()
   const { showToast } = useToast()
@@ -1123,7 +1123,7 @@ export default function Bookings() {
                             className="bookings-row"
                             onClick={() =>
                               navigate(
-                                `/admin/bookings/${booking.id}`,
+                                `${detailBase}/${booking.id}`,
                                 { state: { from: { ...location, state: { ...(location.state || {}), bookingFilters: { status, search, timeframe, priorityOnly }, scrollY: window.scrollY } } } }
                               )
                             }
@@ -1140,6 +1140,8 @@ export default function Bookings() {
                                 {booking.name ||
                                   'Unnamed Client'}
                               </strong>
+
+                              {Number(booking.open_flag_count) > 0 && <span className="status-badge status-badge--PENDING" title={booking.latest_flag_reason || 'Oversight warning'}>Flagged</span>}
 
                               <span className="bookings-row__email">
                                 {booking.email ||
@@ -1191,7 +1193,7 @@ export default function Bookings() {
                             </td>
 
                             <td className="bookings-row__open" data-label="Actions">
-                              {QUICK_ACTIONS[booking.status]?.length ? (
+                              {!readOnly && QUICK_ACTIONS[booking.status]?.length ? (
                                 <div className="bookings-quick-actions" aria-label={`Actions for ${booking.name}`}>
                                   {QUICK_ACTIONS[booking.status].map((action) => {
                                     const Icon = action.icon

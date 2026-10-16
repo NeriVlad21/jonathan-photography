@@ -23,6 +23,30 @@
   top: 0;
   height: 100svh;
 }
+
+/* Platform transparency: shared warning and access-log surfaces. */
+.admin-shell .oversight-flags-panel { margin-top: 20px; }
+.admin-shell .oversight-flag-list { display: grid; gap: 10px; padding: 16px 20px 20px; }
+.admin-shell .oversight-flag-card { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 16px; border: 1px solid var(--admin-border); background: #fffdf0; }
+.admin-shell .oversight-flag-card > div { min-width: 0; }
+.admin-shell .oversight-flag-card strong { display: block; margin: 8px 0 4px; text-transform: capitalize; }
+.admin-shell .oversight-flag-card p { margin: 0 0 5px; line-height: 1.5; overflow-wrap: anywhere; }
+.admin-shell .oversight-flag-card small { color: var(--admin-muted); }
+.admin-shell .oversight-flag-card__actions { display: flex; flex: 0 0 auto; gap: 8px; }
+.admin-shell .oversight-transparency-page { display: grid; gap: 20px; }
+.admin-shell .responsive-table { width: 100%; overflow-x: auto; }
+.admin-shell .responsive-table table { width: 100%; border-collapse: collapse; min-width: 680px; }
+.admin-shell .responsive-table th, .admin-shell .responsive-table td { padding: 13px 16px; border-bottom: 1px solid var(--admin-border); text-align: left; }
+.admin-shell .responsive-table th { color: var(--admin-muted); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.admin-shell .platform-fee-toggle { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.admin-shell .platform-fee-toggle input { width: 20px; height: 20px; accent-color: var(--c-yellow); }
+
+@media (max-width: 700px) {
+  .admin-shell .oversight-flag-card { align-items: stretch; flex-direction: column; }
+  .admin-shell .oversight-flag-card .btn { width: 100%; justify-content: center; }
+  .admin-shell .oversight-flag-card__actions { width: 100%; }
+  .admin-shell .superadmin-readonly-banner { padding-inline: 18px !important; }
+}
 .admin-sidebar__brand { padding: 26px 24px; font-family: var(--font-display); font-size: 1.1rem; border-bottom: 1px solid var(--c-hairline-on-dark); }
 .admin-sidebar__brand span { color: var(--c-yellow); font-style: italic; }
 .admin-sidebar__nav { flex: 1; padding: 18px 12px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }

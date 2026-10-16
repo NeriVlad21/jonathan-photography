@@ -10,7 +10,7 @@ require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../email/mailer.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') json_error('Method not allowed.',405);
-require_admin(); require_csrf();
+require_owner(); require_csrf();
 $input=json_input();
 $v=new Validator($input); $v->required('id')->positiveInteger('id','booking id')->required('payment_type')->inList('payment_type',['DOWN_PAYMENT','FINAL_PAYMENT'])->required('amount')->required('date')->date('date',false)->string('note','Note')->maxLength('note',500);
 if($v->fails()) json_error('Please correct the payment details.',422,$v->errors());

@@ -23,7 +23,7 @@ $pdo = Database::connect();
 $all = isset($_GET['all']);
 
 if ($all) {
-    require_admin();
+    require_owner();
 }
 
 $hoursSql =

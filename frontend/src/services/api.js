@@ -657,10 +657,11 @@ export const bookingsApi = {
   },
 
   details: (
-    id
+    id,
+    revealContact = false
   ) =>
     get(
-      `/bookings/details.php?id=${id}`
+      `/bookings/details.php?id=${id}${revealContact ? '&reveal_contact=1' : ''}`
     ),
 
   availability: (month) =>
@@ -712,7 +713,22 @@ export const bookingsApi = {
 export const feesApi = {
   list: () => get('/fees/index.php'),
   updateSettings: (cycleStartDate) => put('/fees/index.php', { cycle_start_date: cycleStartDate }),
+  updatePassThroughDefault: (enabled) => put('/fees/index.php', { pass_platform_fee_to_client_default: enabled }),
   markCyclePaid: (data) => post('/fees/index.php', data)
+}
+
+export const oversightApi = {
+  flags: (params = {}) => {
+    const query = new URLSearchParams(params).toString()
+    return get(`/oversight/flags.php${query ? `?${query}` : ''}`)
+  },
+  createFlag: (data) => post('/oversight/flags.php', data),
+  resolveFlag: (id, resolutionNote) => put('/oversight/flags.php', { id, resolution_note: resolutionNote }),
+  accessLog: (params = {}) => {
+    const query = new URLSearchParams(params).toString()
+    return get(`/oversight/access-log.php${query ? `?${query}` : ''}`)
+  },
+  logAccess: (resourceType, resourceId) => post('/oversight/log.php', { resource_type: resourceType, resource_id: String(resourceId) })
 }
 
 export const superAdminApi = {

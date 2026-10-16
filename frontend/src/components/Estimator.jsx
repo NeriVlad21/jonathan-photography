@@ -330,7 +330,7 @@ export default function Estimator({ estimator }) {
         </div>
 
         <p className="estimate-summary__disclaimer">
-          Please note: This is an estimated baseline. We are happy to customize this package and negotiate terms to better fit your budget during our consultation meeting. The final agreed price includes a small platform service fee; it is not added as a separate client charge.
+          This is a preliminary estimate, not a final quotation. The final invoice will clearly show the agreed service price and any platform service fee only when the studio chooses to pass that fee to the client.
         </p>
 
         <div className="estimate-summary__actions">
@@ -361,7 +361,7 @@ export default function Estimator({ estimator }) {
               </div>
               <label className="estimate-privacy-consent">
                 <input type="checkbox" checked={privacyAgreed} onChange={(e) => setPrivacyAgreed(e.target.checked)} required />
-                <span>I agree that my name and email may be used to send this estimate and respond to my inquiry.</span>
+                <span>I agree that my name and email may be used to send this estimate and respond to my inquiry. The platform operator may access this record for security, support, and accountable platform oversight.</span>
               </label>
               <button type="button" className="estimate-privacy-link" onClick={() => setPrivacyModalOpen(true)}>Read the Data Privacy Notice</button>
               <div className="modal-card__actions">

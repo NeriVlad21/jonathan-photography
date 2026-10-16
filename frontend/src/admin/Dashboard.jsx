@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { dashboardApi } from '../services/api.js'
 import { peso, formatDateTime } from '../utils/format.js'
 import LoadingState from '../components/LoadingState.jsx'
+import FlaggedItemsPanel from './FlaggedItemsPanel.jsx'
 import { subscribeAdminDataChanged } from '../utils/adminDataSync.js'
 import {
   AreaChart,
@@ -1144,6 +1145,8 @@ export default function Dashboard() {
               </div>
 
             </section>
+
+            <FlaggedItemsPanel compact />
 
           </div>
 

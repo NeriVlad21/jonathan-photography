@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     json_error('Method not allowed.', 405);
 }
 
-require_admin();
+require_owner();
 $pdo = Database::connect();
 
 // Get timeframe from query params

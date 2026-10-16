@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
     json_error('Method not allowed.', 405);
 }
 
-require_admin();
+require_owner();
 require_csrf();
 
 $input = json_input();

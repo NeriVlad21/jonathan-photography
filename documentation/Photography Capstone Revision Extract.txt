@@ -1,0 +1,2822 @@
+=== PAGE 1 ===
+
+A Web-Based Booking and Portfolio Management
+                                 System for Jonathan Photography
+
+
+
+
+
+
+
+
+                     A proposed Capstone Project submitted to the faculty of the
+                              College of Information Technology Education
+                                   PHINMA UPang College of Urdaneta
+
+
+
+
+
+
+
+
+
+
+
+                       In partial fulfillment of the requirements for the subject
+                                   code: ITE 381 IT Business Solutions
+
+
+
+
+
+
+
+                                                      by:
+
+                                           BASA, FIONA GENE U.
+                                        DEODORA, DON JASPER A.
+                                       NERI, MIKAEL VLADIMIR M.
+                                           SALANGO, ALYZA MAE
+                                              YU, KIMBERLY D.
+
+
+
+
+
+
+
+
+
+                                            September 30, 2026
+
+
+
+=== PAGE 2 ===
+
+TABLE OF CONTENTS
+
+
+Title Page                       ……………………………………………………….                        i
+
+Table of Contents                ……………………………………………………….                        ii
+
+List of Figures                  ……………………………………………………….                       iii
+
+List of Tables                   ……………………………………………………….                       iv
+
+
+
+
+Validated User-Centered Problem Statement         …………………………………..              1
+
+Evidence Supporting the Problem                   …………………………………..              5
+
+HMW Question and Solution Ideas Considered        …………………………………..             10
+
+Top Three Ideas, Scoring, and Justification       …………………………………..             12
+
+Final Solution and TELOS Feasibility Analysis     …………………………………..             18
+
+MVP Feature List and Scope                        …………………………………..             21
+
+Main User Flow                                    …………………………………..             26
+
+Low-Fidelity Wireframes / Prototype Description   …………………………………..             30
+
+       Low-Fidelity Wireframes                    …………………………………..             31
+
+       Functional Prototype                       …………………………………..             46
+
+       Owner Interview and Prototype Testing      …………………………………..             60
+
+
+
+
+APPENDICES                                     ………………………………………                64
+
+       Appendix A. Interview Questions         ………………………………………                64
+
+       Appendix B. Interview Notes / Answers   ………………………………………                65
+
+
+
+=== PAGE 3 ===
+
+LIST OF FIGURES
+
+
+ Figure 1. Interview and Prototype Evaluation                 ……………………………..                2
+ Conducted with the Owner of Jonathan Photography
+
+ Figure 2. 2x2 Matrix of Jonathan Photography                 ……………………………..               14
+ Capstone
+
+ Figure 3. Proposed Booking Request Workflow of               ……………………………..               27
+ Jonathan Photography
+
+
+
+=== PAGE 4 ===
+
+LIST OF TABLES
+
+
+ Table 1. Journey Map of Jonathan Photography                           …………………...           9
+
+ Table 2. Idea 1: Integrated Booking and Portfolio                      …………………...           15
+ Management System
+
+ Table 3. Idea 2: Centralized Request and Calendar Tracker              …………………...           16
+ with Basic Inquiry Form
+
+ Table 4. Idea 3: Portfolio and Estimator Website with Direct           …………………...           16
+ Communication
+
+ Table 5. TELOS Feasibility Analysis                                    …………………...           20
+
+ Table 6. Design Guidelines Derived from Interview Findings             …………………...           22
+
+ Table 7. MVP Feature List                                              …………………...           24
+
+ Table 8. Proposed Main User Flow of Jonathan Photography               …………………...           29
+
+
+
+=== PAGE 5 ===
+
+LIST OF PLATES
+
+
+ Plate 1. Low-Fidelity Wireframe - Public Homepage                      …………………           31
+
+ Plate 2. Low-Fidelity Wireframe - Portfolio                            …………………           32
+
+ Plate 3. Low-Fidelity Wireframe - Services                             …………………           33
+
+ Plate 4. Low-Fidelity Wireframe - Contact                              …………………           34
+
+ Plate 5. Low-Fidelity Wireframe - Estimator                            …………………           35
+
+ Plate 6. Low-Fidelity Wireframe - Booking Request                      …………………           36
+
+ Plate 7. Low-Fidelity Wireframe - Administrative Dashboard             …………………           37
+
+ Plate 8. Low-Fidelity Wireframe - Client Requests                      …………………           38
+
+ Plate 9. Low-Fidelity Wireframe - Administrative Calendar              …………………           39
+
+ Plate 10. Low-Fidelity Wireframe - Portfolio Management                …………………           40
+
+ Plate 11. Low-Fidelity Wireframe - Services Management                 …………………           41
+
+ Plate 12. Low-Fidelity Wireframe - Estimator Configuration             …………………           42
+
+ Plate 13. Low-Fidelity Wireframe - Contact Links Management            …………………           43
+
+ Plate 14. Low-Fidelity Wireframe - Archive and Logs                    …………………           44
+
+ Plate 15. Low-Fidelity Wireframe - Studio Profile                      …………………           45
+
+ Plate 16. Functional Prototype - Public Homepage                       …………………           46
+
+        Plate 16.1. Functional Prototype - Homepage, Upper              …………………           47
+        Section
+
+        Plate 16.2. Functional Prototype - Homepage, Middle             …………………           47
+        Section
+
+        Plate 16.3. Functional Prototype - Homepage, Lower              …………………           48
+        Section
+
+ Plate 17. Functional Prototype - Portfolio                             …………………           48
+
+ Plate 18. Functional Prototype - Services                              …………………           49
+
+ Plate 19. Functional Prototype - Contact                               …………………           50
+
+ Plate 20. Functional Prototype - Estimator                             …………………           51
+
+
+
+=== PAGE 6 ===
+
+Plate 20.1. Functional Prototype - Estimator, Selection          …………………            51
+        Section
+
+        Plate 20.2. Functional Prototype - Estimator, Estimate           …………………            52
+        Summary
+
+ Plate 21. Functional Prototype - Booking Request                        …………………            53
+
+        Plate 21.1. Functional Prototype - Booking Request,              …………………            53
+        Information Section
+
+        Plate 21.2. Functional Prototype - Booking Request,              …………………            54
+        Privacy and Submission Section
+
+ Plate 22. Functional Prototype - Administrative Dashboard               …………………            54
+
+ Plate 23. Functional Prototype - Client Requests                        …………………            55
+
+ Plate 24. Functional Prototype - Administrative Calendar                …………………            56
+
+ Plate 25. Functional Prototype - Portfolio Management                   …………………            56
+
+ Plate 26. Functional Prototype - Services Management                    …………………            57
+
+ Plate 27. Functional Prototype - Estimator Configuration                …………………            58
+
+ Plate 28. Functional Prototype - Contact Links Management               …………………            58
+
+ Plate 29. Functional Prototype - Archive and Logs                       …………………            59
+
+ Plate 30. Functional Prototype - Studio Profile                         …………………            60
+
+ Plate 31. Owner Prototype Testing Session                               …………………            61
+
+
+
+=== PAGE 7 ===
+
+Validated User-Centered Problem Statement
+
+
+         For  Jonathan    Photography, maintaining         clear   communication       with prospective clients is
+
+essential   to   delivering    reliable   and    personalized      photography      and    videography      services.
+
+However,     the   studio’s   existing   inquiry   and    booking    process    depends      largely   on   referrals,
+
+Facebook     Messenger,      personal     conversations,      handwritten      records,   and    manual     calendar
+
+checking. During the interview, the owner explained, “Clients usually contact us through chat or
+
+personal   conversations.” He further stated, “The information clients usually ask about includes
+
+the  available   packages      and   their  corresponding      prices.”   Although    these    practices   allow   the
+
+owner     to  communicate        personally     with   clients,   important     information—including         service
+
+preferences,    estimated     prices,  event dates,     coverage times,      locations, and contact       details—is
+
+distributed across separate conversations and physical records.
+
+
+         As  presented     in Figure   1, the   researchers     conducted a direct interview and           prototype
+
+evaluation    with  the   owner    of  Jonathan    Photography. The session allowed the              researchers    to
+
+examine how the        studio receives client      inquiries,  discusses    package    prices, presents previous
+
+work,   verifies   event    schedules,    and    records    booking    information.     When     asked    about    the
+
+information collected from clients, the owner explained, “Before accepting a booking, I need to
+
+know the     event date,    time, location, preferred       package, and the       client’s contact information.”
+
+This  demonstrates       that  several   important     details  must    be  gathered     and   verified  before    the
+
+owner can properly evaluate a booking request.
+
+
+
+=== PAGE 8 ===
+
+Figure 1. Interview and prototype evaluation conducted with the owner of Jonathan
+
+                                                   Photography
+
+
+         The   existing  process presents several challenges            for the   owner. Schedule availability is
+
+manually checked using a calendar and traditional records. The owner stated, “I currently use a
+
+calendar   and record book to monitor my schedules and client transactions.” Previous inquiries
+
+and   booking     information     may    also   need    to  be   retrieved   from    separate    conversations      or
+
+handwritten notes. As the number of inquiries increases, this method can make it more difficult
+
+to determine     which    clients  are   still inquiring,  which   have   submitted     booking    requests, which
+
+schedules    have    been    confirmed,     and   which    transactions     have   already    been    completed     or
+
+cancelled.
+
+
+         The   interview   also  revealed    that  service prices    are not always fixed because they may
+
+depend on the nature of the event, the requested coverage, available equipment, and additional
+
+client requirements. According to the owner, “Package prices may still be adjusted depending on
+
+
+
+=== PAGE 9 ===
+
+the client’s  needs,    the event    requirements,     and the final agreement.” This explains why direct
+
+communication must remain part of the booking process. An online estimate can provide clients
+
+with  an   initial idea  of  the   expected    cost,  but   it cannot    replace   the   consultation required to
+
+determine the final package, payment arrangement, and other event-specific conditions.
+
+
+         Despite   the importance of       direct  consultation, the      owner   recognized     the usefulness     of
+
+allowing   clients  to  review    services   and   prepare    a preliminary estimate before contacting the
+
+studio. He stated, “An online estimator would be a great help because clients could already have
+
+an  idea   of  the   possible   price  before    we   discuss   the  final  arrangement.”      This   would   reduce
+
+repetitive questions about basic packages and prices while allowing personal communication to
+
+focus  on   the specific requirements of the event. The owner also identified the need to include
+
+event   time,   equipment      upgrades,     video   portfolio   content,    payment     agreements,      and   more
+
+accessible booking records.
+
+
+         Following    the Point of    View   method,    the researchers met an independent photography
+
+studio owner who personally manages client inquiries, package explanations, price adjustments,
+
+schedule    checking,    website    content, and booking confirmations. The owner explained,                   “I still
+
+prefer direct communication with clients because some packages and additional fees need to be
+
+adjusted    through    consultation.”    This   preference     indicates   that   the  studio   does   not   need   to
+
+eliminate   personal    communication.       Instead, it needs      a more    organized    method of      supporting
+
+those conversations and preserving the information produced through them.
+
+
+         The   researchers    were surprised to discover that important client and event information
+
+is managed      across    online   messages,      personal    conversations,      a  calendar,    and   handwritten
+
+records. The     owner    stated,  “I prefer having      both   personal   and   digitized   records because it is
+
+easier to   check the details when they are properly organized.” This suggests that the principal
+
+
+
+=== PAGE 10 ===
+
+difficulty  is not   the  owner’s    willingness    to  communicate       with   clients,  but   the  absence    of  a
+
+consistent and centralized process for recording, retrieving, and monitoring information between
+
+conversations.
+
+
+         The   researchers     therefore   wondered      whether    the repeated      clarification, manual     work,
+
+and possible scheduling difficulties         experienced by the studio could be reduced by providing a
+
+more    structured     method     of   managing      inquiries    and    booking     information.     It  would     be
+
+game-changing to allow prospective clients to independently review services, examine portfolio
+
+work, and prepare a preliminary estimate while giving the owner a dependable way to monitor
+
+client  details,   requested      schedules,     booking    statuses,     and   service    information.     Such    an
+
+approach     would     support    the   owner’s     existing    workflow     without     removing     the   personal
+
+consultation required before a booking becomes final.
+
+
+         Based    on   the   interview    findings,   the   validated    user-centered     problem     is  stated   as
+
+follows:  The owner      and   prospective    clients of Jonathan Photography need a clearer and more
+
+consistent     way    to    organize,     access,    and     communicate        service,    pricing,    client,   and
+
+event-schedule information during the inquiry and booking process because the current reliance
+
+on   separate    online    conversations,     personal     discussions,    handwritten      records,   and    manual
+
+schedule    checking     makes     information     difficult  to   track   and   retrieve,    potentially   affecting
+
+response time, record accuracy, productivity, and service consistency.
+
+
+Cards applied: Card 4 — Interview for Empathy and Card 11 — Point of View.
+
+
+
+=== PAGE 11 ===
+
+Evidence Supporting the Problem
+
+
+         The evidence supporting the identified problem was gathered through the interview and
+
+prototype    evaluation    conducted     with   the   owner    of  Jonathan     Photography.      The   researchers
+
+examined the      studio’s  existing   inquiry and booking       process to understand what information is
+
+requested     from   clients,   how    the   information     is communicated        and    recorded,    and   where
+
+repeated    clarification   and   manual    work    occur.  The   interview    showed     that  clients  commonly
+
+discover   the  studio   through    referrals, Facebook,      or previous customers        before   contacting    the
+
+owner    through    Messenger      or  personal    conversations.     The   owner    explained,    “Clients   usually
+
+contact us through chat or personal conversations, and they commonly ask about the available
+
+packages     and   prices.”   This   means     that  the   owner    becomes     directly   involved    even   at  the
+
+beginning of the inquiry, particularly when the client is only looking for basic information about
+
+services and pricing.
+
+
+         At the concrete or “What”         level, the process begins when a prospective client contacts
+
+the studio and asks about its services. The owner then gathers information needed to evaluate
+
+the request,    including   the client’s   name,    address, contact number, budget, preferred package,
+
+event date, time, and location. The owner stated, “Before accepting a booking, I need to know
+
+the client’s  name,    address, contact      number,    budget, preferred package, event date, time, and
+
+location.”  The   interview   notes also indicate      that package selection may depend on the client’s
+
+budget,    meaning     that  the   owner    must    consider    both   the  client’s  available   budget    and   the
+
+requirements of the event when discussing a suitable package. This shows that a single inquiry
+
+involves   several   pieces   of  information    that  must    be  collected   before   the owner can properly
+
+evaluate the request.
+
+
+
+=== PAGE 12 ===
+
+The    interview     also   showed      that   portfolio    presentation      is  part   of   the   personal
+
+communication       process.    The   owner    presents    previous    work   and    may   directly   send   portfolio
+
+samples    to  prospective     clients   while   explaining    the  available    photography      and   videography
+
+services.   This  means that      clients may need to       request    or  receive   examples of     previous work
+
+through direct communication before deciding whether the studio’s services match their needs.
+
+This  adds   another    part of   the inquiry    process that     is currently   handled     manually rather than
+
+through one organized source of information.
+
+
+         At  the  “How”     level,  the  activities  are   completed     through    separate    conversations      and
+
+manual records. Package explanations, price discussions, portfolio samples, schedule availability,
+
+payment     arrangements,        and    other   requirements       may    be    discussed     through    Messenger,
+
+telephone calls, or personal meetings. The owner stated, “I currently use a calendar and record
+
+book to monitor my schedules and client transactions.” The interview notes further indicate that
+
+the owner prefers having both personal and digitized records because organized records make it
+
+easier to   check details.    Because     communication       records   and schedule      records are maintained
+
+separately, information      must still be manually        transferred, remembered, or          retrieved when an
+
+inquiry progresses toward a booking.
+
+
+         The   interview    also   revealed    that  pricing   is  not   always    fixed.  The   owner     explained,
+
+“Package prices may be adjusted depending on the client’s needs, the event requirements, and
+
+the  final  agreement.”      The    interview    notes    further   indicate   that   availability,  client   budget,
+
+equipment requirements, and other event conditions can affect the final package and price. This
+
+means    that  the   price  discussed     at  the  beginning     of  an  inquiry   may    not  always be the      final
+
+amount     agreed    upon.    An   online   estimator    can   therefore    be   useful   for  providing    an   initial
+
+reference, but the final price still needs to be discussed directly with the owner.
+
+
+
+=== PAGE 13 ===
+
+Payment     arrangements       are   also  part   of  the   booking    process.    The   interview    notes
+
+indicate  that the studio requires a 30% non-refundable down payment and that payment
+
+agreements are      discussed directly with the client. The notes also indicate that there are cases
+
+where an agreed plan may change and adjustments or additional fees may be required. These
+
+findings further show why the booking process cannot rely only on an automatically calculated
+
+price or an automatically confirmed booking. The information recorded during the initial inquiry
+
+must remain open to administrative review until the final arrangement has been discussed and
+
+agreed upon.
+
+
+         At  the  interpretative,    or  "why,"   level, the difficulty exists because        general   information
+
+and event-specific arrangements are handled through the same communication process. Clients
+
+may   need    to ask the    owner    separately about      portfolio  samples, packages,        prices, schedules,
+
+and  other   service   details   before   the  owner    can move     on   to the   specific requirements of the
+
+event. At the same time, information about the client, schedule, payment agreement, and final
+
+arrangement      must    be   preserved     across    conversations      and   manual     records.    This   creates
+
+repeated explanations and additional work even when some of the information could already be
+
+made    available   before   direct  consultation.    The    owner    confirmed    the   value  of  improving    this
+
+stage by stating, “An online estimator would be a great help because clients could already have
+
+an idea of the possible price before we discuss the final arrangement.”
+
+
+         The interview findings also indicate that the studio’s need for organized records becomes
+
+more important as       the number      of inquiries   changes throughout the year. The interview notes
+
+describe   the business as seasonal, with fewer clients during the rainy season and more clients
+
+during   the  dry   season.   The   notes   also identify    weddings and birthdays         as common       types   of
+
+events, while burial and christening bookings occur less frequently. These observations do not
+
+
+
+=== PAGE 14 ===
+
+establish a separate problem by themselves, but they provide context for the need to maintain
+
+consistent booking and client records when the volume and type of inquiries change.
+
+
+         Using the information gathered from the interview, the researchers arranged the existing
+
+client experience into      a sequence     beginning with      the discovery of     the studio and ending with
+
+the  confirmation     of a  booking.    This   made    it possible   to  identify   the  stages   where    repeated
+
+clarification, manual effort, and record-management difficulties occur.
+
+
+      Stage              Current client and owner activity                          Identified difficulty
+
+ Discover              The     client   learns     about     Jonathan      Portfolio    work    and    basic    service
+                       Photography           through         referrals,    information       may      need     to    be
+                       Facebook,     or  previous    customers      and    obtained    through    separate channels
+                       may request portfolio samples.                      or direct communication.
+
+ Inquire               The   client  contacts   the   owner    through     The    owner     must    respond    directly
+                       Messenger,        phone,        or     personal     even    when     the   client  only   needs
+                       conversation     and   asks   about    services,    general information.
+                       packages, and prices.
+
+ Clarify               The   owner    gathers    the   client’s  name,     Several    pieces   of  information     may
+ requirements          address,      contact     number,       budget,     need     to    be     collected     through
+                       preferred    package,     event    date,   time,    multiple      exchanges       before     the
+                       location, and other event details.                  request can be evaluated.
+
+ Review                The       owner        explains        available    Similar    service     explanations      and
+ services              photography      and   videography      services    portfolio   sharing    may    need    to  be
+                       and     presents      or     sends     portfolio    repeated for different clients.
+                       samples.
+
+ Estimate              The   owner     discusses    a   package     and    Clients   do   not   have   an   immediate
+ price                 prepares or adjusts      the estimated price        reference for a possible price before
+                       based    on   the    client’s  budget,     event    consultation,    while   the final amount
+                       requirements, availability, and requested           may still require adjustment.
+                       services.
+
+ Check                 The   owner    checks    the  requested     date    Schedule     information    is  maintained
+ availability          using   the   calendar,    record   book,    and    separately     from   conversations      and
+                       existing client information.                        requires manual verification.
+
+
+
+=== PAGE 15 ===
+
+Discuss              The   owner     and  client  discuss   package      Final    terms    may     be    distributed
+ terms                adjustments,         coverage,        additional    across    different   conversations     and
+                      requirements,      payment      arrangements,       may    change    before   the   booking    is
+                      and    the    30%     non-refundable       down     finalized.
+                      payment.
+
+ Confirm              The    owner    confirms    the   arrangement       The     final   agreement       must      be
+ booking              after   the  requirements,      schedule,    and    accurately      transferred      into    the
+                      payment terms have been agreed upon.                appropriate     records    while   keeping
+                                                                          the schedule updated.
+
+                             Table 1. Journey Map of Jonathan Photography
+
+
+        The    journey     map    indicates    that    the   greatest    difficulties   occur   during    service
+
+clarification,      portfolio     presentation,        price     estimation,       information        collection,
+
+schedule     verification,     and   discussion      of  final   terms.    These   stages   require   the owner’s
+
+direct  involvement     even   when    some    of the   information    can  be   prepared    or reviewed before
+
+consultation. The     evidence does      not suggest that personal communication should be removed
+
+from   the  process    because    the  owner    specifically   emphasized     the   need   for  direct  discussion
+
+when packages, prices, additional requirements, and final agreements need to be adjusted.
+
+
+        The   interview   and   journey map therefore support the            validated problem      statement by
+
+showing    that  the   current   process    relies  on  repeated     explanations,    separate    communication
+
+channels, manual schedule checking, and traditional record keeping. The process also requires
+
+the  owner    to   preserve    information    about    client  details,   package    selection,    budget,    event
+
+requirements,      payment     arrangements,       and    final  agreements.      Although     the   evidence     is
+
+qualitative, it identifies the specific stages where the existing process requires additional manual
+
+effort and   where    information    may    become     difficult to  retrieve  or  keep    consistent.   The later
+
+prototype     evaluation     can   therefore     examine      whether     the   proposed      workflow     reduces
+
+
+
+=== PAGE 16 ===
+
+task-completion      time,   repeated    clarification,   required    assistance,    and   record-retrieval    effort
+
+while maintaining the direct communication needed for final arrangements.
+
+
+Cards applied: Card 2 — What? How? Why? and Card 7 — Journey Map.
+
+
+HMW Question and Solution Ideas Considered
+
+
+         Based   on   the  validated    problem    statement,     the  researchers     used   the How     Might   We
+
+method to     convert   the identified problem into a design opportunity. The purpose of this stage
+
+was not yet to choose a final feature, but to reframe the owner’s difficulties in a way that would
+
+guide   possible   solutions. Since    the existing process       depends    heavily on Facebook Messenger,
+
+phone    calls,  personal    discussion,    handwritten     records,   and    manual    schedule     checking,    the
+
+design   challenge    needed to    focus on both sides of        the workflow:      the client’s need for clearer
+
+information    before    booking    and   the   owner’s    need   for  organized     records   after  receiving    an
+
+inquiry.
+
+
+         The   resulting   How     Might   We    question    is:  How    might    we   help   prospective     clients
+
+independently review Jonathan Photography’s portfolio, understand available services, prepare a
+
+preliminary    estimate,    and   submit    complete    booking     details,  while   helping   the   administrator
+
+organize    inquiries,    schedules,     and    service    information      without    removing      the   personal
+
+communication needed to finalize a photography booking?
+
+
+         This question     reflects  the owner’s interview response that direct communication should
+
+still remain   part of  the process. Photography services may              require   adjustments depending on
+
+the event, location, requested coverage, budget, and final agreement. Therefore, the proposed
+
+solution should not replace the owner’s judgment or personal negotiation with clients. Instead,
+
+
+
+=== PAGE 17 ===
+
+it should    reduce    repeated    explanations,     give   clients  a  clearer   starting   point,  and   make     the
+
+information easier to review once a client proceeds with a booking request.
+
+
+         Using   the   HMW     question    as  the   basis   for brainstorming,      the  researchers     considered
+
+several possible solution       ideas. One     idea  was to create      a  categorized portfolio website where
+
+clients could    view  the studio’s previous       work before sending        a message. Another idea was to
+
+provide an online      service and package estimator           that  would allow clients to see a preliminary
+
+price  range   based    on   their  selected    event   type,   coverage    hours,    and   add-ons.    A  structured
+
+online   booking    request    form   was    also   considered     so  that   client  details,  event    information,
+
+preferred    schedule,    and    contact    information     could   be   submitted     in  a  more    complete     and
+
+organized manner.
+
+
+         For  the   administrator    side, the    researchers    considered     an  administrative dashboard, a
+
+booking    request    tracker,  a  calendar    for  requested     and confirmed schedules,          and  an   editable
+
+service catalogue connected to the public estimator. These ideas directly respond to the owner’s
+
+need to monitor dates, retrieve previous inquiry information, and update service prices without
+
+manually     repeating     the   same    information      across   separate     tools.   Other    ideas    were    also
+
+considered,     such   as   a  Facebook      chatbot,    shared    spreadsheet,      client  account     portal,  SMS
+
+notification, online payment processing, electronic contract, and photo delivery platform.
+
+
+         After  brainstorming,     the researchers recognized that           not all ideas were appropriate for
+
+the initial  version of   the system. Features         such  as  online payment, electronic contracts, client
+
+accounts,     and    full   photo    delivery     would     require    wider    legal,    financial,   and    storage
+
+considerations.    These    may be useful in future development, but they would expand the scope
+
+beyond the current capstone’s main problem. The ideas most aligned with the interview findings
+
+were the    portfolio   website,   preliminary    estimator,    structured booking request workflow, admin
+
+
+
+=== PAGE 18 ===
+
+dashboard,     calendar,   editable   services,   and   centralized    request    management,       because     these
+
+directly address the owner’s current difficulties while preserving the direct client communication
+
+that remains necessary for final agreements.
+
+
+Cards applied: Card 13 — How Might We Questions and Card 15 — Brainstorming.
+
+
+
+Top Three Ideas, Scoring, and Justification
+
+
+         Based    on   the   solution    ideas   generated      from   the   HMW     question,    the   researchers
+
+identified three ideas to carry forward for further comparison. The purpose of this stage was to
+
+consider   different   possible    directions   before   selecting    the  idea   that  would    best  address    the
+
+identified problem. The three ideas were selected based on how they could improve the client’s
+
+access    to  information,     support     the   owner’s    existing   booking     process,    and    organize    the
+
+information    involved in    inquiries and schedules. The project guidelines require the researchers
+
+to identify the    Top 3 solution     ideas   and   evaluate them based        on   user impact,    feasibility, and
+
+business value.
+
+
+         The   first  idea   was   an   Integrated     Booking     and   Portfolio   Management        System    that
+
+combines the portfolio, service and package information, preliminary price estimator, structured
+
+booking    request   form,   administrative     dashboard,     and   calendar    into  one   system. The second
+
+idea  was a    Centralized Request and Calendar Tracker with a basic inquiry form, which focuses
+
+mainly on organizing client requests, schedules, and booking records on the administrator side.
+
+The  third idea was a Portfolio and Estimator Website with direct communication, where clients
+
+can  view   previous    work,   review    services   and   packages,     and   prepare    a  preliminary    estimate
+
+before continuing through Facebook Messenger, phone, or personal consultation.
+
+
+
+=== PAGE 19 ===
+
+These    three  ideas were     selected because       they   represent    different ways of      addressing
+
+the problems identified       during   the interview. The owner explained that clients usually contact
+
+the studio through chat or personal conversations and commonly ask about available packages
+
+and prices. He also stated that schedules and client transactions are currently monitored using a
+
+calendar   and record     book.   In  addition,   he   identified an    online  estimator and more accessible
+
+booking records as useful improvements to the existing process.
+
+
+         To further compare the three ideas, the researchers plotted them on a 2×2 matrix using
+
+client-facing   depth    and   administrative     record-keeping      depth    as  the   two   dimensions.     These
+
+dimensions were chosen because the identified problem involves both the client and the owner.
+
+Clients need clearer access to services, portfolio information, and preliminary pricing, while the
+
+owner needs a       more   organized     way to manage inquiries, schedules, and booking information.
+
+The matrix therefore allows the researchers to see how much each idea addresses either side of
+
+the existing process.
+
+
+The matrix was arranged as follows:
+
+
+
+=== PAGE 20 ===
+
+Figure 2. 2x2 Matrix of Jonathan Photography Capstone
+
+
+        The    matrix   shows    that  the   Centralized    Request    and   Calendar     Tracker   gives   greater
+
+attention   to  the   administrator’s    existing    record-keeping     and   scheduling     process,   while   the
+
+Portfolio and Estimator Website gives greater attention to the client’s initial inquiry experience.
+
+The Integrated Booking and Portfolio Management System addresses both dimensions by giving
+
+clients   access    to   important     information      before    consultation     while    also   providing    the
+
+administrator    with   a  centralized    way   to  manage      booking    requests,    schedules,    and   related
+
+information.
+
+
+        After   comparing     the  three   ideas,  the   researchers    scored each     one   from 1   to  5 using
+
+User Impact, Feasibility, and Business Value. User Impact refers to how strongly the idea
+
+addresses the identified problem, Feasibility refers to whether the group can realistically develop
+
+the idea, and Business Value refers to how the idea can improve the organization or its process.
+
+Each   researcher    provided    an   individual  score   for  every   criterion,  and   the  scores   were    then
+
+consolidated to obtain the overall assessment for each idea.
+
+
+ Member                                  User Impact           Feasibility       Business Value         Total
+
+ BASA, FIONA GENE U.                     5                     4                 5                      14
+
+ DEODORA, DON JASPER A.                  5                     4                 5                      14
+
+ NERI, MIKAEL VLADIMIR M.                5                     4                 4                      13
+
+ SALANGO, ALYZA MAE                      4                     4                 5                      13
+
+ YU, KIMBERLY D.                         5                     5                 5                      15
+
+ Average                                 4.8                   4.2               4.8                    13.8
+
+ Final Score                             5                     4                 5                      14/15
+
+
+
+=== PAGE 21 ===
+
+Table 2. Idea 1. Integrated Booking and Portfolio Management System
+
+
+        The    Integrated      Booking      and    Portfolio     Management         System      received    a  User
+
+Impact score     of 5 because     most of    the researchers considered it capable of           addressing    both
+
+sides  of the identified problem. Clients would be able to review the studio’s portfolio, services,
+
+and preliminary prices before contacting the owner, while the administrator would have a more
+
+organized way to manage booking requests, client information, and schedules. This reflects the
+
+HMW     question,   which    focuses   on  helping    prospective    clients  obtain   clearer  information     and
+
+submit    complete     booking     details   while   helping    the  administrator     organize     inquiries   and
+
+schedules.
+
+
+        The   idea   received   a  Feasibility  score   of  4  because it contains      more components that
+
+need   to  work    together,    including   the   portfolio,  estimator,   booking    request    form,   database
+
+records, dashboard, and calendar. The researchers considered the idea realistic to develop, but
+
+recognized    that  the  larger   number     of connected     functions   would    require   more   development
+
+time  and coordination. These functions can still be limited to the essential features needed for
+
+the  MVP,   consistent    with   the  project   guideline    of  focusing   on   the   core  user   problem     and
+
+prioritizing high-impact features with manageable effort.
+
+
+ Member                                  User Impact         Feasibility       Business Value            Total
+
+ BASA, FIONA GENE U.                     4                   5                 4                         13
+
+ DEODORA, DON JASPER A.                  4                   5                 4                         13
+
+ NERI, MIKAEL VLADIMIR M.                4                   5                 4                         13
+
+ SALANGO, ALYZA MAE                      4                   4                 4                         12
+
+ YU, KIMBERLY D.                         4                   5                 5                         14
+
+ Average                                 4.0                 4.8               4.2                       13.0
+
+
+
+=== PAGE 22 ===
+
+Final Score                             4                   5                 4                         13/15
+
+       Table 3. Idea 2. Centralized Request and Calendar Tracker with Basic Inquiry Form
+
+
+        The    Centralized      Request      and    Calendar      Tracker     with    a  basic    inquiry    form
+
+received a Feasibility score of 5 because it has a more limited scope and focuses mainly on the
+
+administrator’s existing workflow.        It directly responds to the owner’s current use of a calendar
+
+and  record   book    to monitor    schedules and client transactions.         The   researchers    considered    it
+
+relatively  straightforward     to  implement     because    the   main   functions   would    involve  recording
+
+inquiries, organizing booking information, and monitoring schedules.
+
+
+        Its  User   Impact    score  was    4 because,    although it would improve         the organization     of
+
+booking   information    for the administrator, it would provide less support for prospective clients.
+
+Clients would still have to rely more heavily on direct communication to view portfolio work, ask
+
+about   packages,    and   understand     preliminary    prices.  This   means    that  some    of  the  repeated
+
+clarification identified in the existing process would remain.
+
+
+ Member                                  User Impact          Feasibility       Business Value           Total
+
+ BASA, FIONA GENE U.                     4                    5                 3                        12
+
+ DEODORA, DON JASPER A.                  4                    5                 3                        12
+
+ NERI, MIKAEL VLADIMIR M.                4                    4                 3                        11
+
+ SALANGO, ALYZA MAE                      4                    5                 3                        12
+
+ YU, KIMBERLY D.                         4                    5                 3                        12
+
+ Average                                 4.0                  4.8               3.0                      11.8
+
+ Final Score                             4                    5                 3                        12/15
+
+            Table 4. Idea 3. Portfolio and Estimator Website with Direct Communication
+
+
+
+=== PAGE 23 ===
+
+The Portfolio and Estimator Website with direct communication received a User
+
+Impact score     of 4 because     it directly  addresses    several difficulties experienced by prospective
+
+clients. It would    allow  clients to   view   previous work, review       available   services   and  packages,
+
+and prepare     a preliminary estimate before contacting the owner. The owner specifically stated
+
+that an online estimator would help clients have an idea of the possible price before discussing
+
+the final arrangement.
+
+
+        The   idea   received a    Feasibility  score of   5  because its functions are       more focused and
+
+would    require   fewer   administrative     components       than   the   integrated    system.    However,     its
+
+Business   Value   score   was 3 because       the administrator     would    still rely largely on the existing
+
+manual     process     for  monitoring      schedules,     organizing     booking    records,     and   managing
+
+transactions. The idea improves the          beginning     of the  client journey    but does not address the
+
+administrative side as extensively.
+
+
+        After the individual scores were consolidated, the Integrated Booking and Portfolio
+
+Management          System      obtained     the   highest   overall   score    of  14/15,     followed     by  the
+
+Centralized     Request      and Calendar        Tracker with       Basic Inquiry Form with 13/15, and
+
+the Portfolio and Estimator Website with Direct Communication with 12/15.
+
+
+        The    Integrated       Booking       and    Portfolio     Management          System      was   therefore
+
+selected as the initial Top 1 idea because it provides a more complete response to the identified
+
+problem.    It connects     the  client-facing   process    of  reviewing    services,   portfolio   content,   and
+
+preliminary pricing     with the administrator’s need to organize booking requests, schedules, and
+
+client information. At the same time, it does not remove direct communication from the process,
+
+which   remains    necessary     because    package     prices   and   additional   requirements     may    still be
+
+adjusted according to the client’s needs and event requirements.
+
+
+
+=== PAGE 24 ===
+
+Cards applied: Card 17 — Brainstorm Selection · Card 9 — 2×2 Matrix.
+
+
+Final Solution and TELOS Feasibility Analysis
+
+
+         Based    on   the  scoring   and    comparison     of  the   three   solution   ideas,  the   researchers
+
+selected the    Integrated Booking and Portfolio Management System as the initial Top 1
+
+idea.  The   selected   solution   combines     the  client-facing    and administrative      functions   identified
+
+during the previous stages of the study. The purpose is to give prospective clients a clearer way
+
+to view the studio’s services, packages, portfolio, and estimated prices while giving the owner a
+
+more    organized    way    to  manage      booking    requests,    client  details,  schedules,    and    payment
+
+agreements. This addresses the existing process in which clients commonly inquire through chat
+
+or personal conversations,       while   important    booking    information is maintained        across separate
+
+conversations, a calendar, and record books.
+
+
+         The   proposed     solution    is  a  Web-Based         Booking      and    Portfolio     Management
+
+System     for Jonathan Photography. Prospective clients                  will be able to browse the studio’s
+
+portfolio, review available services and packages, prepare a preliminary estimate based on their
+
+selected   requirements,      and   submit    a  booking    request    containing    the   necessary    event    and
+
+contact   information.    On   the  administrator     side,  the  owner    will  be  able   to  review   submitted
+
+requests, monitor requested dates, maintain client and transaction records, and update service
+
+information.    The system     will support the     owner’s    existing  practice of    adjusting packages and
+
+prices based on the client’s needs, event requirements, and availability rather than automatically
+
+determining a final arrangement.
+
+
+         The system will provide a preliminary estimate and a booking request, rather than
+
+a binding    quotation    or  automatic    confirmation.     The   final price,  additional   requirements,     and
+
+
+
+=== PAGE 25 ===
+
+payment     agreement     will  still be discussed    directly  with the    client.  This  is consistent    with the
+
+interview    findings   that   pricing   may     be   adjusted    according     to  the   event   and    that   direct
+
+communication       remains    important    for  reaching    the  final  agreement. The system may             record
+
+agreed payment terms, including the owner’s stated 30% non-refundable down payment, but it
+
+will not require online payment as part of the initial solution. The system is therefore intended
+
+to organize    and   support   the booking process while preserving the owner’s role in consultation
+
+and final confirmation.
+
+
+         To determine whether the selected solution can realistically be developed and used, the
+
+researchers assessed it using the five areas of TELOS: Technical, Economic, Legal, Operational,
+
+and Schedule. These areas consider whether the group has the necessary technical capability,
+
+whether development and deployment costs are manageable, whether the system can properly
+
+handle   the information it collects, whether it can fit the owner’s existing process, and whether
+
+the proposed functions can be completed within the available project schedule.
+
+
+   TELOS Area                                           Feasibility Analysis
+
+
+ Technical              The   proposed     system    is  technically   feasible   because     the   technologies
+                        selected by the researchers can support the required functions. React can
+                        be used for the      public and administrative        interfaces, PHP     with PDO can
+                        handle server-side processing and database communication, and MariaDB
+                        can   store    client,  service,    booking,    and    schedule    information.     Email
+                        notifications    can   also  be   used   for  important     booking    updates.     These
+                        technologies are already within the group’s working capability, making the
+                        system realistic to develop.
+
+ Economic               The    proposed      system     is  economically       feasible   because      the   main
+                        technologies     used     for  development       are   available    without    additional
+                        software     licensing    costs.    The    researchers      can    use    their   existing
+                        computers       and    development        tools   during     development.       Expected
+                        expenses     are  mainly    related   to  deployment,      such    as  hosting,   domain
+                        registration, database storage, backups, and email               delivery.   The   project
+
+
+
+=== PAGE 26 ===
+
+will also avoid adding online payment as a required function, limiting the
+                        additional costs and considerations associated with financial transactions.
+
+ Legal                  The   system    will  collect  personal    and   event-related information        such   as
+                        client  names,     contact   numbers,     email   addresses,     event   dates,   venues,
+                        budgets, and other        booking    details.  The   system    must   therefore    provide
+                        clear   information    regarding     the  collection    and   use   of  client  data   and
+                        obtain     the    necessary      consent      before     submission.      Administrative
+                        information     must   be   accessible   only   to authorized users, while account
+                        credentials    and stored    client information must be protected. The system
+                        must    also clearly distinguish     a preliminary estimate        from the    final  price
+                        agreed upon through direct consultation.
+
+ Operational            The   proposed     system     is operationally    feasible   because     it supports    the
+                        owner’s existing way of working rather than attempting to replace it. The
+                        owner can continue discussing package adjustments, event requirements,
+                        payment     agreements,      and   final arrangements directly with clients, while
+                        the system provides a more organized record of the information involved.
+                        This is   also  useful  during periods      of higher   client activity,   as the owner
+                        noted    that  the   number     of  clients  varies  by   season,    with  fewer    clients
+                        during the rainy season and more during the dry season. The centralized
+                        record and calendar can therefore help the owner manage information as
+                        the number of inquiries increases.
+
+ Schedule               The    proposed     system     is  feasible   within    the   project   schedule     when
+                        development       is  limited    to  the    functions    directly   connected      to   the
+                        identified   problem.     The   researchers     will prioritize  the   portfolio,  service
+                        and package information, preliminary estimator, booking request process,
+                        and   administrative      management        of  requests    and   schedules.     Features
+                        such   as   online   payment,     electronic   contracts,    client  accounts,    and   full
+                        photo delivery     can be excluded from the initial version because they are
+                        not   necessary     to  address     the  main    problem     and   would    increase    the
+                        project scope. The ITBS guidelines similarly require the MVP to focus on
+                        essential features directly connected to the validated problem.
+
+                                     Table 5. TELOS Feasibility Analysis
+
+
+         The   main   risk  identified   for  the proposed solution       is the   possibility  of inconsistency
+
+between the recorded booking information and the actual availability of the studio’s
+
+schedule.     In   the  current    process,   the   owner    manually     checks   dates   using    a calendar    and
+
+
+
+=== PAGE 27 ===
+
+record book,     while other client and transaction information may be maintained separately. If a
+
+schedule    is not updated or a booking request is not properly recorded, the same date may be
+
+considered available when another request or confirmed booking already exists. This could lead
+
+to additional clarification, changes to agreed plans, or scheduling conflicts.
+
+
+         To address this risk, the system will maintain booking requests and schedule information
+
+in a  centralized    database    and   check    existing   records   when    a  client  submits    a request. Each
+
+request   will be assigned a      controlled    status  such as Requested, Confirmed, Cancelled, or
+
+Manually Booked so that the administrator can clearly distinguish between pending requests
+
+and finalized arrangements. The owner will also be able to record bookings that were arranged
+
+through    personal    communication       or  outside    the   website,   helping    keep    the  digital  calendar
+
+consistent   with   the  actual   studio   schedule.    Final  confirmation     will  remain   under    the owner’s
+
+control   because     the  interview    established     that   direct   communication       is  still necessary    for
+
+adjustments and final agreements.
+
+
+         The    selected    solution    therefore     remains     consistent     with   the   validated     problem,
+
+supporting evidence, HMW question, and Top 3 comparison. It addresses the repeated need for
+
+clients  to  ask   about   packages,     prices,   and   available    services   while   also  responding      to the
+
+owner’s need for a more organized way to track client information, schedules, transactions, and
+
+booking   requests. The solution will        serve   as the basis for defining the MVP feature list and
+
+scope in the next stage of the project.
+
+
+
+MVP Feature List and Scope
+
+
+         Based    on  the   validated    problem,    supporting     evidence,    HMW      question,   and   selected
+
+solution, the researchers defined the MVP by identifying the functions necessary to address the
+
+
+
+=== PAGE 28 ===
+
+main difficulties    found in   the existing inquiry and booking process. The purpose of the MVP is
+
+not to   develop a complete booking platform, but               to provide the essential functions needed to
+
+make   information     easier for   clients to access and submit and easier for the owner to organize
+
+and   retrieve.  The   project   guidelines    require   the   MVP    to  contain   about three     to six  essential
+
+features,   prioritize   high-impact      functions    with   manageable       effort,   and    exclude    additional
+
+features that are not necessary for addressing the core user problem.
+
+
+The findings from the interview were translated into the following design guidelines:
+
+
+        User need identified from the                                       Design guideline
+                      interview
+
+ Clients need access to the studio’s previous              Make      portfolio,     service,     and      package
+ work   and   available   services before     starting     information independently accessible.
+ a direct conversation.
+
+ Clients   commonly      ask  about packages and           Provide    a   preliminary     estimate    that    gives
+ prices before deciding whether to proceed.                clients  an   initial  reference    for  the   possible
+                                                           cost.
+
+ The owner needs complete client and event                 Collect  the   necessary     client,  event,   budget,
+ information before evaluating a request.                  package,     and   schedule    information     through
+                                                           one structured request.
+
+ The   owner     currently   uses   a  calendar    and     Maintain    a   centralized     record    of   booking
+ record book     and prefers properly organized            requests      and     schedule      information      for
+ personal and digitized records.                           administrative review.
+
+                      Table 6. Design Guidelines Derived from Interview Findings
+
+
+         These    guidelines   were    based on the existing        workflow    identified during     the interview.
+
+Clients  commonly       contact   the   owner    through     chat   or  personal    conversations      to ask   about
+
+packages and prices,       while   the owner gathers information such as the client’s name, address,
+
+contact number, budget, preferred package, event date, time, and location before evaluating a
+
+
+
+=== PAGE 29 ===
+
+request.   The   owner    also   uses  a  calendar    and   record   book   to  monitor    schedules    and   client
+
+transactions and prefers having records that are properly organized.
+
+
+         The interview also showed that the final package and price may be adjusted depending
+
+on the client’s needs, event requirements, availability, and final agreement. Because of this, the
+
+MVP   will provide   a  preliminary      estimate     rather   than a final    quotation,   while the submitted
+
+information will remain a booking request that must still be reviewed and discussed with the
+
+owner before a      final arrangement is      made.    This  preserves the     direct  communication that the
+
+owner considers necessary when discussing customized packages and additional requirements.
+
+
+         To  keep   the  MVP    within   scope,   the  researchers     identified  five  essential   features that
+
+directly correspond to the design guidelines and the validated problem:
+
+
+       MVP Feature                                          Purpose                                    Related
+                                                                                                      Guideline
+
+ 1. Portfolio,                   Allows   prospective     clients  to  browse    previous   work     Guideline 1
+ Services, and                   and   review   available    photography     and    videography
+ Package Information             services,    packages,      and     starting    prices    before
+                                 contacting the owner.
+
+ 2. Preliminary Price            Allows   clients to  select  applicable    services, coverage       Guideline 2
+ Estimator                       options, and add-ons to obtain a preliminary estimate
+                                 before    discussing    the   final  arrangement      with   the
+                                 owner.
+
+ 3. Structured                   Collects  the   client’s name, address,      contact number,        Guideline 3
+ Booking Request                 budget,    event   type,   date,  time,   location,   preferred
+ Form                            package,     and   other   necessary     information     in  one
+                                 submission.
+
+ 4. Administrative               Allows the owner to review submitted requests, client               Guideline 4
+ Booking Request                 information,    selected    services,   estimated     amounts,
+ Management                      and request status in one place.
+
+
+
+=== PAGE 30 ===
+
+5. Centralized                  Allows   the   owner    to  view   requested    and confirmed        Guideline 4
+ Booking Request                 dates and maintain digital schedule records, including
+ Calendar                        requests     or    bookings      arranged      through     direct
+                                 communication.
+
+                                           Table 7. MVP Feature List
+
+
+         The   Portfolio,    Services,     and   Package      Information        feature addresses the       current
+
+need for clients to     view the    studio’s work and understand its available services. The interview
+
+showed that     portfolio   presentation    and   service explanations      are currently    part of   the owner’s
+
+direct interaction with clients. Providing this information through the website allows prospective
+
+clients to review basic information before continuing to a personal conversation.
+
+
+         The   Preliminary      Price    Estimator      addresses    the   repeated    questions    about package
+
+prices  and   gives   clients   an  initial reference     for  the  possible    cost  of  the   services   they   are
+
+considering.    The owner specifically       stated  that   an online estimator would help clients have an
+
+idea of the possible price before discussing the final arrangement.
+
+
+         The   Structured      Booking      Request Form         addresses    the amount of       information    that
+
+the  owner    currently    gathers    through    direct  conversations.     Instead    of  collecting   the   client’s
+
+details, budget, preferred package, event date, time, and location through separate exchanges,
+
+the  MVP    will  provide   one   structured     submission     containing    the  information     needed    for  the
+
+owner’s initial evaluation.
+
+
+         The  Administrative Booking Request Management feature addresses the owner’s
+
+need   to  review    and   organize    the   information    received    from   prospective    clients.  The   owner
+
+currently manages       inquiries, pricing    discussions, and transaction information through separate
+
+conversations    and records. A      centralized    request   record   allows the    submitted information and
+
+request status to be reviewed without relying entirely on separate conversations.
+
+
+
+=== PAGE 31 ===
+
+The Centralized Booking Request Calendar addresses the owner’s current use of a
+
+calendar and record book to monitor schedules and client transactions. The feature will provide
+
+a digital  view   of requested     and  confirmed     dates   while  allowing   the   owner   to  keep   track  of
+
+bookings arranged through other forms of communication. This supports the owner’s preference
+
+for having both personal communication and organized digital records.
+
+
+        The     MVP    will   deliberately    exclude     online     payment       processing,       electronic
+
+contracts,     client    accounts,      SMS     notifications,      AI-driven     recommendations,            and
+
+cloud-based photo delivery. These features may be considered for future development, but
+
+they are not necessary to address the core problem identified during the interview. In particular,
+
+online payment is     outside   the scope of the current prototype because the proposed system is
+
+intended   to create a booking request, not complete a transaction. Likewise, the estimator is
+
+not intended to produce a final quotation because the owner may still adjust packages, prices,
+
+and other requirements through direct consultation.
+
+
+        The MVP will therefore focus on one clear workflow: the client reviews the studio’s
+
+portfolio and services, prepares a preliminary estimate, submits a complete booking
+
+request,    and   the   owner receives, reviews, and organizes the request together with
+
+the   relevant     schedule      information.       This  allows    the  researchers     to  test  whether     the
+
+proposed    process    can   reduce    repeated    clarification  and    fragmented     record   keeping    while
+
+preserving    the  direct  communication       that  remains    part   of  Jonathan    Photography’s     existing
+
+workflow.
+
+
+Cards applied: Card 12 — Design Guidelines · Card 24 — Identify a Variable.
+
+
+
+=== PAGE 32 ===
+
+Main User Flow
+
+
+         Based on the validated problem, supporting evidence, HMW question, selected solution,
+
+and MVP scope, the researchers mapped the proposed user flow from the client’s initial visit to
+
+the final decision on a booking request. The purpose of the proposed flow is to reorganize the
+
+activities  identified   in  the   existing   journey    so  that  clients   can  access    basic   information    and
+
+prepare    a  request    before   direct  consultation,     while   the  owner    can   receive   and    manage     the
+
+information in a more organized manner. The flow also preserves the owner’s involvement in the
+
+later  stages   because the      interview   showed     that  package     prices, additional requirements, and
+
+final arrangements may still need to be discussed and adjusted through direct communication.
+
+
+         The   proposed     flow   begins   when    a  prospective     client  visits the Jonathan Photography
+
+website and reviews        the available portfolio, services,        and   package information. The client can
+
+then   open    the  estimator,    select   the   desired   service,   coverage,     and   add-ons,    and   receive   a
+
+preliminary estimate.      After reviewing      the estimate,     the client can either end the process after
+
+obtaining the estimate or continue to the booking request form. This changes the beginning of
+
+the existing process      by allowing     clients to   review basic     information    and   obtain an initial price
+
+reference    before   direct  communication is required.          The owner specifically       identified an online
+
+estimator   as   useful because      it would allow clients to have an idea of the possible price before
+
+discussing the final arrangement.
+
+
+         Once    the client continues to       the booking     request, the     system    collects the    information
+
+needed    by   the  owner    to  evaluate    the request. This      includes   the   client’s contact information,
+
+budget,   preferred package, event date, time, location, and other relevant event details. These
+
+details were identified during the interview as information that the owner normally needs before
+
+accepting    a  booking.    The   submitted     information     is then   validated    and   recorded    so   that  the
+
+
+
+=== PAGE 33 ===
+
+request remains organized in one record instead of being distributed across several messages or
+
+separate records.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+              Figure 3. Proposed Booking Request Workflow of Jonathan Photography
+
+
+         The   proposed    flow reflects the     owner’s    current process     while   reducing the     amount     of
+
+information    that  must   be  exchanged      manually before a       request   can be evaluated. The owner
+
+currently uses    a calendar and record book to monitor schedules and client transactions, while
+
+other   information    is  discussed    through    chat,   phone    calls,  and   personal    conversations.     The
+
+
+
+=== PAGE 34 ===
+
+proposed flow instead places the client’s submitted information and requested schedule into one
+
+digital request record that can be reviewed by the administrator.
+
+
+         The   activities  shown     in  Figure   3   are   summarized      in  Table   8  to  provide    a  clearer
+
+description of what takes place at each stage of the proposed flow.
+
+
+           Step                    Client / Owner Activity                     Purpose in the Proposed
+                                                                                          Process
+
+ 1. Visit Website             The   prospective     client  opens    the   Provides a direct starting point
+                              public      Jonathan       Photography       for accessing studio information.
+                              website.
+
+ 2. Browse                    The      client    reviews      portfolio    Allows basic information to be
+ Information                  samples,     services,    and   package      accessed without immediately
+                              information.                                 contacting the owner.
+
+ 3. Prepare                   The    client   selects    the   desired     Provides a preliminary estimate
+ Estimate                     service, coverage, and add-ons.              based on the selected
+                                                                           requirements.
+
+ 4. Client Decision           The    client   decides    whether      to   Allows the client to consider the
+                              request     only    the    estimate     or   available information before
+                              continue    to  the   booking    request     submitting a request.
+                              form.
+
+ 5. Submit Booking            The   client enters contact, budget,         Collects the information needed
+ Request                      event,    package,      and     schedule     by the owner in one structured
+                              information      and     submits      the    submission.
+                              request.
+
+ 6. Validate                  The       system       validates      the    Helps maintain complete and
+ Request                      submitted                   information,     consistent request and schedule
+                              recalculates     the    estimate,     and    information.
+                              checks the requested date.
+
+ 7. Record Request            The system stores the request and            Creates a centralized record for
+                              assigns its current status.                  administrative review.
+
+
+
+=== PAGE 35 ===
+
+8. Administrator             The   owner     reviews    the  request,     Allows the owner to evaluate the
+ Review                       estimate,    client  information,     and    request before making a
+                              requested schedule.                          decision.
+
+ 9. Direct                    The    owner     and    client   discuss     Preserves the personal
+ Consultation                 package        adjustments,        event     communication required for
+                              requirements,                  payment       customized arrangements.
+                              arrangements, and other details.
+
+ 10. Administrator            The   owner     confirms    or  declines     Provides a documented outcome
+ Decision                     the  booking    request    and updates       while keeping the final decision
+                              its status.                                  under the owner’s control.
+
+ 11. Manual                   Bookings    arranged     through direct      Helps keep the centralized
+ Booking Entry                communication       can   be  added    by    schedule consistent with
+                              the administrator when necessary.            bookings made outside the
+                                                                           website.
+
+                     Table 8. Proposed Main User Flow of Jonathan Photography
+
+
+         The   table  shows    that  the   proposed    workflow     separates    the activities that    clients can
+
+complete     independently      from    the   activities   that   require    administrative     review.    Portfolio
+
+browsing, service review, and preliminary estimation occur before the booking request, allowing
+
+clients to obtain basic information without immediately starting a conversation with the owner.
+
+This  directly   addresses    the   existing   process    in which    clients  commonly      contact    the  owner
+
+through chat or personal conversations to ask about packages and prices.
+
+
+         The  later stages remain       under the owner’s control because the initial request does not
+
+necessarily represent the final arrangement. The interview showed that package prices may be
+
+adjusted   according to the      client’s needs, event requirements, availability, and final agreement.
+
+Payment arrangements and other terms may also need to be discussed directly with the client.
+
+Therefore, the proposed flow treats the submitted information as a booking request and the
+
+
+
+=== PAGE 36 ===
+
+calculated amount as a preliminary estimate, rather than automatically treating either one as
+
+a finalized transaction.
+
+
+        The proposed flow also provides a way to maintain the owner’s existing calendar records
+
+within the new process. Since the owner currently uses a calendar and record book to monitor
+
+schedules   and   transactions, requests and manually           arranged    bookings can be recorded in the
+
+centralized   system    so  that  the digital schedule can be kept consistent           with the   actual   studio
+
+schedule.
+
+
+        The   proposed user flow therefore         follows   one  continuous sequence:        visit website →
+
+browse information → prepare estimate → client decision → submit booking request
+
+→   validate    and    record    request     →   administrator        review    →    direct   consultation      →
+
+administrator decision. This sequence connects the main MVP features and provides a basis
+
+for evaluating whether       the proposed system can reduce repeated clarification and fragmented
+
+record keeping while preserving the direct communication required by Jonathan Photography.
+
+
+Cards applied: Card 7 — Journey Map · Card 28 — Storytelling.
+
+
+Low-Fidelity Wireframes / Prototype Description
+
+        Based     on   the  defined    MVP    scope    and   proposed     main   user   flow,   the  researchers
+
+developed    low-fidelity wireframes for the key screens of the proposed system. The wireframes
+
+were created to     establish   the structure    of  the  MVP   before implementation and to identify the
+
+main information,     primary    action,  and   expected feedback       for each   screen. The public screens
+
+were   designed    around    the prospective client’s     process   of  reviewing the    studio’s  portfolio   and
+
+services,   preparing    a   preliminary    estimate,    and   submitting    a  booking     request,   while   the
+
+administrative    screens   were   designed    around    reviewing    requests,    monitoring    schedules,    and
+
+
+
+=== PAGE 37 ===
+
+maintaining the information presented on the public website. This follows the ITBS requirement
+
+that the wireframes focus on structure and that the combined screens represent one clear and
+
+navigable MVP user journey.
+
+
+         The   first wireframe     represents     the  public    homepage,        which    serves   as  the   starting
+
+point  of  the   proposed     client  journey.    It  presents    the  studio   introduction,    selected    portfolio
+
+content,   available    services,   starting   prices,   and   navigation    toward    the  main    sections   of  the
+
+website.   The    primary    action   is to  continue    to  the   portfolio,  services,   or  estimator,    allowing
+
+prospective clients to begin exploring the studio without immediately contacting the owner. This
+
+addresses    the   existing   process    in  which   clients   commonly      inquire   through    chat  or  personal
+
+conversations before receiving basic information about services and prices.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                       Plate 1. Low-Fidelity Wireframe — Public Homepage
+
+
+
+=== PAGE 38 ===
+
+The portfolio wireframe organizes previous photography work into categories so that
+
+prospective    clients   can   browse    work    relevant   to  their  intended    event    or  session.   The   main
+
+information    consists   of  categorized     portfolio  samples,     while   the  primary    action  is selecting    a
+
+category or portfolio item for further viewing. This supports the interview finding that portfolio
+
+work is currently presented personally or shared directly with prospective clients.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             Plate 2. Low-Fidelity Wireframe — Portfolio
+
+
+         The services wireframe presents the photography and videography services together
+
+with   their  descriptions     and   starting   prices.   The    primary    action   is  proceeding      toward    the
+
+
+
+=== PAGE 39 ===
+
+estimator after reviewing the available services. This provides clients with an initial reference for
+
+the services offered before direct consultation with the owner.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             Plate 3. Low-Fidelity Wireframe — Services
+
+
+         The contact wireframe presents the communication platforms available to prospective
+
+clients.   The    primary     action    is  selecting     a  communication        platform     and    opening     the
+
+corresponding     contact    channel.    The   screen   preserves the     direct   communication      that remains
+
+necessary for customized packages, clarifications, and final arrangements.
+
+
+
+=== PAGE 40 ===
+
+Plate 4. Low-Fidelity Wireframe — Contact
+
+
+         The   estimator       wireframe        represents     the   beginning     of  the   proposed     estimation
+
+process.   It  presents    the   available   occasion,    coverage    options,    and   add-ons    together    with   a
+
+preliminary    estimate    that  changes     according    to  the   client’s selections.    The   primary    action is
+
+continuing    with the   estimate or     requesting    a copy of it, while immediate feedback is provided
+
+whenever     a   selection   changes.     The    estimated     amount     is  clearly   identified   as  preliminary
+
+because    the   final package     and   price  may    still be  adjusted    through    consultation.    The   owner
+
+specifically identified an online estimator as useful for giving clients an idea of the possible price
+
+before the final arrangement is discussed.
+
+
+
+=== PAGE 41 ===
+
+Plate 5. Low-Fidelity Wireframe — Estimator
+
+
+         The booking request wireframe continues from the completed estimate and provides
+
+the form where the client submits the information required for administrative review. The screen
+
+includes contact details, event information, preferred date, location, guest information, message
+
+details,  and    privacy   consent.    The   primary    action   is  submitting    the   booking    request,    while
+
+feedback is provided through date availability, field validation, and submission confirmation. The
+
+selected estimate is carried into the request so that the client does not have to repeat the same
+
+selections.
+
+
+
+=== PAGE 42 ===
+
+Plate 6. Low-Fidelity Wireframe — Booking Request
+
+
+        The   administrative dashboard wireframe provides                     the owner with      an overview of
+
+current   activity  and   access    to  the   main   administrative     functions.   The   primary    actions   are
+
+reviewing   activity  and   navigating    to  the  relevant   administrative    records,   while   the  displayed
+
+information provides feedback on current system activity.
+
+
+
+=== PAGE 43 ===
+
+Plate 7. Low-Fidelity Wireframe — Administrative Dashboard
+
+
+         The   client   requests      wireframe       provides    a  centralized   view    of submitted     booking
+
+requests    and   related   information.     It  presents    client  details,   request    information,    estimate
+
+information, reference      codes,   and request      status. The primary action is opening a request for
+
+review   or   administrative     action.   This   directly   responds     to   the   current   need    to  organize
+
+information that is otherwise distributed across separate conversations and records.
+
+
+
+=== PAGE 44 ===
+
+Plate 8. Low-Fidelity Wireframe — Client Requests
+
+
+        The   administrative        calendar     wireframe      provides    a  centralized   view   of  requested
+
+and confirmed     schedules. It also allows the owner to record bookings arranged through direct
+
+communication outside the website. The primary action is opening a schedule entry or adding a
+
+manual    booking,     while   status   indicators   show     the   current   state   of  each    schedule.    This
+
+corresponds to the owner’s existing use of a calendar and record book to monitor schedules and
+
+transactions.
+
+
+
+=== PAGE 45 ===
+
+Plate 9. Low-Fidelity Wireframe — Administrative Calendar
+
+
+        The   portfolio    management wireframe provides the administrator with a structured
+
+way  to maintain    portfolio  categories, shoots, and photographs. The primary action is selecting
+
+and managing portfolio content, while prompts provide feedback when the required category or
+
+shoot has not yet been selected.
+
+
+
+=== PAGE 46 ===
+
+Plate 10. Low-Fidelity Wireframe — Portfolio Management
+
+
+         The   services     management          wireframe       allows    the  administrator     to  maintain    the
+
+services   displayed   on the    public website. It contains the        service name, category, description,
+
+and   starting   price,  together    with   controls   for  editing,   deleting,   and   changing    visibility. The
+
+primary    action   is adding    or   updating    a  service,   while   changes     to  the  service   list provide
+
+feedback.
+
+
+
+=== PAGE 47 ===
+
+Plate 11. Low-Fidelity Wireframe — Services Management
+
+
+         The   estimator      configuration       wireframe      allows   the   administrator    to  maintain    the
+
+pricing  information    used   by the   public   estimator. It   includes   service prices,    coverage options,
+
+and add-ons, together with controls for activating or deactivating available options. The primary
+
+action  is updating or adding       estimation    information, while save confirmations and active-state
+
+indicators provide feedback.
+
+
+
+=== PAGE 48 ===
+
+Plate 12. Low-Fidelity Wireframe — Estimator Configuration
+
+
+        The contact links management wireframe allows the administrator to maintain the
+
+communication platforms displayed on the public website. The primary action is adding, editing,
+
+or removing a contact platform, while the updated platform list provides feedback after changes
+
+are made.
+
+
+
+=== PAGE 49 ===
+
+Plate 13. Low-Fidelity Wireframe — Contact Links Management
+
+
+        The    archive     and    logs   wireframe       provides    access    to  completed,     cancelled,    or
+
+superseded    records.   The information is organized according to record type and can be filtered
+
+by  period.  The   primary action is reviewing or exporting archived records, while an appropriate
+
+empty-state message is displayed when no matching information is found.
+
+
+
+=== PAGE 50 ===
+
+Plate 14. Low-Fidelity Wireframe — Archive and Logs
+
+
+         The  studio    profile wireframe provides the administrator with access to account and
+
+profile-management        functions.   It contains    the  administrator’s     identity  and   role  and   provides
+
+controls   for updating     account    information    and   credentials.   The   primary    action   is saving   the
+
+updated information, while confirmation is provided after a successful change.
+
+
+
+=== PAGE 51 ===
+
+Plate 15. Low-Fidelity Wireframe — Studio Profile
+
+
+         The   fifteen  low-fidelity   wireframes     collectively  establish the structure of       the proposed
+
+MVP before implementation. The public screens form a continuous path from the homepage to
+
+the portfolio, services, estimator, and booking request, while the administrative screens provide
+
+the corresponding functions for reviewing requests, monitoring schedules, and maintaining the
+
+information    used   by   the  public   interface.   The  wireframes therefore represent one connected
+
+MVP    journey    rather    than   a   collection   of  unrelated     screens.    This   is  consistent    with   the
+
+requirement that the combined wireframes represent one clear and navigable user journey.
+
+
+         Following   the wireframe      stage, the    researchers implemented the proposed design as a
+
+functional web prototype. The prototype follows the structure established in the wireframes and
+
+
+
+=== PAGE 52 ===
+
+demonstrates the      interactions and feedback        of the   proposed MVP in        practice.  The public side
+
+connects    portfolio  browsing,    service information,      preliminary estimation,      and   booking    request
+
+submission,    while   the  administrative     side  provides   access    to  request   management,       schedule
+
+management, and website-content management.
+
+
+         The   functional     homepage        serves    as  the  starting   point   of  the  implemented      client
+
+journey. Because the homepage contains multiple sections extending beyond a single screen, it
+
+is presented     through    sub-plates    so   that  the   content   remains     readable.   The    upper   section
+
+introduces   the studio and provides        the main     navigation, the    middle    section  presents    selected
+
+portfolio  and   service   information,    and   the  lower   section   provides    additional   information    and
+
+actions that guide the visitor toward the main functions of the website.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                       Plate 16. Functional Prototype — Public Homepage
+
+
+
+=== PAGE 53 ===
+
+Plate 16.1. Functional Prototype — Homepage, Upper Section
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+             Plate 16.2. Functional Prototype — Homepage, Middle Section
+
+
+
+=== PAGE 54 ===
+
+Plate 16.3. Functional Prototype — Homepage, Lower Section
+
+
+        The functional portfolio page implements the categorized presentation of the studio’s
+
+previous   work    established    in  the  wireframe.     Prospective    clients  can   browse     the  portfolio
+
+according to category before continuing to the services or estimator.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                            Plate 17. Functional Prototype — Portfolio
+
+
+
+=== PAGE 55 ===
+
+The functional services page presents the available services and starting prices. The
+
+information displayed is connected to the service information used by the estimator so that the
+
+public service information remains consistent with the estimation process.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              Plate 18. Functional Prototype — Services
+
+
+         The   functional      contact     page     presents    the  communication        platforms    available   to
+
+prospective    clients  and    provides   direct   access   to  the  selected    communication       channel.   This
+
+allows   the   website    to  support    the   owner’s    continued     use   of  direct   communication       when
+
+consultation is necessary.
+
+
+
+=== PAGE 56 ===
+
+Plate 19. Functional Prototype — Contact
+
+
+         The functional estimator allows the client to select the applicable occasion, coverage
+
+option, and add-ons while displaying a continuously updated preliminary estimate. Because the
+
+screen   contains   several   selection    and   summary     areas,   it may    be  divided   into  sub-plates    for
+
+readability.
+
+
+
+=== PAGE 57 ===
+
+Plate 20. Functional Prototype — Estimator
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+             Plate 20.1. Functional Prototype — Estimator, Selection Section
+
+
+
+=== PAGE 58 ===
+
+Plate 20.2. Functional Prototype — Estimator, Estimate Summary
+
+
+         The functional booking request page carries the selected estimate into the request
+
+form   and  collects   the  contact   and   event   information     required   for  administrative    review. The
+
+interface provides date availability,       field validation,   privacy  consent,    and submission feedback.
+
+The completed action creates a booking request and does not automatically confirm the client’s
+
+booking.
+
+
+
+=== PAGE 59 ===
+
+Plate 21. Functional Prototype — Booking Request
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      Plate 21.1. Functional Prototype — Booking Request, Information Section
+
+
+
+=== PAGE 60 ===
+
+Plate 21.2. Functional Prototype — Booking Request, Privacy and Submission
+
+                                                   Section
+
+
+        The   functional    administrative       dashboard      provides   a  summary     of  current  activity
+
+and gives the owner access to the main administrative functions. It serves as the starting point
+
+for reviewing current requests and other records.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                Plate 22. Functional Prototype — Administrative Dashboard
+
+
+
+=== PAGE 61 ===
+
+The   functional     client   requests      screen     provides   the   administrator    with   access   to
+
+submitted    booking    requests    and   their  related  information. The      owner    can review    the   client’s
+
+details, estimate information, requested date, and current request status before continuing with
+
+direct communication.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                        Plate 23. Functional Prototype — Client Requests
+
+
+         The functional administrative calendar presents requested and confirmed schedules
+
+in one   centralized    view.   It also   allows   manually    arranged     bookings    to  be   entered    so  that
+
+bookings received through direct communication can still be represented in the digital schedule.
+
+
+
+=== PAGE 62 ===
+
+Plate 24. Functional Prototype — Administrative Calendar
+
+
+        The  functional portfolio management              screen allows the administrator to maintain
+
+portfolio categories, shoots, and photographs displayed on the public website.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                  Plate 25. Functional Prototype — Portfolio Management
+
+
+
+=== PAGE 63 ===
+
+The   functional services management screen allows the administrator to add, edit,
+
+remove,    and   control  the  visibility of  services   and  their  starting prices. These      values are    also
+
+used by the public service display and estimator.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                    Plate 26. Functional Prototype — Services Management
+
+
+        The functional estimator configuration screen allows the administrator to maintain
+
+the prices, coverage options, and add-ons used by the public estimator.
+
+
+
+=== PAGE 64 ===
+
+Plate 27. Functional Prototype — Estimator Configuration
+
+
+        The   functional    contact    links   management        screen    allows   the  administrator   to
+
+maintain the communication channels displayed on the public website.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                Plate 28. Functional Prototype—Contact Links Management
+
+
+
+=== PAGE 65 ===
+
+The    functional     archive    and    logs   screen     allows   the  administrator    to  retain   and
+
+retrieve completed,     cancelled,   or  superseded records rather than removing them entirely from
+
+the system.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                       Plate 29. Functional Prototype — Archive and Logs
+
+
+        The    functional     studio    profile   screen     provides    the  administrator     with  access    to
+
+account information and credential-management functions.
+
+
+
+=== PAGE 66 ===
+
+Plate 30. Functional Prototype — Studio Profile
+
+
+         After  the functional prototype       was   implemented,      the researchers conducted         an  owner
+
+interview   and   prototype    testing   session   on   September       23.   The   session   was   conducted     to
+
+understand     the  owner’s    experience    with the    existing  process and to      observe    how   the owner
+
+interacted with the proposed prototype. The prototype-testing activities focused on finding and
+
+reviewing   a booking     request, checking the requested date on the calendar, changing a service
+
+price and checking the estimator, changing website content, and acting as a client to create an
+
+estimate    and   submit   a  booking     request.   The   owner     was   allowed    to  perform    the  activities
+
+without   being guided     through    each individual step so that the         researchers     could  observe the
+
+areas  that  were easy to      understand and the        areas   where   assistance    or  clarification  might be
+
+needed.
+
+
+
+=== PAGE 67 ===
+
+Plate   31   documents      the   prototype    testing   session   conducted     with   the   owner.   The
+
+photograph     shows     the   owner    reviewing     and   interacting    with   the   implemented      prototype
+
+together   with   the  researchers.    The   session    provides   visual  evidence     that  the  prototype    was
+
+presented    to  the   actual   stakeholder    for  evaluation    rather   than   being   assessed    only   by  the
+
+researchers.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             Plate 31. Owner Prototype Testing Session
+
+
+         The   prototype     testing    produced     several   observations      regarding    the   usability   and
+
+usefulness of the     proposed     system. When asked which features stood out most positively, the
+
+owner   identified   easy    access, the personal portfolio,             and the user-friendly          nature of
+
+the  system.     These    responses     support   the   decision   to make the     studio’s portfolio and      basic
+
+information directly accessible through the website rather than requiring clients to begin with a
+
+message or personal conversation.
+
+
+
+=== PAGE 68 ===
+
+The   owner identified     the  main point of      confusion    as the system      not  being sufficiently
+
+friendly    for  someone        who    is  not   computer       literate.    This  feedback     indicates   that  the
+
+prototype should place greater emphasis on simple navigation, clear labels, and straightforward
+
+interactions so that administrative        users   with limited computer experience can use the system
+
+more comfortably.
+
+
+         The   distinction   between    the estimate,       booking     request,     and confirmed         booking
+
+was reported as      clear.  This  is important because the proposed system is intended to create a
+
+booking    request    rather   than   complete     the   booking     automatically.    The   result   supports    the
+
+decision   to  maintain    a  separate    preliminary-estimation      stage   and   to  leave   final  confirmation
+
+under the owner’s control.
+
+
+         The   owner   also  indicated that the administrator navigation was understandable.
+
+No   major    missing    feature    was    identified   during    the   feedback     session,   while   the   owner
+
+suggested adding time information to the process. This provides a specific improvement for
+
+the  researchers    to  consider,    particularly in   the booking request and schedule            portions   of the
+
+prototype.
+
+
+         The    feedback     session    therefore     identified    both    positive   aspects     and    areas    for
+
+improvement.      Easy   access   to the   system,    the presentation      of the  personal    portfolio,  and   the
+
+overall  user-friendly    design    were    recognized     as  strengths.    At  the   same    time,   the  concern
+
+regarding     users   who     are   not    computer     literate   indicates    a   need    for  further    usability
+
+improvements,      while   the  request    for  time   information    provides    a  specific  adjustment     to  the
+
+scheduling-related portion of the interface.
+
+
+         The interview and prototype testing also support the continued separation between the
+
+preliminary estimate,      booking request,      and   final confirmation.     The   owner’s feedback indicates
+
+
+
+=== PAGE 69 ===
+
+that this distinction is understandable within the prototype, while the existing interview findings
+
+establish   that   direct   communication       remains     necessary     for  package     adjustments      and   final
+
+arrangements.      This  keeps    the prototype consistent with         the actual workflow       identified during
+
+the study.
+
+
+         The   researchers     will  use   the   testing   feedback     as  the   basis  for  the   next   prototype
+
+iteration. The immediate improvements identified are to make the system easier for users with
+
+limited  computer     familiarity  and   to provide    clearer   time information within the scheduling and
+
+booking-request      process.    The   owner’s    overall   response     did  not  identify   an  additional    major
+
+feature   that   needed    to  be   added    at  this  stage,   allowing    the  researchers     to  keep   the   MVP
+
+focused on the validated problem and the defined user flow.
+
+
+         The wireframes, functional prototype, and owner testing session therefore complete the
+
+progression     from    design     structure    to   implementation        and    stakeholder      evaluation.    The
+
+wireframes    establish   the intended structure of the MVP, the functional prototype demonstrates
+
+the  proposed     workflow     in  practice,   and   the   owner’s    feedback     provides    direct  evidence     for
+
+evaluating the usability and clarity of the current design. The results will be used to refine the
+
+prototype    while   maintaining     the   central   purpose    of  the  project:   providing    clearer   access    to
+
+information    and   more    organized    booking-request and schedule           records without removing the
+
+direct communication required by Jonathan Photography.
+
+
+Cards applied: Card 3 — Interview Preparation · Card 4 — Interview for Empathy · Card 11 —
+Point of View · Card 22 — Testing with Users · Card 27 — Feedback Capture Matrix.
+
+
+
+=== PAGE 70 ===
+
+APPENDICES
+
+                                                   Appendix A
+
+
+                                             Interview questions
+
+             1.   How do clients usually discover and contact Jonathan Photography?
+             2.   How do you currently receive and manage client inquiries?
+             3.   What information do clients usually ask for before deciding to book?
+             4.   What information do you normally collect from a client who wants to book a
+                  photography or video service?
+             5.   How do you currently provide package prices or estimates to clients?
+             6.   What difficulties do you experience when explaining packages, prices, coverage
+                  options, and add-ons?
+             7.   How do you currently check whether a client's preferred date is available?
+             8.   Have you experienced difficulties keeping track of requested, confirmed,
+                  cancelled, or completed bookings? If yes, what difficulties?
+             9.   How do you currently record or store client and booking information?
+             10. What difficulties do you experience when retrieving information from previous
+                  inquiries or bookings?
+             11. How do you currently present your photography portfolio and services to
+                  prospective clients?
+             12. What difficulties do clients experience when trying to view your previous work,
+                  services, or pricing information?
+             13. How do you currently update your services, prices, packages, and add-ons?
+             14. What information would you want to see on an administrative dashboard?
+             15. What booking information would be most important for you to see when
+                  reviewing a client's request?
+             16. Which parts of the booking process should remain personally handled by you
+                  rather than automatically processed by a website?
+             17. Would a preliminary online package estimator be useful for your current process?
+                  Why or why not?
+             18. What information should clients receive after submitting a booking request?
+             19. What concerns do you have regarding the privacy and security of client
+                  information?
+             20. Are there other problems in your current inquiry, portfolio, pricing, or booking
+                  process that you would like the proposed system to address?
+
+
+
+=== PAGE 71 ===
+
+Appendix B
+
+                                          Interview Notes / Answer

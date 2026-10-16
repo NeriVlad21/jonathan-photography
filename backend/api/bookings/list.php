@@ -10,12 +10,13 @@ require_once __DIR__ . '/../../middleware/cors.php';
 require_once __DIR__ . '/../../helpers/response.php';
 require_once __DIR__ . '/../../middleware/auth.php';
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../helpers/oversight.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     json_error('Method not allowed.', 405);
 }
 
-require_admin();
+$admin = require_admin();
 $pdo = Database::connect();
 
 $where = [];
@@ -72,7 +73,9 @@ $sql = "SELECT b.id,b.reference_code,b.name,b.email,b.phone,b.shoot_type,b.prefe
         JSON_UNQUOTE(JSON_EXTRACT(b.agreed_details,'$.date')) agreed_date,
         COALESCE(p.total_paid,0) total_paid,
         GREATEST(COALESCE(CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(b.agreed_details,'$.client_total')),JSON_UNQUOTE(JSON_EXTRACT(b.agreed_details,'$.total'))) AS DECIMAL(10,2)),0)-COALESCE(p.total_paid,0),0) balance_due,
-        (SELECT sent_at FROM invoices i WHERE i.booking_id=b.id AND i.voided_at IS NULL ORDER BY i.id DESC LIMIT 1) latest_invoice_sent_at
+        (SELECT sent_at FROM invoices i WHERE i.booking_id=b.id AND i.voided_at IS NULL ORDER BY i.id DESC LIMIT 1) latest_invoice_sent_at,
+        (SELECT COUNT(*) FROM entity_flags ef WHERE ef.entity_type='BOOKING' AND ef.entity_id=b.id AND ef.status='OPEN') open_flag_count,
+        (SELECT reason FROM entity_flags ef WHERE ef.entity_type='BOOKING' AND ef.entity_id=b.id AND ef.status='OPEN' ORDER BY ef.created_at DESC LIMIT 1) latest_flag_reason
         FROM bookings b LEFT JOIN (SELECT booking_id,SUM(amount) total_paid FROM booking_payments GROUP BY booking_id) p ON p.booking_id=b.id";
 
 if ($where) {
@@ -82,4 +85,13 @@ $sql .= ' ORDER BY b.created_at DESC';
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
-json_success($stmt->fetchAll());
+$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+if (($admin['role'] ?? '') === 'SUPER_ADMIN') {
+    foreach ($rows as &$row) {
+        $row['email'] = mask_email_address((string) ($row['email'] ?? ''));
+        $row['phone'] = mask_phone_number((string) ($row['phone'] ?? ''));
+        $row['contact_masked'] = true;
+    }
+    unset($row);
+}
+json_success($rows);

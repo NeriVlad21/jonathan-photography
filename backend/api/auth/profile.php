@@ -14,7 +14,7 @@ $adminId = (int) $adminSession['id'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $stmt = $pdo->prepare(
-        'SELECT id, username, email, role, created_at, updated_at
+        'SELECT id, username, email, role, must_change_password, created_at, updated_at
          FROM admins WHERE id = :id LIMIT 1'
     );
     $stmt->execute(['id' => $adminId]);
@@ -60,6 +60,10 @@ $currentPassword = (string) $input['current_password'];
 $newPassword = (string) ($input['new_password'] ?? '');
 $confirmPassword = (string) ($input['confirm_password'] ?? '');
 
+if (!empty($adminSession['must_change_password']) && $newPassword === '') {
+    json_error('You must replace the temporary password before continuing.', 422, ['new_password' => 'Enter a new password with at least 12 characters.']);
+}
+
 if (!preg_match('/^[A-Za-z0-9_.-]{3,60}$/', $username)) {
     json_error('Please check the profile fields.', 422, [
         'username' => 'Use 3–60 letters, numbers, periods, underscores, or hyphens.'
@@ -103,7 +107,7 @@ if ($duplicate->fetch()) {
 if ($newPassword !== '') {
     $update = $pdo->prepare(
         'UPDATE admins
-         SET username = :username, email = :email, password_hash = :password_hash
+         SET username = :username, email = :email, password_hash = :password_hash, must_change_password = 0
          WHERE id = :id'
     );
     $update->execute([
@@ -130,7 +134,8 @@ json_success([
         'id' => $adminId,
         'username' => $username,
         'email' => $email,
-        'role' => $adminSession['role']
+        'role' => $adminSession['role'],
+        'must_change_password' => $newPassword === '' ? $adminSession['must_change_password'] : false
     ],
     'password_changed' => $newPassword !== '',
     'message' => 'Profile updated successfully.'

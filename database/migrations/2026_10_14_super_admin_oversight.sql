@@ -1,6 +1,6 @@
 -- Adds role separation, owner support reports, and a Super Admin audit trail.
 -- Existing administrators remain active owners. Create the first Super Admin
--- with backend/scripts/create_admin.php after applying this migration.
+-- with backend/scripts/create_superadmin.php after applying the latest migrations.
 
 ALTER TABLE admins
   ADD COLUMN IF NOT EXISTS role ENUM('OWNER','SUPER_ADMIN') NOT NULL DEFAULT 'OWNER' AFTER password_hash,

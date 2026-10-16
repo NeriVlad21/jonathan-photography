@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 $pdo = Database::connect();
 
 if (isset($_GET['all'])) {
-    require_admin();
+    require_owner();
     $stmt = $pdo->query('SELECT ' . SERVICE_COLUMNS . ' FROM services ORDER BY category ASC, sort_order ASC, id ASC');
 } else {
     $stmt = $pdo->query("SELECT " . SERVICE_COLUMNS . " FROM services s WHERE visible = 1 AND NOT EXISTS (SELECT 1 FROM content_moderation cm WHERE cm.entity_type='SERVICE' AND cm.entity_key=CAST(s.id AS CHAR) AND cm.status='HIDDEN') ORDER BY category ASC, sort_order ASC, id ASC");

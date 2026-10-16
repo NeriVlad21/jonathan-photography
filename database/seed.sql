@@ -30,6 +30,12 @@ USE jonathan_photography;
 -- ------------------------------------------------------------
 
 -- booking_addons is a child of bookings -> delete first
+DELETE FROM entity_flags;
+ALTER TABLE entity_flags AUTO_INCREMENT = 1;
+
+DELETE FROM superadmin_access_log;
+ALTER TABLE superadmin_access_log AUTO_INCREMENT = 1;
+
 DELETE FROM booking_addons;
 ALTER TABLE booking_addons AUTO_INCREMENT = 1;
 
@@ -196,4 +202,5 @@ INSERT INTO site_settings (setting_key, setting_value) VALUES
 ('platform_fee_low_rate', '0.005'),
 ('platform_fee_high_rate', '0.01'),
 ('platform_fee_cycle_start_date', '2026-01-01'),
-('platform_fee_due_days', '7');
+('platform_fee_due_days', '7'),
+('pass_platform_fee_to_client_default', '0');

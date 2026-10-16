@@ -23,7 +23,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 // Handle Date Filters & Listing
 if ($method === 'GET') {
-    require_admin();
+    require_owner();
     
     $timeframe = $_GET['timeframe'] ?? 'all';
     $whereClause = '';
@@ -55,7 +55,7 @@ if ($method === 'GET') {
 
 // Handle Status Updates from the Admin Dashboard
 if ($method === 'PUT') {
-    require_admin();
+    require_owner();
     require_csrf();
     $input = json_input();
 
@@ -267,7 +267,7 @@ if ($method === 'POST') {
                 <table style='width:100%;border-collapse:collapse;font-size:14px;'>{$addonLines}
                 <tr><td style='padding-top:10px;font-weight:bold;'>Estimated Total</td><td style='padding-top:10px;text-align:right;font-weight:bold;'>" . peso($total) . "</td></tr>
                 </table>
-                <p style='color:#777;font-size:13px;margin-top:20px;'>This is a baseline estimate — we're happy to customize it during a consultation. Ready to move forward? Just reply to this email or visit our booking page.</p>
+                <p style='color:#777;font-size:13px;margin-top:20px;'>This is a preliminary estimate, not a final quotation. The final invoice will clearly show the agreed service price and any platform service fee only when the studio chooses to pass that fee to the client. Ready to move forward? Reply to this email or visit our booking page.</p>
                 </div>";
             send_mail_with_retry($mail, 'Estimate email');
         }

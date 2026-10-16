@@ -14,7 +14,7 @@ require_once __DIR__ . '/../../helpers/validation.php';
 require_once __DIR__ . '/../../middleware/auth.php';
 require_once __DIR__ . '/../../config/database.php';
 
-require_admin();
+require_owner();
 $pdo = Database::connect();
 $method = $_SERVER['REQUEST_METHOD'];
 

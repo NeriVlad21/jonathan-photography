@@ -36,6 +36,7 @@ const SupportReports = lazy(() => import('./admin/SupportReports.jsx'))
 const AdminHome = lazy(() => import('./admin/AdminHome.jsx'))
 const SuperAdminArchives = lazy(() => import('./admin/SuperAdminArchives.jsx'))
 const ContentOversight = lazy(() => import('./admin/ContentOversight.jsx'))
+const OversightAccessLog = lazy(() => import('./admin/OversightAccessLog.jsx'))
 
 function NotFound() {
   return (
@@ -117,6 +118,11 @@ export default function App() {
               <Route path="super-admin" element={<RoleRoute roles={['SUPER_ADMIN']}><SuperAdminOverview /></RoleRoute>} />
               <Route path="super-archives" element={<RoleRoute roles={['SUPER_ADMIN']}><SuperAdminArchives /></RoleRoute>} />
               <Route path="content-oversight" element={<RoleRoute roles={['SUPER_ADMIN']}><ContentOversight /></RoleRoute>} />
+              <Route path="oversight/bookings" element={<RoleRoute roles={['SUPER_ADMIN']}><ClientRequests readOnly /></RoleRoute>} />
+              <Route path="oversight/bookings/:id" element={<RoleRoute roles={['SUPER_ADMIN']}><BookingDetails readOnly /></RoleRoute>} />
+              <Route path="oversight/calendar" element={<RoleRoute roles={['SUPER_ADMIN']}><AdminBookingCalendar readOnly /></RoleRoute>} />
+              <Route path="oversight/portfolio" element={<RoleRoute roles={['SUPER_ADMIN']}><PortfolioManager readOnly /></RoleRoute>} />
+              <Route path="oversight-log" element={<RoleRoute roles={['OWNER']}><OversightAccessLog /></RoleRoute>} />
               <Route path="support" element={<SupportReports />} />
 
               {/* Archive */}

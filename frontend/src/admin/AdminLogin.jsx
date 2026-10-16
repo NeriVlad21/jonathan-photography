@@ -34,7 +34,7 @@ export default function AdminLogin() {
   if (admin) {
     return (
       <Navigate
-        to={admin.role === 'SUPER_ADMIN' ? '/admin/super-admin' : '/admin/dashboard'}
+        to={admin.must_change_password ? '/admin/profile' : admin.role === 'SUPER_ADMIN' ? '/admin/super-admin' : '/admin/dashboard'}
         replace
       />
     )
@@ -61,7 +61,7 @@ export default function AdminLogin() {
       )
 
       navigate(
-        result.admin?.role === 'SUPER_ADMIN' ? '/admin/super-admin' : '/admin/dashboard'
+        result.admin?.must_change_password ? '/admin/profile' : result.admin?.role === 'SUPER_ADMIN' ? '/admin/super-admin' : '/admin/dashboard'
       )
     } catch (err) {
       setError(

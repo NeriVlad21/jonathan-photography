@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     json_error('Method not allowed.', 405);
 }
 
-require_admin();
+require_owner();
 require_csrf();
 
 $pdo = Database::connect();

@@ -1,8 +1,9 @@
-import { Navigate, Outlet } from 'react-router-dom'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAdminAuth } from '../context/AdminAuthContext.jsx'
 import LoadingState from '../components/LoadingState.jsx'
 
 export default function ProtectedRoute() {
+  const location = useLocation()
   const {
     admin,
     loading
@@ -37,6 +38,22 @@ export default function ProtectedRoute() {
         replace
       />
     )
+  }
+
+  if (admin.must_change_password && location.pathname !== '/admin/profile') {
+    return <Navigate
+      to="/admin/profile"
+      replace
+      state={{
+        passwordChangeRequired: true,
+        returnTo: {
+          pathname: location.pathname,
+          search: location.search,
+          hash: location.hash,
+          state: location.state
+        }
+      }}
+    />
   }
 
   /*
