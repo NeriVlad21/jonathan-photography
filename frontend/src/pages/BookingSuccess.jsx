@@ -17,9 +17,9 @@ export default function BookingSuccess() {
   return (
     <div className="success-page">
       <div>
-        <div className="success-page__ref">REFERENCE {reference}</div>
+        <div className="success-page__ref">Reference {reference}</div>
         <h1 className="display success-page__title">
-          REQUEST<br /><em>RECEIVED.</em>
+          Request received.
         </h1>
         <p className="success-page__body">
           Looks like we have something to photograph. Thanks, {name || 'friend'}.

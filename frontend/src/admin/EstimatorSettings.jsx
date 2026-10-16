@@ -1804,6 +1804,7 @@ export default function EstimatorSettings() {
                             onKeyDown={(event) => {
                               if (event.key === 'Enter') event.currentTarget.blur()
                             }}
+                            aria-label={`${service.name} starting price`}
                             className="estimator-price-input"
                             title="Starting price"
                           />
@@ -1923,6 +1924,7 @@ export default function EstimatorSettings() {
                               event.target.value
                             )
                           }
+                          aria-label={`${hour.label || 'Coverage option'} label`}
                           className="estimator-inline-input"
                           title="Coverage label"
                         />
@@ -1941,6 +1943,7 @@ export default function EstimatorSettings() {
                               event.target.value
                             )
                           }
+                          aria-label={`${hour.label || 'Coverage option'} hours`}
                           className="estimator-inline-input"
                           title="Hours"
                           placeholder="Hours"
@@ -1960,6 +1963,7 @@ export default function EstimatorSettings() {
                               event.target.value
                             )
                           }
+                          aria-label={`${hour.label || 'Coverage option'} price`}
                           className="estimator-inline-input"
                           title="Price"
                           placeholder="Price"
@@ -2047,6 +2051,7 @@ export default function EstimatorSettings() {
                         event.target.value
                     })
                   }
+                  aria-label={'New coverage label'}
                   className="estimator-inline-input"
                 />
 
@@ -2064,6 +2069,7 @@ export default function EstimatorSettings() {
                         event.target.value
                     })
                   }
+                  aria-label={'New coverage hours'}
                   className="estimator-inline-input"
                 />
 
@@ -2081,6 +2087,7 @@ export default function EstimatorSettings() {
                         event.target.value
                     })
                   }
+                  aria-label={'New coverage price'}
                   className="estimator-inline-input"
                 />
 
@@ -2166,6 +2173,7 @@ export default function EstimatorSettings() {
                               event.target.value
                             )
                           }
+                          aria-label={`${addon.label || 'Add-on'} name`}
                           className="
                             estimator-inline-input
                             estimator-addon-label
@@ -2186,6 +2194,7 @@ export default function EstimatorSettings() {
                               event.target.value
                             )
                           }
+                          aria-label={`${addon.label || 'Add-on'} description`}
                           className="
                             estimator-inline-input
                             estimator-addon-description
@@ -2207,6 +2216,7 @@ export default function EstimatorSettings() {
                               event.target.value
                             )
                           }
+                          aria-label={`${addon.label || 'Add-on'} price`}
                           className="estimator-inline-input"
                           title="Price"
                           placeholder="Price"
@@ -2332,6 +2342,7 @@ export default function EstimatorSettings() {
                         event.target.value
                     })
                   }
+                  aria-label={'New add-on name'}
                   className="estimator-inline-input"
                 />
 
@@ -2348,6 +2359,7 @@ export default function EstimatorSettings() {
                         event.target.value
                     })
                   }
+                  aria-label={'New add-on description'}
                   className="estimator-inline-input"
                 />
 
@@ -2367,6 +2379,7 @@ export default function EstimatorSettings() {
                         event.target.value
                     })
                   }
+                  aria-label={'New add-on price'}
                   className="estimator-inline-input"
                 />
 

@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useDialog } from '../components/useDialog.js'
+import { useReasonDialog } from './useReasonDialog.jsx'
 import { Link, useLocation } from 'react-router-dom'
 import { CalendarDays, Download, Mail, MapPin, Phone, Plus, X } from 'lucide-react'
 import { bookingsApi, oversightApi } from '../services/api.js'
@@ -39,11 +41,12 @@ const rangeBounds = (range, month) => {
 }
 
 function CalendarEventDialog({ date, events, onClose, onEventUpdated, returnLocation, readOnly = false, onFlag, flaggingId = null }) {
+  const dialogRef = useDialog(Boolean(date), onClose)
   if (!date) return null
 
   return (
     <div className="calendar-event-modal" role="presentation" onMouseDown={onClose}>
-      <section className="calendar-event-dialog" role="dialog" aria-modal="true" aria-labelledby="calendar-event-title" onMouseDown={(event) => event.stopPropagation()}>
+      <section ref={dialogRef} className="calendar-event-dialog" role="dialog" aria-modal="true" aria-labelledby="calendar-event-title" onMouseDown={(event) => event.stopPropagation()}>
         <button type="button" className="calendar-event-dialog__close" onClick={onClose} aria-label="Close event details"><X size={18} /></button>
         <span className="calendar-event-dialog__eyebrow">Booking schedule</span>
         <h2 id="calendar-event-title">{formatDate(date)}</h2>
@@ -106,6 +109,7 @@ const emptySchedule = (date = '') => ({
 })
 
 function AddScheduleDialog({ initialDate, requests, onClose, onSaved }) {
+  const dialogRef = useDialog(true, onClose)
   const [form, setForm] = useState(() => emptySchedule(initialDate))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -143,7 +147,7 @@ function AddScheduleDialog({ initialDate, requests, onClose, onSaved }) {
 
   return (
     <div className="calendar-event-modal" role="presentation" onMouseDown={onClose}>
-      <form className="calendar-schedule-dialog" onSubmit={submit} onMouseDown={(event) => event.stopPropagation()}>
+      <form ref={dialogRef} className="calendar-schedule-dialog" role="dialog" aria-modal="true" aria-label="Add booked work" onSubmit={submit} onMouseDown={(event) => event.stopPropagation()}>
         <button type="button" className="calendar-event-dialog__close" onClick={onClose} aria-label="Close add schedule form"><X size={18} /></button>
         <span className="calendar-event-dialog__eyebrow">Admin schedule</span>
         <h2>Add booked work</h2>
@@ -282,8 +286,10 @@ function CalendarWorkspace({ archive = false, readOnly = false }) {
     }
   }
 
+  const [askReason, reasonDialog] = useReasonDialog()
+
   const flagEvent = async (event) => {
-    const reason = window.prompt('Reason for this advisory warning (required):')?.trim()
+    const reason = await askReason({ title: 'Flag this calendar entry' })
     if (!reason) return
     setFlaggingId(event.calendar_event_id)
     try {
@@ -324,6 +330,7 @@ function CalendarWorkspace({ archive = false, readOnly = false }) {
 
   return (
     <div className={`booking-calendar-workspace ${archive ? 'booking-calendar-workspace--archive' : ''}`}>
+      {reasonDialog}
       <div className="booking-calendar-toolbar">
         <div>
           <span>{archive ? 'Monthly records' : 'Requests + confirmed schedule'}</span>

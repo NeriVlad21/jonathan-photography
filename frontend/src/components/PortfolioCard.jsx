@@ -5,16 +5,10 @@ import EditorialImage from './EditorialImage.jsx'
  * A single editorial category row on the Portfolio index page.
  * Categories are displayed in an ordered, admin-controlled sequence.
  */
-export default function PortfolioCard({ category, index, reverse }) {
-  const num = String(index + 1).padStart(2, '0')
-
+export default function PortfolioCard({ category, reverse }) {
   return (
     <article className={`cat-row ${reverse ? 'cat-row--reverse' : ''}`}>
       <div className="cat-row__content">
-        <span className="cat-row__index">
-          {num} — {category.name}
-        </span>
-
         <h3 className="display cat-row__title">
           {category.name}
         </h3>

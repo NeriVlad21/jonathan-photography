@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import EditorialImage from '../components/EditorialImage.jsx'
 import LoadingState from '../components/LoadingState.jsx'
@@ -18,6 +18,15 @@ export default function PortfolioShoot() {
       .then((d) => { setData(d); document.title = `Jonathan Photography — ${d.title}` })
       .catch(() => setNotFound(true))
   }, [category, shoot])
+
+  const lightboxTrigger = useRef(null)
+  const lightboxClose = useRef(null)
+
+  // Move focus into the lightbox when it opens and back to the photo when it closes.
+  useEffect(() => {
+    if (lightboxImage) { lightboxClose.current?.focus(); return }
+    lightboxTrigger.current?.focus?.()
+  }, [lightboxImage])
 
   // Allow users to press "Escape" to close the high-res lightbox
   useEffect(() => {
@@ -42,7 +51,6 @@ export default function PortfolioShoot() {
   if (!data) return <LoadingState label="Loading the exhibition…" />
 
   const images = data.images || []
-  const totalImages = images.length
 
   return (
     <article style={{ paddingBottom: 0, backgroundColor: '#FAFAFA' }}>
@@ -78,26 +86,14 @@ export default function PortfolioShoot() {
         .exhibition-item:nth-child(3n+2) { align-self: flex-end; }
         .exhibition-item:nth-child(3n) { align-self: center; max-width: 1100px; }
 
-        .exhibition-counter {
-          font-family: monospace;
-          font-size: 0.85rem;
-          color: #999;
-          letter-spacing: 2px;
-          margin-bottom: 16px;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .exhibition-counter::after {
-          content: '';
-          display: block;
-          width: 40px;
-          height: 1px;
-          background-color: #D1D1D1;
-        }
-
         .exhibition-image-wrapper {
+          display: block;
+          width: 100%;
+          padding: 0;
+          border: 0;
+          background: none;
+          font: inherit;
+          text-align: inherit;
           position: relative;
           cursor: zoom-in;
           overflow: hidden;
@@ -125,30 +121,6 @@ export default function PortfolioShoot() {
         }
 
         /* Justin Le Style Marquee */
-        .marquee-wrapper {
-          overflow: hidden;
-          white-space: nowrap;
-          border-top: 1px solid #E5E5E5;
-          border-bottom: 1px solid #E5E5E5;
-          padding: 24px 0;
-          margin-top: 15vh;
-          background: #fff;
-        }
-        
-        .marquee-content {
-          display: inline-block;
-          animation: marquee 25s linear infinite;
-          font-family: var(--font-body);
-          font-size: 1.5rem;
-          color: #000;
-          text-transform: uppercase;
-          letter-spacing: 4px;
-        }
-
-        @keyframes marquee {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
 
         /* Lightbox (Unchanged - Keeps the 100MB viewing experience intact) */
         .lightbox-overlay {
@@ -214,28 +186,24 @@ export default function PortfolioShoot() {
         {images.length === 0 ? (
           <p style={{ textAlign: 'center', color: '#999', fontStyle: 'italic' }}>Archive empty.</p>
         ) : (
-          images.map((img, index) => {
+          images.map((img) => {
             // Format number as 01, 02, etc.
-            const currentNum = String(index + 1).padStart(2, '0');
-            const totalNum = String(totalImages).padStart(2, '0');
 
             return (
               <div key={img.id} className="exhibition-item">
                 
-                {/* Minimalist Fractional Counter */}
-                <div className="exhibition-counter">
-                  {currentNum} / {totalNum}
-                </div>
 
-                <div 
+                <button
+                  type="button"
                   className="exhibition-image-wrapper"
-                  onClick={() => setLightboxImage(img)}
+                  onClick={(event) => { lightboxTrigger.current = event.currentTarget; setLightboxImage(img) }}
+                  aria-label={`View ${img.title || data.title} full screen`}
                 >
                   <EditorialImage 
                     src={img.image_path} 
                     alt={img.title || data.title} 
                   />
-                </div>
+                </button>
                 
                 {(img.title || img.caption) && (
                   <div className="exhibition-caption">
@@ -250,21 +218,11 @@ export default function PortfolioShoot() {
       </div>
 
       {/* =========================================
-          3. THE MARQUEE FOOTER
-      ========================================= */}
-      <div className="marquee-wrapper">
-        <div className="marquee-content">
-          {/* We repeat the text to ensure a seamless infinite scroll loop */}
-          BOOK A SESSION AT JONATHAN PHOTOGRAPHY • INQUIRE FOR AVAILABILITY • BOOK A SESSION AT JONATHAN PHOTOGRAPHY • INQUIRE FOR AVAILABILITY • BOOK A SESSION AT JONATHAN PHOTOGRAPHY • INQUIRE FOR AVAILABILITY • BOOK A SESSION AT JONATHAN PHOTOGRAPHY • INQUIRE FOR AVAILABILITY • 
-        </div>
-      </div>
-
-      {/* =========================================
           4. FULL SCREEN HIGH-RES LIGHTBOX
       ========================================= */}
       {lightboxImage && (
-        <div className="lightbox-overlay" onClick={() => setLightboxImage(null)}>
-          <button className="lightbox-close" onClick={() => setLightboxImage(null)}>
+        <div className="lightbox-overlay" role="dialog" aria-modal="true" aria-label={lightboxImage.title || data.title} onClick={() => setLightboxImage(null)}>
+          <button type="button" className="lightbox-close" ref={lightboxClose} onClick={() => setLightboxImage(null)}>
             Close [ESC]
           </button>
           

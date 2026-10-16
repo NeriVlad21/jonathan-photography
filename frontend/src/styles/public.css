@@ -1402,10 +1402,10 @@ html.public-scroll-theme::-webkit-scrollbar-button { display: none; width: 0; he
 }
 
 /* The primary booking action is intentionally distinct from the square editorial controls. */
-.navbar__book-button { border-radius: 999px; padding-inline: 22px; }
+.navbar__book-button { padding-inline: 18px; }
 
 /* ---------- Public UI simplification ---------- */
-.navbar--scrolled { border-color: transparent; box-shadow: 0 8px 30px rgba(10, 10, 10, 0.06); }
+.navbar--scrolled { border-color: var(--c-hairline); box-shadow: none; }
 .page-hero__topline,
 .section-header { border-top: 0; padding-top: 0; }
 .section-header .eyebrow { color: var(--c-yellow-dim); }
@@ -2417,11 +2417,12 @@ html { scrollbar-gutter: stable; }
     padding: 11px 16px;
   }
   .public-shell .navbar__logo {
-    max-width: calc(100vw - 92px);
+    max-width: calc(100vw - 170px);
     font-size: clamp(.92rem, 4vw, 1.08rem);
   }
   .public-shell .navbar__right { gap: 8px; }
-  .public-shell .navbar__book-button:not(.navbar__mobile-panel .navbar__book-button) { display: none; }
+  /* One compact booking action in the header replaces the old floating round button. */
+  .public-shell .navbar__book-button:not(.navbar__mobile-panel .navbar__book-button) { display: inline-flex; min-height: 40px; padding: 6px 12px; font-size: .84rem; }
   .public-shell .navbar__mobile-panel {
     align-items: flex-start;
     padding: 96px 28px 38px;
@@ -2657,7 +2658,8 @@ html { scrollbar-gutter: stable; }
   .public-shell .page-hero h1 { margin: 26px 0; }
   .public-shell .page-content { padding-block: 38px 58px; }
   .booking-workflow__intro h2 { font-size: clamp(2rem, 10vw, 2.8rem); }
-  .booking-workflow__steps { display: grid; grid-template-columns: 1fr; }
+  .booking-workflow__steps { display: grid; grid-template-columns: 1fr; grid-auto-flow: row; grid-auto-columns: auto; margin-inline: 0; padding-inline: 0; overflow: visible; scroll-snap-type: none; background: var(--c-hairline); }
+  .booking-workflow__steps li { border: 0; }
   .booking-workflow__steps li {
     min-width: 0;
     padding: 20px;
@@ -2672,3 +2674,229 @@ html { scrollbar-gutter: stable; }
   .work-intro__frame { position: relative; top: auto; }
   .work-intro__arrow { position: relative; inset: auto; display: block; margin: 28px auto 0; translate: 0 0; }
 }
+
+/* ---------- Soundtrack bar: compact, ink surface, real touch targets ----------
+   Overrides the earlier pill variants. Yellow stays an accent (icon + focus). */
+.persistent-player,
+.persistent-player.is-open {
+  left: max(12px, env(safe-area-inset-left));
+  right: auto;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  width: min(340px, calc(100vw - 24px));
+}
+.persistent-player__pill {
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  gap: 8px;
+  min-height: 48px;
+  padding: 2px 2px 2px 14px;
+  border: 1px solid var(--c-black);
+  border-radius: var(--radius);
+  background: var(--c-black);
+  color: var(--c-white);
+  box-shadow: 0 6px 18px rgba(0,0,0,.18);
+}
+.persistent-player__note { color: var(--c-yellow); }
+.persistent-player__title { font-size: .84rem; font-weight: 600; }
+.persistent-player__controls { gap: 0; }
+.persistent-player .persistent-player__controls button { width: 44px; height: 44px; border-radius: var(--radius); }
+.persistent-player .persistent-player__controls button:hover { background: rgba(255,255,255,.1); transform: none; }
+@media (max-width: 380px) {
+  .persistent-player .persistent-player__controls button { width: 40px; }
+}
+
+/* ---------- Touch targets and standalone links ---------- */
+.navbar__toggle,
+.navbar__mobile-close { min-width: 44px; min-height: 44px; }
+.public-shell .navbar__book-button:not(.navbar__mobile-panel .navbar__book-button) { min-height: 44px; }
+.text-link,
+.hero__text-link { min-height: 44px; align-items: center; border-bottom: 0; padding-bottom: 0; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 6px; }
+.footer__col a { display: flex; align-items: center; width: fit-content; min-height: 40px; }
+.footer__cta a { display: inline-flex; align-items: center; min-height: 44px; }
+.option-card__info { width: 44px; height: 44px; }
+.photobooth-filter-dock__track button { min-height: 44px; }
+.navbar__logo { min-height: 44px; display: inline-flex; align-items: center; }
+.footer__found-camera { min-width: 44px; justify-content: center; }
+
+/* ============================================================
+   EDITORIAL POLISH — final layer
+   One type scale, flat surfaces, yellow as an accent only.
+   ============================================================ */
+
+/* Three heading tiers instead of ~40 competing clamps. */
+.public-shell .hero__title {
+  font-size: clamp(2.6rem, 1.5rem + 4.4vw, 5.25rem);
+  line-height: .96;
+  letter-spacing: -.045em;
+  text-wrap: balance;
+}
+.public-shell .page-hero h1,
+.public-shell .photobooth-intro h1 {
+  font-size: clamp(2.3rem, 1.55rem + 3vw, 4rem);
+  line-height: .98;
+  letter-spacing: -.04em;
+  text-wrap: balance;
+}
+.public-shell .section-header__title,
+.public-shell .intro__statement,
+.public-shell .faq__title,
+.public-shell .home-estimator-cta h2,
+.public-shell .booking-workflow__intro h2,
+.public-shell .home-about__music-intro h2,
+.public-shell .work-index__heading h2,
+.public-shell .work-videos__heading h2,
+.public-shell .cat-row__title,
+.public-shell .booking-review__heading h3,
+.public-shell .booking-estimator-gate h2,
+.public-shell .page-hero__bottom > span,
+.public-shell .footer__cta a {
+  font-size: clamp(1.9rem, 1.35rem + 2vw, 3.1rem);
+  line-height: 1.02;
+  letter-spacing: -.035em;
+  text-wrap: balance;
+}
+/* The accent line keeps its line break but not a second colour. */
+.public-shell .intro__statement em { color: inherit; font-style: normal; }
+.public-shell p { text-wrap: pretty; }
+
+/* Surfaces at rest carry no shadow; overlays (dialogs, the player) may. */
+.public-shell .service-row,
+.public-shell .service-row--link,
+.public-shell .faq__item,
+.public-shell .option-card,
+.public-shell .about-player,
+.public-shell .photobooth-studio { box-shadow: none; }
+.public-shell .navbar,
+.public-shell .navbar--scrolled,
+.public-shell .photobooth-filter-dock { -webkit-backdrop-filter: none; backdrop-filter: none; }
+.public-shell .navbar--scrolled { background: var(--c-white); }
+
+/* Decorative layers removed: doodles, clip-art, index numbers. */
+.editorial-doodles,
+.home-estimator-cta__art { display: none; }
+
+/* The estimate call-to-action: off-white ground, yellow as a rule, not a fill. */
+.public-shell .home-estimator-cta {
+  padding-block: clamp(56px, 8vw, 104px);
+  background: var(--c-white);
+  border-top: 1px solid var(--c-hairline);
+}
+.public-shell .home-estimator-cta .container { display: block; }
+.public-shell .home-estimator-cta__copy { max-width: 760px; padding-left: clamp(16px, 2vw, 28px); border-left: 4px solid var(--c-yellow); }
+.public-shell .home-estimator-cta h2 { margin: 10px 0 24px; }
+
+/* FAQ label: plain text, not a yellow pill. */
+.public-shell .faq__eyebrow {
+  display: block;
+  margin: 0 0 12px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--c-muted);
+  font-size: .9rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* Service lists: one hairline list, not a stack of shadowed cards. */
+.public-shell .service-list { border-top: 1px solid var(--c-hairline); }
+.public-shell .service-row,
+.public-shell .service-row--link {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 24px;
+  margin: 0;
+  padding: 18px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--c-hairline);
+  border-radius: 0;
+  background: transparent;
+}
+.public-shell .service-row--link:hover { background: rgba(10,10,10,.03); }
+.public-shell .service-row__name { font-size: clamp(1.05rem, 1rem + .35vw, 1.3rem); letter-spacing: -.015em; line-height: 1.2; }
+.public-shell .service-row__desc { max-width: 60ch; margin-top: 4px; color: var(--c-muted); font-size: .92rem; line-height: 1.5; }
+.public-shell .service-row__price { grid-column: auto; align-self: center; white-space: nowrap; font-size: .92rem; font-weight: 600; }
+@media (max-width: 560px) {
+  .public-shell .service-row,
+  .public-shell .service-row--link { grid-template-columns: minmax(0, 1fr); padding: 16px 0; }
+  .public-shell .service-row__price { justify-content: flex-start; }
+}
+
+/* Remaining small uppercase micro-labels on the public site. */
+.public-shell .page-hero__topline,
+.public-shell .page-hero__topline span,
+.public-shell .booking-workflow__notice strong,
+.public-shell .home-about__label,
+.public-shell .footer__col h3,
+.public-shell .footer__col h4 { letter-spacing: 0; text-transform: none; }
+
+/* Muted body copy that passes AA on the off-white ground. */
+.public-shell .booking-workflow__steps p,
+.public-shell .booking-workflow__intro > p,
+.public-shell .faq__answer,
+.public-shell .page-hero p { color: var(--c-muted); }
+
+/* Small labels in sentence case, without wide tracking. */
+.public-shell :is(.hero__eyebrow, .hero__footer, .hero__scroll-cue, .about-player__now span, .booking-estimator-gate__step,
+  .service-details__eyebrow, .service-details__section h4, .work-intro__kicker, .work-index__heading p, .work-videos__heading p,
+  .preview-strip .editorial-image__caption, .work-gallery__overlay span:last-child, .footer__col h5, .month-calendar__eyebrow,
+  .availability-picker__heading span, .booking-date-instruction span, .photobooth-controls__heading, .field-optional) {
+  text-transform: none;
+  letter-spacing: 0;
+}
+.public-shell .hero__eyebrow { font-size: .95rem; font-weight: 500; }
+.service-details { --focus-ring: var(--c-black); }
+/* "What I do": a plain list, not four outlined chips with one yellow fill. */
+.public-shell .home-about__skills li,
+.public-shell .home-about__skills li:first-child {
+  min-height: 0;
+  padding: 10px 0;
+  border: 0;
+  border-bottom: 1px solid var(--c-hairline);
+  border-radius: 0;
+  background: none;
+  font-weight: 600;
+}
+
+/* Estimator on phones: two-up option cards and a sticky running total. */
+.estimate-mobile-bar { display: none; }
+@media (max-width: 960px) {
+  .public-shell .option-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .public-shell .option-card { min-height: 72px; padding: 12px; }
+  .estimate-mobile-bar {
+    position: sticky;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    z-index: 30;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    min-height: 52px;
+    margin: 16px 0;
+    padding: 6px 6px 6px 14px;
+    border-radius: var(--radius);
+    background: var(--c-black);
+    color: var(--c-white);
+    --focus-ring: var(--c-yellow);
+  }
+  .estimate-mobile-bar > span:first-child { color: rgba(247,247,245,.7); font-size: .85rem; }
+  .estimate-mobile-bar strong { color: var(--c-yellow); font-size: 1rem; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .estimate-mobile-bar__action { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: var(--radius); background: var(--c-yellow); color: var(--c-black); font-size: .88rem; font-weight: 600; }
+  .estimate-summary { scroll-margin-top: 84px; }
+}
+.public-shell .option-card--has-info { padding-right: 54px; }
+.public-shell .option-card { overflow-wrap: anywhere; hyphens: auto; }
+.public-shell .filmstrip__frame { grid-template-columns: minmax(0, 1fr) auto; }
+
+/* Single photo: no tall empty stage on phones; facts align with the caption. */
+.photo-view__facts { color: rgba(247,247,245,.7); font-size: .9rem; text-align: right; }
+@media (max-width: 760px) {
+  .photo-view { min-height: 0; }
+  .photo-view__stage { flex: none; padding: 84px 0 16px; }
+  .photo-view__stage img { max-height: 72svh; }
+  .photo-view__facts { text-align: left; }
+}
+.public-shell .booking-review { scroll-margin-top: 88px; }
+.public-shell .booking-review__heading h3:focus { outline: none; }
+.public-shell .success-page__ref { letter-spacing: .02em; text-transform: none; }
+.public-shell .booking-review__grid :is(dd, strong, span, div) { min-width: 0; overflow-wrap: anywhere; }

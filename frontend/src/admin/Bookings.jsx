@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { bookingsApi } from '../services/api.js'
 import { peso, formatDateTime } from '../utils/format.js'
@@ -77,6 +77,14 @@ export default function Bookings({ readOnly = false, detailBase = '/admin/bookin
   const { showToast } = useToast()
 
   const [bookings, setBookings] = useState(null)
+  // Returning from Booking Details: restore the list position once the rows exist.
+  const pendingScrollY = useRef(location.state?.scrollY ?? null)
+  useEffect(() => {
+    if (!bookings || pendingScrollY.current === null) return
+    const top = Number(pendingScrollY.current) || 0
+    pendingScrollY.current = null
+    window.requestAnimationFrame(() => window.scrollTo({ top, behavior: 'auto' }))
+  }, [bookings])
   const [status, setStatus] = useState(() => location.state?.bookingFilters?.status || '')
   const [search, setSearch] = useState(() => location.state?.bookingFilters?.search || '')
   const [timeframe, setTimeframe] = useState(() => location.state?.bookingFilters?.timeframe || 'today')
@@ -981,7 +989,7 @@ export default function Bookings({ readOnly = false, detailBase = '/admin/bookin
 
           <div className="bookings-priority-strip">
             <div>
-              <strong>{priorityCount} request{priorityCount === 1 ? '' : 's'} need attention</strong>
+              <strong>{priorityCount} {priorityCount === 1 ? 'request needs' : 'requests need'} attention</strong>
               <span>New and pending requests that still need an owner decision.</span>
             </div>
             <button

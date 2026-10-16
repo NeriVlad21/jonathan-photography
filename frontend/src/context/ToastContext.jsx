@@ -19,7 +19,7 @@ export function ToastProvider({ children }) {
     <ToastContext.Provider value={{ showToast }}>
       {children}
       {toast && (
-        <div className={`toast ${toast.type === 'error' ? 'toast--error' : ''}`} role="status">
+        <div className={`toast ${toast.type === 'error' ? 'toast--error' : ''}`} role={toast.type === 'error' ? 'alert' : 'status'}>
           {toast.message}
         </div>
       )}

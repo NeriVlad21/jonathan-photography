@@ -71,7 +71,6 @@ export default function Booking() {
               {bookingPage.steps.map((step, index) => {
                 const Icon = WORKFLOW_ICONS[index] || BadgeCheck
                 return <li key={`${step.title}-${index}`}>
-                  <span className="booking-workflow__number">{String(index + 1).padStart(2, '0')}</span>
                   <Icon size={21} aria-hidden="true" />
                   <strong>{step.title}</strong>
                   <p>{step.text}</p>

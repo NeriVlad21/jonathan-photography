@@ -752,6 +752,7 @@ export default function Archive() {
               </span>
 
               <select
+                aria-label="Period"
                 className="archive-select"
                 value={timeframe}
                 onChange={(event) =>

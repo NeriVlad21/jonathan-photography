@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useDialog } from '../components/useDialog.js'
 import { AlertTriangle, Flag, Search, ShieldCheck } from 'lucide-react'
 import { assetUrl, contentOversightApi } from '../services/api.js'
 import { DEFAULT_SITE_CONTENT, mergeSiteContent } from '../content/defaultSiteContent.js'
@@ -54,6 +55,7 @@ export default function ContentOversight() {
   const [activeTab, setActiveTab] = useState('home')
   const [review, setReview] = useState(null)
   const [saving, setSaving] = useState(false)
+  const reviewDialogRef = useDialog(Boolean(review), () => { if (!saving) setReview(null) })
   const [filters, setFilters] = useState({ q: '', status: 'ALL', from: '', to: '' })
 
   const load = () => contentOversightApi.list().then((result) => setData({ ...result, content: mergeSiteContent(result.content) })).catch((error) => showToast(error.message || 'Unable to load website content.', 'error'))
@@ -98,15 +100,15 @@ export default function ContentOversight() {
 
     <div className="oversight-workspace">
       <nav className="oversight-tabs" aria-label="Website content sections"><span>Choose a section</span>{CONTENT_TABS.map((tab) => <button key={tab.id} type="button" className={activeTab === tab.id ? 'is-active' : ''} onClick={() => setActiveTab(tab.id)}><strong>{tab.label}</strong><small>{tab.description}</small></button>)}</nav>
-      <main className="oversight-content">
+      <div className="oversight-content">
         <header><div><span>Read-only owner content</span><h3>{activeDefinition.label}</h3></div><time>Last updated {formatDate(data.content_updated_at)}</time></header>
         {sections.length ? sections.map((section) => <article className={`oversight-section ${section.warning ? 'has-warning' : ''}`} key={section.key}>
           <div className="oversight-section__head"><div><h4>{section.title}</h4>{section.warning && <p><AlertTriangle size={16} /><span><strong>Review warning:</strong> {section.warning.reason}</span></p>}</div>{section.warning ? <button className="btn btn--secondary" type="button" onClick={() => setReview({ ...section, status: 'CLEAR', reason: '' })}>Clear warning</button> : <button className="btn btn--outline" type="button" onClick={() => setReview({ ...section, status: 'FLAGGED', reason: '' })}><Flag size={16} /> Issue warning</button>}</div>
           <ReadOnlyContent value={section.value} />
         </article>) : <div className="support-empty">No content in this section matches the current filters.</div>}
-      </main>
+      </div>
     </div>
 
-    {review && <div className="invoice-preview-modal" onMouseDown={() => !saving && setReview(null)}><form onSubmit={saveWarning} onMouseDown={(event) => event.stopPropagation()}><h2>{review.status === 'CLEAR' ? 'Clear content warning' : 'Issue content warning'}</h2><p><strong>{review.title}</strong><br />This action never changes or hides the Owner’s website content.</p>{review.status === 'FLAGGED' && <label>Reason for warning<textarea required minLength="5" maxLength="500" rows="4" value={review.reason} onChange={(event) => setReview({ ...review, reason: event.target.value })} placeholder="Explain what the owner should review…" /></label>}<div className="booking-action-form__actions"><button type="button" className="btn btn--secondary" onClick={() => setReview(null)}>Cancel</button><button className="btn btn--primary" disabled={saving}>{saving ? 'Saving…' : review.status === 'CLEAR' ? 'Clear warning' : 'Send warning'}</button></div></form></div>}
+    {review && <div className="invoice-preview-modal" onMouseDown={() => !saving && setReview(null)}><form ref={reviewDialogRef} role="dialog" aria-modal="true" aria-label={review.status === 'CLEAR' ? 'Clear content warning' : 'Issue content warning'} onSubmit={saveWarning} onMouseDown={(event) => event.stopPropagation()}><h2>{review.status === 'CLEAR' ? 'Clear content warning' : 'Issue content warning'}</h2><p><strong>{review.title}</strong><br />This action never changes or hides the Owner’s website content.</p>{review.status === 'FLAGGED' && <label>Reason for warning<textarea required minLength="5" maxLength="500" rows="4" value={review.reason} onChange={(event) => setReview({ ...review, reason: event.target.value })} placeholder="Explain what the owner should review…" /></label>}<div className="booking-action-form__actions"><button type="button" className="btn btn--secondary" onClick={() => setReview(null)}>Cancel</button><button className="btn btn--primary" disabled={saving}>{saving ? 'Saving…' : review.status === 'CLEAR' ? 'Clear warning' : 'Send warning'}</button></div></form></div>}
   </section>
 }
