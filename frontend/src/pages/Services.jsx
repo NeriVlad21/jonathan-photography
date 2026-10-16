@@ -69,7 +69,7 @@ export default function Services() {
               {categoryLabel(cat)}
             </h2>
             <div className="service-list">
-              {items.map((s) => (
+              {items.map((s, i) => (
                 <button
                   type="button"
                   className="service-row service-row--link service-row--button"
@@ -78,6 +78,7 @@ export default function Services() {
                   aria-label={`View details for ${s.name}`}
                   key={s.id}
                 >
+                  <span className="service-row__num">{String(i + 1).padStart(2, '0')}</span>
                   <div>
                     <div className="display service-row__name">{s.name}</div>
                     {s.description && <p className="service-row__desc">{s.description}</p>}
