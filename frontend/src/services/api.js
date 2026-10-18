@@ -736,9 +736,42 @@ export const superAdminApi = {
   update: (data) => put('/super-admin/overview.php', data)
 }
 
+const toQuery = (params = {}) => {
+  const query = new URLSearchParams(Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== '' && value !== 'ALL')).toString()
+  return query ? `?${query}` : ''
+}
+
+/**
+ * Downloads a server-generated file (CSV) with the admin session. JSON error
+ * bodies become ApiErrors; the filename comes from Content-Disposition.
+ */
+export async function downloadFile(path, fallbackName = 'export.csv') {
+  const res = await fetch(`${BASE_URL}${path}`, { credentials: 'include' })
+  const type = res.headers.get('content-type') || ''
+  if (!res.ok || type.includes('application/json')) {
+    let message = `Download failed with status ${res.status}.`
+    try { const json = await res.json(); message = json.message || message } catch { /* keep default */ }
+    throw new ApiError(message, res.status)
+  }
+  const blob = await res.blob()
+  const match = /filename="([^"]+)"/.exec(res.headers.get('content-disposition') || '')
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = match ? match[1] : fallbackName
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  setTimeout(() => URL.revokeObjectURL(link.href), 1000)
+  return link.download
+}
+
 export const superArchiveApi = {
   list: () => get('/super-admin/archives.php'),
-  update: (data) => put('/super-admin/archives.php', data)
+  update: (data) => put('/super-admin/archives.php', data),
+  // Read-only archived records: filtered list, one record, and exports.
+  records: (entity, filters = {}, purpose) => request(`/super-admin/archive-records.php${toQuery({ entity, ...filters, purpose })}`),
+  record: (entity, id, purpose) => request(`/super-admin/archive-records.php${toQuery({ entity, id, purpose })}`),
+  downloadCsv: (entity, filters = {}) => downloadFile(`/super-admin/archive-records.php${toQuery({ entity, ...filters, format: 'csv', purpose: 'csv' })}`, `archived-${entity}.csv`),
 }
 
 export const contentOversightApi = {
@@ -753,7 +786,11 @@ export const superSearchApi = {
 export const supportApi = {
   list: ({ includeArchived = false } = {}) => get(`/support/reports.php${includeArchived ? '?include_archived=1' : ''}`),
   create: (data) => post('/support/reports.php', data),
-  update: (data) => put('/support/reports.php', data)
+  update: (data) => put('/support/reports.php', data),
+  // Read-only details and Super Admin exports.
+  record: (id, purpose) => request(`/support/report-records.php${toQuery({ id, purpose })}`),
+  records: (filters = {}, purpose) => request(`/support/report-records.php${toQuery({ ...filters, purpose })}`),
+  downloadCsv: (filters = {}) => downloadFile(`/support/report-records.php${toQuery({ ...filters, format: 'csv', purpose: 'csv' })}`, 'support-reports.csv'),
 }
 
 // ============================================================

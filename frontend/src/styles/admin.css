@@ -2108,3 +2108,113 @@ body .admin-login-page {
   .admin-shell .support-card footer { flex-direction: column; align-items: stretch; gap: 10px; }
   .admin-shell .support-card footer time { text-align: left; }
 }
+
+/* ============================================================
+   PROFILE FIELDS (Owner + Super Admin)
+   Root cause of the old misalignment: each field was a display:grid <label>
+   inside a stretched grid row, so a field without helper text stretched its
+   own rows to match its neighbour and pushed its input down. Field groups now
+   pack to the top and helper text is a separate row under its own input.
+   ============================================================ */
+.admin-shell .admin-profile-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 18px 20px; margin-top: 20px; }
+.admin-shell .admin-profile-fields--single { grid-template-columns: minmax(0, 1fr); margin-top: 22px; }
+.admin-shell .profile-field { display: grid; align-content: start; gap: 7px; min-width: 0; }
+.admin-shell .profile-field__label-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-height: 20px; }
+.admin-shell .profile-field__label-row label { display: block; margin: 0; font-size: .8rem; font-weight: 700; line-height: 1.3; }
+.admin-shell .profile-field__aside { color: var(--admin-muted); font-size: .76rem; font-weight: 500; text-align: right; }
+.admin-shell .profile-field__control { position: relative; display: block; min-width: 0; }
+.admin-shell .profile-field__control > svg { position: absolute; top: 50%; left: 14px; color: var(--admin-muted); transform: translateY(-50%); pointer-events: none; }
+.admin-shell .profile-field__control input { display: block; box-sizing: border-box; width: 100%; min-width: 0; height: 46px; min-height: 46px; padding: 0 14px !important; border: 1px solid var(--admin-line); border-radius: 4px; background: #fff; font-size: .94rem; text-overflow: ellipsis; }
+.admin-shell .profile-field__control.has-icon input { padding-left: 42px !important; }
+.admin-shell .profile-field__help { margin: 0; color: var(--admin-muted); font-size: .78rem; font-weight: 500; line-height: 1.45; }
+.admin-shell .profile-field__error { display: flex; gap: 6px; margin: 0; color: #B3261E; font-size: .8rem; font-weight: 600; line-height: 1.4; }
+.admin-shell .profile-field__error span { display: inline-grid; place-items: center; flex: 0 0 16px; height: 16px; border-radius: 50%; background: #B3261E; color: #fff; font-size: .7rem; }
+.admin-shell .profile-field.has-error input { border-color: #B3261E; }
+.admin-shell .admin-profile-section-head { align-items: center; }
+.admin-shell .admin-profile-section-head > svg { flex: 0 0 auto; color: var(--admin-muted); }
+.admin-shell .admin-profile-summary > a { overflow-wrap: anywhere; }
+.admin-shell .admin-profile-actions .btn { min-height: 44px; }
+/* Two columns only when the form itself is wide enough. */
+.admin-shell .admin-profile-form { container-type: inline-size; min-width: 0; }
+@container (max-width: 480px) {
+  .admin-shell .admin-profile-fields { grid-template-columns: minmax(0, 1fr); }
+  .admin-shell .profile-field__label-row { flex-wrap: wrap; }
+  .admin-shell .profile-field__aside { text-align: left; }
+}
+
+/* ============================================================
+   RECORD DETAILS + DOWNLOADS (Archives, Support Reports)
+   Read-only record views reuse the dialog shell; downloads use a compact
+   PDF / CSV menu. Plain text only, line breaks kept.
+   ============================================================ */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.admin-dialog--lg { max-width: 760px; }
+.admin-dialog--lg .admin-dialog__body { gap: 16px; }
+.record-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; padding: 8px 12px; border-left: 3px solid var(--c-yellow); background: #F7F7F5; font-size: .78rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.record-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; margin: 0; border-top: 1px solid #ECEAE4; }
+.record-fields > div { display: grid; grid-template-columns: minmax(92px, 38%) minmax(0, 1fr); gap: 10px; padding: 8px 0; border-bottom: 1px solid #ECEAE4; min-width: 0; }
+.record-fields dt { color: #6B6861; font-size: .8rem; font-weight: 600; }
+.record-fields dd { margin: 0; min-width: 0; font-size: .88rem; line-height: 1.45; overflow-wrap: anywhere; }
+.record-fields .is-missing,
+.record-text .is-missing { color: #6B6861; font-style: italic; }
+.record-text { display: grid; gap: 6px; min-width: 0; }
+.record-text h3 { margin: 0; font-size: .82rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.record-text > p { margin: 0; font-size: .9rem; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.record-note, .record-loading { margin: 0; color: #6B6861; font-size: .82rem; }
+.record-error { margin: 0; padding: 10px 12px; border-left: 3px solid #B3261E; background: #FCEDEC; color: #8C1D18; font-size: .88rem; }
+.record-table-wrap { overflow-x: auto; border: 1px solid #ECEAE4; }
+.record-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.record-table th, .record-table td { padding: 8px 10px; border-bottom: 1px solid #ECEAE4; text-align: left; vertical-align: top; white-space: nowrap; }
+.record-table thead th { background: #F7F7F5; font-size: .74rem; letter-spacing: .04em; text-transform: uppercase; }
+.record-table td small { display: block; color: #6B6861; }
+.record-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.record-table tfoot th, .record-table tfoot td { border-bottom: 0; background: #FBF7DD; font-weight: 700; }
+.record-table .is-voided td { color: #6B6861; text-decoration: line-through; }
+.record-history { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; border-top: 1px solid #ECEAE4; }
+.record-history li { display: grid; grid-template-columns: minmax(130px, auto) minmax(0, 1fr) auto; gap: 12px; padding: 8px 0; border-bottom: 1px solid #ECEAE4; font-size: .86rem; }
+.record-history time, .record-history small { color: #6B6861; }
+
+.record-download { position: relative; display: grid; justify-items: end; gap: 4px; }
+.record-download > .btn { min-height: 44px; gap: 8px; }
+.record-download__menu { position: absolute; top: calc(100% + 4px); right: 0; z-index: 20; display: grid; min-width: 220px; border: 1px solid var(--c-black); border-radius: 4px; background: #fff; }
+.record-download__menu button { display: flex; align-items: baseline; gap: 8px; min-height: 44px; padding: 10px 14px; border: 0; border-bottom: 1px solid #ECEAE4; background: #fff; font: inherit; font-weight: 700; text-align: left; cursor: pointer; }
+.record-download__menu button:last-child { border-bottom: 0; }
+.record-download__menu button:hover, .record-download__menu button:focus-visible { background: #FFF4C2; outline: none; }
+.record-download__menu small { color: #6B6861; font-weight: 500; }
+.record-download__reason { max-width: 280px; margin: 0; color: #6B6861; font-size: .76rem; text-align: right; }
+
+.archive-toolbar { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px 16px; margin-top: 14px; }
+.admin-shell .archive-toolbar { flex-direction: row; padding: 0; border: 0; background: transparent; box-shadow: none; }
+.archive-toolbar > p { flex: 1 1 280px; margin: 10px 0 0; color: var(--admin-muted); font-size: .86rem; overflow-wrap: anywhere; }
+.admin-shell .archive-filterbar,
+.admin-shell .support-filterbar { align-items: flex-end; }
+.archive-filterbar__search { flex: 1 1 260px; align-self: flex-end; }
+.archive-filterbar__search svg { top: 21px !important; }
+.archive-filterbar__field, .support-filterbar__date { display: grid; gap: 4px; flex: 0 1 170px; }
+.archive-filterbar__field > span, .support-filterbar__date > span { color: var(--admin-muted); font-size: .74rem; font-weight: 600; }
+.archive-filterbar__field select, .archive-filterbar__field input, .support-filterbar__date input { width: 100%; min-height: 42px; }
+.archive-filterbar__clear { min-height: 42px; }
+.archive-filterbar__error { flex: 1 1 100%; margin: 0; color: #8C1D18; font-size: .82rem; font-weight: 600; }
+.archive-filterbar__error strong { display: inline-grid; place-items: center; width: 16px; height: 16px; margin-right: 4px; border-radius: 50%; background: #B3261E; color: #fff; font-size: .7rem; }
+.archive-row__status { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.admin-shell .super-archive-list .archive-row__actions { justify-content: flex-end; }
+.super-archive-list article > div:first-child { min-width: 0; }
+.super-archive-list h3, .super-archive-list p { overflow-wrap: anywhere; }
+
+@media (max-width: 760px) {
+  .record-fields { grid-template-columns: 1fr; }
+  .record-history li { grid-template-columns: 1fr; gap: 2px; }
+  .archive-filterbar__field, .support-filterbar__date { flex: 1 1 calc(50% - 5px); }
+  .archive-filterbar__clear { flex: 1 1 100%; justify-content: center; }
+  .admin-shell .archive-toolbar { flex-direction: column; align-items: stretch; }
+  .archive-toolbar > p { flex: 0 0 auto; margin-top: 0; }
+  .record-download { justify-items: stretch; flex: 0 0 auto; }
+  .record-download > .btn { justify-content: center; }
+  .record-download__menu { left: 0; right: 0; }
+  .record-download__reason { max-width: none; text-align: left; }
+  .archive-row__status, .admin-shell .super-archive-list .archive-row__actions { justify-content: flex-start; }
+}
+@media (max-width: 420px) {
+  .record-fields > div { grid-template-columns: 1fr; gap: 2px; }
+  .archive-filterbar__field, .support-filterbar__date { flex: 1 1 100%; }
+}

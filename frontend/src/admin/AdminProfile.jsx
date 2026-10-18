@@ -7,6 +7,32 @@ import { useToast } from '../context/ToastContext.jsx'
 import LoadingState from '../components/LoadingState.jsx'
 import { formatDate } from '../utils/format.js'
 
+// One field structure for every Profile input: label row, control row, then
+// helper/error rows. Grouping keeps paired fields aligned whatever their helper text.
+function ProfileField({ id, label, aside, icon: Icon, help, error, ...inputProps }) {
+  const helpId = help ? `${id}-help` : undefined
+  const errorId = error ? `${id}-error` : undefined
+  return (
+    <div className={`profile-field ${error ? 'has-error' : ''}`}>
+      <div className="profile-field__label-row">
+        <label htmlFor={id}>{label}</label>
+        {aside && <span className="profile-field__aside">{aside}</span>}
+      </div>
+      <div className={`profile-field__control ${Icon ? 'has-icon' : ''}`}>
+        {Icon && <Icon size={16} aria-hidden="true" />}
+        <input
+          id={id}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={[helpId, errorId].filter(Boolean).join(' ') || undefined}
+          {...inputProps}
+        />
+      </div>
+      {help && <p className="profile-field__help" id={helpId}>{help}</p>}
+      {error && <p className="profile-field__error" id={errorId} role="alert"><span aria-hidden="true">!</span> {error}</p>}
+    </div>
+  )
+}
+
 const EMPTY_FORM = {
   username: '',
   email: '',
@@ -23,6 +49,7 @@ export default function AdminProfile() {
   const [profile, setProfile] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
+  const [errors, setErrors] = useState({})
 
   useEffect(() => {
     document.title = 'Admin — Profile'
@@ -41,15 +68,18 @@ export default function AdminProfile() {
   const updateField = (event) => {
     const { name, value } = event.target
     setForm((current) => ({ ...current, [name]: value }))
+    setErrors((current) => (current[name] ? { ...current, [name]: '' } : current))
   }
 
   const handleSubmit = async (event) => {
     event.preventDefault()
 
     if (form.new_password && form.new_password !== form.confirm_password) {
+      setErrors({ confirm_password: 'The new passwords do not match.' })
       showToast('The new passwords do not match.', 'error')
       return
     }
+    setErrors({})
 
     setSaving(true)
     try {
@@ -77,6 +107,7 @@ export default function AdminProfile() {
         }
       }
     } catch (error) {
+      setErrors(error?.errors && typeof error.errors === 'object' ? error.errors : {})
       showToast(error?.message || 'Unable to update the profile.', 'error')
     } finally {
       setSaving(false)
@@ -122,25 +153,12 @@ export default function AdminProfile() {
                 <span>Profile information</span>
                 <h3>Account details</h3>
               </div>
-              <UserRound size={20} />
+              <UserRound size={20} aria-hidden="true" />
             </div>
 
             <div className="admin-profile-fields">
-              <label>
-                <span>Username</span>
-                <div className="admin-profile-input-wrap">
-                  <UserRound size={16} />
-                  <input name="username" value={form.username} onChange={updateField} required maxLength={60} />
-                </div>
-              </label>
-              <label>
-                <span>Account email</span>
-                <div className="admin-profile-input-wrap">
-                  <Mail size={16} />
-                  <input type="email" name="email" value={form.email} onChange={updateField} required maxLength={160} />
-                </div>
-                <small className="admin-profile-field-help">Used to identify and contact this account. Changing it does not redirect booking notifications.</small>
-              </label>
+              <ProfileField id="profile-username" label="Username" icon={UserRound} name="username" value={form.username} onChange={updateField} required maxLength={60} autoComplete="username" error={errors.username} />
+              <ProfileField id="profile-email" label="Account email" icon={Mail} type="email" name="email" value={form.email} onChange={updateField} required maxLength={160} autoComplete="email" error={errors.email} help="Used to identify and contact this account. Changing it does not redirect booking notifications." />
             </div>
 
             <div className="admin-profile-section-head admin-profile-section-head--password">
@@ -148,24 +166,17 @@ export default function AdminProfile() {
                 <span>{profile.must_change_password ? 'Required before continuing' : 'Optional'}</span>
                 <h3>Change password</h3>
               </div>
-              <KeyRound size={20} />
+              <KeyRound size={20} aria-hidden="true" />
             </div>
 
             <div className="admin-profile-fields admin-profile-fields--password">
-              <label>
-                <span>New password</span>
-                <input type="password" name="new_password" value={form.new_password} onChange={updateField} minLength={12} required={profile.must_change_password} placeholder={profile.must_change_password ? 'At least 12 characters' : 'Leave blank to keep current'} />
-              </label>
-              <label>
-                <span>Confirm new password</span>
-                <input type="password" name="confirm_password" value={form.confirm_password} onChange={updateField} minLength={12} required={profile.must_change_password} placeholder="Repeat new password" />
-              </label>
+              <ProfileField id="profile-new-password" label="New password" type="password" name="new_password" value={form.new_password} onChange={updateField} minLength={12} required={Boolean(Number(profile.must_change_password))} autoComplete="new-password" placeholder={profile.must_change_password ? 'At least 12 characters' : 'Leave blank to keep current'} error={errors.new_password} />
+              <ProfileField id="profile-confirm-password" label="Confirm new password" type="password" name="confirm_password" value={form.confirm_password} onChange={updateField} minLength={12} required={Boolean(Number(profile.must_change_password))} autoComplete="new-password" placeholder="Repeat new password" error={errors.confirm_password} />
             </div>
 
-            <label className="admin-profile-current-password">
-              <span>Current password <small>Required to save any changes</small></span>
-              <input type="password" name="current_password" value={form.current_password} onChange={updateField} required autoComplete="current-password" />
-            </label>
+            <div className="admin-profile-fields admin-profile-fields--single">
+              <ProfileField id="profile-current-password" label="Current password" aside="Required to save any changes" type="password" name="current_password" value={form.current_password} onChange={updateField} required autoComplete="current-password" error={errors.current_password} />
+            </div>
 
             <div className="admin-profile-actions">
               <p>{profile.must_change_password ? 'This one-time security step unlocks the platform workspace.' : 'Your current session stays active after saving.'}</p>

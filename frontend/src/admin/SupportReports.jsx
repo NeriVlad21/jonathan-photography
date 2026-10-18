@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Archive, LifeBuoy, Search, Send, X } from 'lucide-react'
+import { Archive, Download, Eye, LifeBuoy, Search, Send, X } from 'lucide-react'
 import { supportApi, superArchiveApi } from '../services/api.js'
 import { useAdminAuth } from '../context/AdminAuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
@@ -8,10 +8,13 @@ import LoadingState from '../components/LoadingState.jsx'
 import AdminDialog, { AdminDialogField, AdminDialogSummary } from '../components/AdminDialog.jsx'
 import { formatDate } from '../utils/format.js'
 import { SUPPORT_STATUSES, SupportPriorityBadge, SupportStatusBadge, supportStatusKey } from './supportStatus.jsx'
+import { FilteredDownloadMenu, SupportDetailBody, useDownloads } from './recordViews.jsx'
+import { downloadSupportListPdf, downloadSupportPdf } from './recordDocuments.js'
 
 const EMPTY_REPORT = { subject: '', category: 'TECHNICAL', priority: 'NORMAL', description: '' }
 const CATEGORY_LABELS = { TECHNICAL: 'Technical', BILLING: 'Billing', ACCOUNT: 'Account', OTHER: 'Other' }
-const FILTER_KEYS = ['q', 'status', 'from', 'to']
+const FILTER_KEYS = ['q', 'status', 'priority', 'category', 'from', 'to']
+const reference = (id) => `SR-${String(id).padStart(6, '0')}`
 
 export default function SupportReports() {
   const { admin } = useAdminAuth()
@@ -25,14 +28,16 @@ export default function SupportReports() {
   const [editError, setEditError] = useState('')
   const [archiving, setArchiving] = useState(null)
   const [archiveBusy, setArchiveBusy] = useState(false)
+  const [detail, setDetail] = useState(null)
   const requestId = useRef(0)
+  const downloads = useDownloads()
 
   // Filters live in the URL so they survive opening a report, reloads, and Back.
   const [searchParams, setSearchParams] = useSearchParams()
-  const filters = { q: searchParams.get('q') || '', status: searchParams.get('status') || 'ALL', from: searchParams.get('from') || '', to: searchParams.get('to') || '' }
+  const filters = { q: searchParams.get('q') || '', status: searchParams.get('status') || 'ALL', priority: searchParams.get('priority') || 'ALL', category: searchParams.get('category') || 'ALL', from: searchParams.get('from') || '', to: searchParams.get('to') || '' }
   const setFilter = (key, value) => setSearchParams((current) => {
     const next = new URLSearchParams(current)
-    if (!value || (key === 'status' && value === 'ALL')) next.delete(key)
+    if (!value || value === 'ALL') next.delete(key)
     else next.set(key, value)
     return next
   }, { replace: true })
@@ -89,13 +94,35 @@ export default function SupportReports() {
     finally { setArchiveBusy(false) }
   }
 
-  const filteredReports = useMemo(() => (reports || []).filter((report) => {
+  // Same rules as the server-side export (report-records.php), so a filtered
+  // download contains exactly the reports listed here.
+  const rangeError = filters.from && filters.to && filters.from > filters.to ? 'The start date cannot be later than the end date.' : ''
+  const filteredReports = useMemo(() => (rangeError ? [] : (reports || []).filter((report) => {
     const key = supportStatusKey(report)
     const statusMatch = filters.status === 'ALL' ? key !== 'ARCHIVED' : key === filters.status
-    const text = `${report.id} ${report.subject} ${report.description} ${report.category} ${report.submitted_by_username || ''}`.toLowerCase()
+    const text = `${reference(report.id)} ${report.subject} ${report.description} ${report.category} ${report.submitted_by_username || ''}`.toLowerCase()
     const date = (report.created_at || '').slice(0, 10)
-    return statusMatch && (!filters.q || text.includes(filters.q.toLowerCase())) && (!filters.from || date >= filters.from) && (!filters.to || date <= filters.to)
-  }), [reports, filters.q, filters.status, filters.from, filters.to])
+    return statusMatch && (filters.priority === 'ALL' || report.priority === filters.priority) && (filters.category === 'ALL' || report.category === filters.category)
+      && (!filters.q || text.includes(filters.q.trim().toLowerCase())) && (!filters.from || date >= filters.from) && (!filters.to || date <= filters.to)
+  })), [reports, rangeError, filters.q, filters.status, filters.priority, filters.category, filters.from, filters.to])
+  const exportFilters = {
+    context: filters.status === 'ARCHIVED' ? 'archived' : 'active',
+    status: ['ALL', 'ARCHIVED'].includes(filters.status) ? '' : filters.status,
+    priority: filters.priority, category: filters.category, q: filters.q.trim(), from: filters.from, to: filters.to,
+  }
+
+  const openDetail = async (report) => {
+    setDetail({ id: report.id, reference: reference(report.id), data: null, error: '' })
+    try {
+      const data = await supportApi.record(report.id)
+      setDetail((current) => (current?.id === report.id ? { ...current, data } : current))
+    } catch (error) {
+      setDetail((current) => (current?.id === report.id ? { ...current, error: error.message || 'Unable to load this report.' } : current))
+    }
+  }
+  const downloadReport = (id) => downloads.run(`report-${id}`, async () => { await downloadSupportPdf(await supportApi.record(id, 'pdf')) })
+  const downloadListPdf = () => downloads.run('list-pdf', async () => { await downloadSupportListPdf(await supportApi.records(exportFilters, 'pdf')) })
+  const downloadListCsv = () => downloads.run('list-csv', () => supportApi.downloadCsv(exportFilters))
 
   if (reports === null) return <LoadingState label="Loading support reports…" />
 
@@ -112,12 +139,27 @@ export default function SupportReports() {
     </form>}
 
     <div className="super-filterbar support-filterbar" role="search" aria-label="Filter support reports">
-      <label className="support-filterbar__search"><Search size={16} aria-hidden="true" /><input aria-label="Search support reports" placeholder="Search subject, description, category…" value={filters.q} onChange={(e) => setFilter('q', e.target.value)} /></label>
+      <label className="support-filterbar__search"><Search size={16} aria-hidden="true" /><input aria-label="Search support reports" placeholder="Search reference, subject, description…" value={filters.q} onChange={(e) => setFilter('q', e.target.value)} /></label>
       <select aria-label="Filter by status" value={filters.status} onChange={(e) => setFilter('status', e.target.value)}>{statusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
-      <input type="date" aria-label="Submitted from" value={filters.from} max={filters.to || undefined} onChange={(e) => setFilter('from', e.target.value)} />
-      <input type="date" aria-label="Submitted to" value={filters.to} min={filters.from || undefined} onChange={(e) => setFilter('to', e.target.value)} />
-      <button type="button" className="btn admin-btn--secondary support-filterbar__clear" onClick={clearFilters} disabled={!hasFilters}><X size={15} aria-hidden="true" />Clear</button>
+      <select aria-label="Filter by priority" value={filters.priority} onChange={(e) => setFilter('priority', e.target.value)}><option value="ALL">All priorities</option><option value="URGENT">Urgent</option><option value="NORMAL">Normal</option></select>
+      <select aria-label="Filter by category" value={filters.category} onChange={(e) => setFilter('category', e.target.value)}><option value="ALL">All categories</option>{Object.entries(CATEGORY_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+      <label className="support-filterbar__date"><span>Submitted from</span><input type="date" value={filters.from} max={filters.to || undefined} aria-invalid={Boolean(rangeError) || undefined} aria-describedby={rangeError ? 'support-range-error' : undefined} onChange={(e) => setFilter('from', e.target.value)} /></label>
+      <label className="support-filterbar__date"><span>Submitted to</span><input type="date" value={filters.to} min={filters.from || undefined} aria-invalid={Boolean(rangeError) || undefined} aria-describedby={rangeError ? 'support-range-error' : undefined} onChange={(e) => setFilter('to', e.target.value)} /></label>
+      <button type="button" className="btn admin-btn--secondary support-filterbar__clear" onClick={clearFilters} disabled={!hasFilters}><X size={15} aria-hidden="true" />Clear filters</button>
+      {rangeError && <p className="archive-filterbar__error" id="support-range-error" role="alert"><strong>!</strong> {rangeError}</p>}
     </div>
+
+    {isSuper && <div className="archive-toolbar">
+      <p>{filters.status === 'ARCHIVED' ? 'Exports include archived reports only.' : 'Exports include active reports matching the filters.'}</p>
+      <FilteredDownloadMenu
+        label="Download filtered reports"
+        count={loading ? null : filteredReports.length}
+        busy={downloads.busy}
+        disabledReason={rangeError ? 'Fix the date range before exporting.' : loading ? 'Waiting for results…' : ''}
+        onPdf={downloadListPdf}
+        onCsv={downloadListCsv}
+      />
+    </div>}
 
     <section className="support-list" aria-busy={loading || undefined}>
       <h3>{isSuper ? 'Reports' : 'Your reports'} <small aria-live="polite">{loading ? 'Updating…' : `${filteredReports.length} matching`}</small></h3>
@@ -125,7 +167,7 @@ export default function SupportReports() {
         const archived = Boolean(report.archived_at)
         return <article key={report.id} className={`support-card ${report.priority === 'URGENT' ? 'support-card--urgent' : ''}`}>
           <header>
-            <div><span>#{report.id} · {CATEGORY_LABELS[report.category] || report.category}</span><h4>{report.subject}</h4></div>
+            <div><span>{reference(report.id)} · {CATEGORY_LABELS[report.category] || report.category}</span><h4>{report.subject}</h4></div>
             <div className="support-card__badges"><SupportPriorityBadge priority={report.priority} /><SupportStatusBadge report={report} /></div>
           </header>
           {isSuper && <small>From {report.submitted_by_username} · {report.submitted_by_email}</small>}
@@ -133,21 +175,41 @@ export default function SupportReports() {
           {report.super_admin_reply && <blockquote><strong>Super Admin response</strong>{report.super_admin_reply}</blockquote>}
           <footer>
             <time dateTime={report.created_at}>{formatDate(report.created_at)}</time>
-            {isSuper && !archived && <div className="admin-actions">
-              <button type="button" className="btn admin-btn--neutral" onClick={() => openReview(report)}>Review</button>
-              {['RESOLVED', 'CLOSED'].includes(report.status) && <button type="button" className="btn admin-btn--secondary" onClick={() => setArchiving(report)}><Archive size={15} aria-hidden="true" />Archive</button>}
-            </div>}
+            <div className="admin-actions">
+              <button type="button" className="btn admin-btn--neutral" onClick={() => openDetail(report)} aria-label={`View details for ${reference(report.id)}`}><Eye size={15} aria-hidden="true" />View details</button>
+              {isSuper && <button type="button" className="btn admin-btn--neutral" onClick={() => downloadReport(report.id)} disabled={Boolean(downloads.busy)} aria-label={`Download PDF for ${reference(report.id)}`}><Download size={15} aria-hidden="true" />{downloads.busy === `report-${report.id}` ? 'Preparing…' : 'PDF'}</button>}
+              {isSuper && !archived && <button type="button" className="btn admin-btn--neutral" onClick={() => openReview(report)}>Review</button>}
+              {isSuper && !archived && ['RESOLVED', 'CLOSED'].includes(report.status) && <button type="button" className="btn admin-btn--secondary" onClick={() => setArchiving(report)}><Archive size={15} aria-hidden="true" />Archive</button>}
+            </div>
           </footer>
         </article>
       }) : <div className="support-empty">
-        <p>{hasFilters ? 'No reports match these filters.' : isSuper ? 'There are no active support reports.' : 'You have not sent any reports yet.'}</p>
+        <p>{rangeError ? 'Fix the date range to see reports.' : hasFilters ? 'No reports match these filters.' : isSuper ? 'There are no active support reports.' : 'You have not sent any reports yet.'}</p>
         {hasFilters && <button type="button" className="btn admin-btn--secondary" onClick={clearFilters}>Clear filters</button>}
       </div>}
     </section>
 
     <AdminDialog
+      open={Boolean(detail)}
+      size="lg"
+      title={detail ? `Support report ${detail.reference}` : ''}
+      description={detail?.data?.archived ? 'Archived and read-only.' : 'Read-only view. Use Review to change the status or response.'}
+      onClose={() => setDetail(null)}
+      cancelLabel="Close"
+      onSubmit={isSuper && detail?.data ? () => downloadReport(detail.id) : undefined}
+      busy={Boolean(downloads.busy)}
+      busyLabel="Preparing download…"
+      submitLabel="Download PDF"
+      submitTone="secondary"
+    >
+      {detail && (detail.error ? <p className="record-error" role="alert">{detail.error}</p>
+        : !detail.data ? <p className="record-loading" aria-live="polite">Loading report…</p>
+        : <SupportDetailBody record={detail.data.record} history={detail.data.history} archived={detail.data.archived} showReporter={isSuper} />)}
+    </AdminDialog>
+
+    <AdminDialog
       open={Boolean(editing)}
-      title={editing ? `Review report #${editing.id}` : ''}
+      title={editing ? `Review report ${reference(editing.id)}` : ''}
       description="Update the status and leave a response the Owner can read on their Report a Problem page."
       onClose={() => { if (!saving) setEditing(null) }}
       onSubmit={update}
@@ -192,7 +254,7 @@ export default function SupportReports() {
       submitLabel="Archive report"
     >
       <AdminDialogSummary items={archiving ? [
-        { label: 'Report', value: `#${archiving.id} · ${archiving.subject}` },
+        { label: 'Report', value: `${reference(archiving.id)} · ${archiving.subject}` },
         { label: 'Current state', value: <SupportStatusBadge report={archiving} /> },
       ] : []} />
     </AdminDialog>

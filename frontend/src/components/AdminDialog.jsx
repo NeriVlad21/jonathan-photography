@@ -11,6 +11,7 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([t
  * - Escape and backdrop clicks close it, except while `busy`
  * - focus returns to the element that opened it
  * - the caller decides when to close (only after its request succeeds)
+ * - without `onSubmit` it is a read-only view with a single Close button
  */
 export default function AdminDialog({
   open,
@@ -93,9 +94,11 @@ export default function AdminDialog({
         <div className="admin-dialog__body">{children}</div>
         <footer className="admin-dialog__footer">
           <button type="button" className="btn btn--secondary" onClick={onClose} disabled={busy}>{cancelLabel}</button>
-          <button type="submit" className={`btn admin-btn--${submitTone}`} disabled={busy || submitDisabled}>
-            {busy ? busyLabel : submitLabel}
-          </button>
+          {onSubmit && (
+            <button type="submit" className={`btn admin-btn--${submitTone}`} disabled={busy || submitDisabled}>
+              {busy ? busyLabel : submitLabel}
+            </button>
+          )}
         </footer>
       </form>
     </div>
