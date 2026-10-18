@@ -51,6 +51,7 @@ export default function PortfolioShoot() {
   if (!data) return <LoadingState label="Loading the exhibition…" />
 
   const images = data.images || []
+  const totalImages = images.length
 
   return (
     <article style={{ paddingBottom: 0, backgroundColor: '#FAFAFA' }}>
@@ -85,6 +86,25 @@ export default function PortfolioShoot() {
         .exhibition-item:nth-child(3n+1) { align-self: flex-start; }
         .exhibition-item:nth-child(3n+2) { align-self: flex-end; }
         .exhibition-item:nth-child(3n) { align-self: center; max-width: 1100px; }
+
+        .exhibition-counter {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 16px;
+          color: #999;
+          font-family: monospace;
+          font-size: 0.85rem;
+          letter-spacing: 2px;
+        }
+
+        .exhibition-counter::after {
+          content: '';
+          display: block;
+          width: 40px;
+          height: 1px;
+          background-color: #D1D1D1;
+        }
 
         .exhibition-image-wrapper {
           display: block;
@@ -121,6 +141,30 @@ export default function PortfolioShoot() {
         }
 
         /* Justin Le Style Marquee */
+        .marquee-wrapper {
+          overflow: hidden;
+          white-space: nowrap;
+          border-top: 1px solid #E5E5E5;
+          border-bottom: 1px solid #E5E5E5;
+          padding: 24px 0;
+          margin-top: 15vh;
+          background: #fff;
+        }
+
+        .marquee-content {
+          display: inline-block;
+          animation: marquee 25s linear infinite;
+          font-family: var(--font-body);
+          font-size: 1.5rem;
+          color: #000;
+          text-transform: uppercase;
+          letter-spacing: 4px;
+        }
+
+        @keyframes marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
 
         /* Lightbox (Unchanged - Keeps the 100MB viewing experience intact) */
         .lightbox-overlay {
@@ -186,12 +230,13 @@ export default function PortfolioShoot() {
         {images.length === 0 ? (
           <p style={{ textAlign: 'center', color: '#999', fontStyle: 'italic' }}>Archive empty.</p>
         ) : (
-          images.map((img) => {
-            // Format number as 01, 02, etc.
+          images.map((img, index) => {
+            const currentNum = String(index + 1).padStart(2, '0')
+            const totalNum = String(totalImages).padStart(2, '0')
 
             return (
               <div key={img.id} className="exhibition-item">
-                
+                <div className="exhibition-counter">{currentNum} / {totalNum}</div>
 
                 <button
                   type="button"
@@ -215,6 +260,12 @@ export default function PortfolioShoot() {
             )
           })
         )}
+      </div>
+
+      <div className="marquee-wrapper" aria-hidden="true">
+        <div className="marquee-content">
+          BOOK A SESSION AT JONATHAN PHOTOGRAPHY • INQUIRE FOR AVAILABILITY • BOOK A SESSION AT JONATHAN PHOTOGRAPHY • INQUIRE FOR AVAILABILITY • BOOK A SESSION AT JONATHAN PHOTOGRAPHY • INQUIRE FOR AVAILABILITY • BOOK A SESSION AT JONATHAN PHOTOGRAPHY • INQUIRE FOR AVAILABILITY •
+        </div>
       </div>
 
       {/* =========================================

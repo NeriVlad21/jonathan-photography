@@ -107,8 +107,8 @@ export default function Home() {
 
           <div className="home-about__label">{content.about.skillsLabel}</div>
           <ol className="home-about__skills" aria-label="Creative services">
-            {content.about.skills.map((item) => (
-              <li key={item}>{item}</li>
+            {content.about.skills.map((item, index) => (
+              <li key={item}><span>{String(index + 1).padStart(2, '0')}</span>{item}</li>
             ))}
           </ol>
 
@@ -156,8 +156,9 @@ export default function Home() {
             action={<Link to="/services" className="text-link">{content.servicesHome.linkLabel}</Link>}
           />
           <div className="service-list">
-            {services.map((s) => (
+            {services.map((s, i) => (
               <Link className="service-row service-row--link" to={`/booking?service=${encodeURIComponent(s.slug || s.name)}#estimator`} key={s.id}>
+                <span className="service-row__num">{String(i + 1).padStart(2, '0')}</span>
                 <div>
                   <div className="display service-row__name">{s.name}</div>
                 </div>
