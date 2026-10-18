@@ -1,15 +1,14 @@
 import { useEffect, useRef } from 'react'
-import { Music2, Pause, Play, SkipBack, SkipForward, Square } from 'lucide-react'
+import { Music2, Pause, Play, SkipBack, SkipForward } from 'lucide-react'
 import { useMusicPlayer } from '../context/MusicPlayerContext.jsx'
 
 export default function PersistentMusicPlayer() {
   const iframeRef = useRef(null)
   const {
     selectedSong,
-    isOpen,
+    hasStarted,
     isPlaying,
     togglePlayback,
-    stopPlayback,
     nextSong,
     previousSong
   } = useMusicPlayer()
@@ -23,15 +22,13 @@ export default function PersistentMusicPlayer() {
   }
 
   useEffect(() => {
-    if (!isOpen) return
+    if (!hasStarted) return
     command(isPlaying ? 'playVideo' : 'pauseVideo')
-  }, [isOpen, isPlaying])
-
-  if (!isOpen) return null
+  }, [hasStarted, isPlaying])
 
   return (
-    <aside className="persistent-player is-open" aria-label="Floating music controls">
-      <iframe
+    <aside className="persistent-player is-open" aria-label="Music player">
+      {hasStarted && <iframe
         ref={iframeRef}
         key={selectedSong.youtubeId}
         className="persistent-player__engine"
@@ -39,7 +36,7 @@ export default function PersistentMusicPlayer() {
         src={`https://www.youtube-nocookie.com/embed/${selectedSong.youtubeId}?autoplay=1&enablejsapi=1&playsinline=1&rel=0`}
         allow="autoplay; encrypted-media"
         onLoad={() => command(isPlaying ? 'playVideo' : 'pauseVideo')}
-      />
+      />}
       <div className="persistent-player__pill">
         <Music2 className="persistent-player__note" size={16} aria-hidden="true" />
         <span className="persistent-player__title" title={`${selectedSong.title} — ${selectedSong.artist}`}>{selectedSong.title}</span>
@@ -49,7 +46,6 @@ export default function PersistentMusicPlayer() {
             {isPlaying ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" />}
           </button>
           <button type="button" onClick={nextSong} aria-label="Next song"><SkipForward size={15} /></button>
-          <button type="button" onClick={() => { command('stopVideo'); stopPlayback() }} aria-label="Stop song"><Square size={12} fill="currentColor" /></button>
         </span>
       </div>
     </aside>

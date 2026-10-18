@@ -16,12 +16,15 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
     if ($admin['role'] === 'SUPER_ADMIN') {
+        // Archived reports are excluded unless the Super Admin explicitly asks for
+        // them (Support Reports "Archived" filter); the default response is unchanged.
+        $includeArchived = ($_GET['include_archived'] ?? '') === '1';
         $stmt = $pdo->query(
             "SELECT r.*, a.username AS submitted_by_username, a.email AS submitted_by_email
              FROM support_reports r
              JOIN admins a ON a.id = r.submitted_by_admin_id
-             WHERE r.archived_at IS NULL
-             ORDER BY FIELD(r.status, 'OPEN','IN_PROGRESS','RESOLVED','CLOSED'),
+             " . ($includeArchived ? '' : 'WHERE r.archived_at IS NULL') . "
+             ORDER BY (r.archived_at IS NOT NULL), FIELD(r.status, 'OPEN','IN_PROGRESS','RESOLVED','CLOSED'),
                       FIELD(r.priority, 'URGENT','NORMAL'), r.created_at DESC"
         );
     } else {

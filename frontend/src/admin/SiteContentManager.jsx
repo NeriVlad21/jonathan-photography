@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AlertTriangle, ImageUp, Plus, Save, Trash2 } from 'lucide-react'
 import { assetUrl, portfolioApi, siteContentApi } from '../services/api.js'
-import { DEFAULT_SITE_CONTENT, mergeSiteContent } from '../content/defaultSiteContent.js'
+import { DEFAULT_SITE_CONTENT, getSkillItems, mergeSiteContent } from '../content/defaultSiteContent.js'
 import { useToast } from '../context/ToastContext.jsx'
 import { preparePublicPreview } from '../utils/publicPreview.js'
 
@@ -91,6 +91,16 @@ export default function SiteContentManager() {
     set(path, items)
   }
   const removeItem = (path, index) => set(path, path.split('.').reduce((obj, part) => obj[part], content).filter((_, i) => i !== index))
+  // "What I do": edit title + description pairs; `about.skills` keeps the titles in
+  // step for anything that still reads the older title-only list.
+  // Use the saved list as-is while editing (a new item starts untitled); fall back to
+  // the derived list for records saved before descriptions existed.
+  const skillItems = content.about.skillItems?.length ? content.about.skillItems : getSkillItems(content.about)
+  const setSkillItems = (items) => {
+    set('about.skillItems', items)
+    set('about.skills', items.map((item) => item.title.trim()).filter(Boolean))
+  }
+  const updateSkill = (index, key, value) => setSkillItems(skillItems.map((item, i) => (i === index ? { ...item, [key]: value } : item)))
 
   const activeWarnings = (CONTENT_TABS.find((tab) => tab.id === activeTab)?.id === 'home'
     ? ['brand', 'navigation', 'hero', 'introduction', 'about', 'selectedWork', 'servicesHome', 'estimatorCta']
@@ -144,7 +154,7 @@ export default function SiteContentManager() {
     <section className={`cms-card ${activeTab === 'home' && homePanel === 'hero' ? 'is-active' : ''}`}><h2>Brand & hero</h2><div className="cms-grid">
       <Field label="Brand name" value={content.brand.name} maxLength={30} onChange={(v) => set('brand.name', v)} />
       <Field label="Brand accent" value={content.brand.accent} maxLength={30} onChange={(v) => set('brand.accent', v)} />
-      <Field label="Studio address" value={content.brand.address} maxLength={220} multiline onChange={(v) => set('brand.address', v)} />
+      <Field label="Studio address" value={content.brand.address} maxLength={220} multiline help="The one studio address. It appears in the About section, Contact page, footer and map, and is used for booking emails and new invoices." onChange={(v) => set('brand.address', v)} />
       <Field label="Hero eyebrow" value={content.hero.eyebrow} maxLength={70} onChange={(v) => set('hero.eyebrow', v)} />
       <Field label="Hero title" value={content.hero.title} maxLength={90} multiline help="Use one line break where you want the title to wrap." onChange={(v) => set('hero.title', v)} />
       <Field label="Hero description" value={content.hero.subtitle} maxLength={240} multiline onChange={(v) => set('hero.subtitle', v)} />
@@ -163,14 +173,14 @@ export default function SiteContentManager() {
       <Field label="Who I am label" value={content.about.whoLabel} maxLength={40} onChange={(v) => set('about.whoLabel', v)} />
       {content.about.whoParagraphs.map((value, index) => <Field key={index} label={`Who I am paragraph ${index + 1}`} value={value} maxLength={900} multiline onChange={(v) => { const a = [...content.about.whoParagraphs]; a[index] = v; set('about.whoParagraphs', a) }} />)}
       <Field label="Skills label" value={content.about.skillsLabel} maxLength={40} onChange={(v) => set('about.skillsLabel', v)} />
-      <Field label="Skills (one per line)" value={content.about.skills.join('\n')} maxLength={240} multiline onChange={(v) => set('about.skills', v.split('\n').map((x) => x.trim()).filter(Boolean).slice(0, 8))} />
-      <Field label="Location label" value={content.about.locationLabel} maxLength={50} onChange={(v) => set('about.locationLabel', v)} />
-      <Field label="Location story" value={content.about.locationText} maxLength={900} multiline onChange={(v) => set('about.locationText', v)} />
-      <Field label="About link" value={content.about.linkLabel} maxLength={70} onChange={(v) => set('about.linkLabel', v)} />
-    </div></section>
+      <Field label="Studio location label" value={content.about.studioLocationLabel} maxLength={40} help="Shown beside the studio address from Brand & hero." onChange={(v) => set('about.studioLocationLabel', v)} />
+      <Field label="Location story" value={content.about.locationText} maxLength={900} multiline help="Shown under the studio address. Avoid writing a different address here." onChange={(v) => set('about.locationText', v)} />
+    </div>
+    <div className="cms-card__head cms-card__head--sub"><div><h3>What I do</h3><p>Each item shows a title and a short description. Up to 8 items.</p></div><button type="button" className="btn btn--outline" disabled={skillItems.length >= 8} onClick={() => setSkillItems([...skillItems, { title: '', description: '' }])}><Plus size={16} /> Add item</button></div>
+    <div className="cms-repeat">{skillItems.map((item, index) => <div className="cms-repeat__row cms-repeat__row--faq" key={index}><Field label={`Item ${index + 1} title`} value={item.title} maxLength={40} onChange={(v) => updateSkill(index, 'title', v)} /><Field label="Description" value={item.description} maxLength={180} multiline onChange={(v) => updateSkill(index, 'description', v)} /><button type="button" aria-label={`Remove ${item.title || 'item'}`} disabled={skillItems.length <= 1} onClick={() => setSkillItems(skillItems.filter((_, i) => i !== index))}><Trash2 size={18} /></button></div>)}</div>
+    </section>
 
     <section className={`cms-card ${activeTab === 'home' && homePanel === 'sections' ? 'is-active' : ''}`}><h2>Homepage section headings</h2><div className="cms-grid">
-      <Field label="Selected work eyebrow" value={content.selectedWork.eyebrow} maxLength={50} onChange={(v) => set('selectedWork.eyebrow', v)} />
       <Field label="Selected work heading" value={content.selectedWork.title} maxLength={80} onChange={(v) => set('selectedWork.title', v)} />
       <Field label="Selected work description" value={content.selectedWork.description} maxLength={240} multiline onChange={(v) => set('selectedWork.description', v)} />
       <Field label="Selected work link" value={content.selectedWork.linkLabel} maxLength={45} onChange={(v) => set('selectedWork.linkLabel', v)} />
@@ -227,6 +237,6 @@ export default function SiteContentManager() {
       <Field label="Booking notice" value={content.bookingPage.notice} maxLength={520} multiline onChange={(v) => set('bookingPage.notice', v)} />
     </div></section>
 
-    <style>{`.cms-page{display:grid;gap:24px;max-width:1180px}.cms-header,.cms-card__head{display:flex;align-items:flex-start;justify-content:space-between;gap:24px}.cms-header h1{font-size:clamp(2rem,4vw,3.25rem);margin:6px 0}.cms-header p,.cms-card p{color:#6b6861}.cms-card{background:#fff;border:1px solid #ddd9cf;border-radius:20px;padding:clamp(20px,3vw,34px);box-shadow:0 10px 35px rgba(30,27,20,.05)}.cms-card h2{font-size:1.45rem;margin:0 0 20px}.cms-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.cms-subgroup{display:grid;gap:10px;padding:14px;background:#f5f3ed;border-radius:14px}.cms-field{display:grid;gap:7px;position:relative}.cms-field>span{font-weight:750}.cms-field small{color:#716d65}.cms-field input,.cms-field textarea{width:100%;border:1px solid #c9c4ba;border-radius:10px;padding:12px 14px;font:inherit;background:#faf9f5;resize:vertical}.cms-field em{font-size:.72rem;color:#888;font-style:normal;text-align:right}.cms-upload{display:flex;gap:16px;align-items:center;margin-top:20px}.cms-upload img{width:160px;aspect-ratio:16/10;object-fit:cover;border-radius:12px}.cms-repeat{display:grid;gap:12px;margin:18px 0}.cms-repeat__row{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end;padding:14px;background:#f5f3ed;border-radius:14px}.cms-repeat__row--faq{grid-template-columns:1fr 2fr auto}.cms-repeat__row>button{width:42px;height:42px;border:1px solid #d7d2c8;border-radius:50%;background:#fff;display:grid;place-items:center;margin-bottom:24px}.cms-checks{border:1px solid #ddd8ce;border-radius:12px;padding:16px;margin-top:20px;display:flex;gap:16px;flex-wrap:wrap}.cms-checks label{display:flex;gap:8px;align-items:center}.cms-page .btn{display:inline-flex;gap:8px;align-items:center;justify-content:center}@media(max-width:760px){.cms-header,.cms-card__head{display:grid}.cms-header .btn{width:100%}.cms-grid,.cms-repeat__row,.cms-repeat__row--faq{grid-template-columns:1fr}.cms-repeat__row>button{margin:0}.cms-upload{align-items:stretch;flex-direction:column}.cms-upload img{width:100%}}`}</style>
+    <style>{`.cms-page{display:grid;gap:24px;max-width:1180px}.cms-header,.cms-card__head{display:flex;align-items:flex-start;justify-content:space-between;gap:24px}.cms-header h1{font-size:clamp(2rem,4vw,3.25rem);margin:6px 0}.cms-header p,.cms-card p{color:#6b6861}.cms-card{background:#fff;border:1px solid #ddd9cf;border-radius:20px;padding:clamp(20px,3vw,34px);box-shadow:0 10px 35px rgba(30,27,20,.05)}.cms-card h2{font-size:1.45rem;margin:0 0 20px}.cms-card__head--sub{margin-top:26px;padding-top:20px;border-top:1px solid #e6e2d9}.cms-card__head--sub h3{margin:0 0 4px;font-size:1.1rem}.cms-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.cms-subgroup{display:grid;gap:10px;padding:14px;background:#f5f3ed;border-radius:14px}.cms-field{display:grid;gap:7px;position:relative}.cms-field>span{font-weight:750}.cms-field small{color:#716d65}.cms-field input,.cms-field textarea{width:100%;border:1px solid #c9c4ba;border-radius:10px;padding:12px 14px;font:inherit;background:#faf9f5;resize:vertical}.cms-field em{font-size:.72rem;color:#888;font-style:normal;text-align:right}.cms-upload{display:flex;gap:16px;align-items:center;margin-top:20px}.cms-upload img{width:160px;aspect-ratio:16/10;object-fit:cover;border-radius:12px}.cms-repeat{display:grid;gap:12px;margin:18px 0}.cms-repeat__row{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end;padding:14px;background:#f5f3ed;border-radius:14px}.cms-repeat__row--faq{grid-template-columns:1fr 2fr auto}.cms-repeat__row>button{width:42px;height:42px;border:1px solid #d7d2c8;border-radius:50%;background:#fff;display:grid;place-items:center;margin-bottom:24px}.cms-checks{border:1px solid #ddd8ce;border-radius:12px;padding:16px;margin-top:20px;display:flex;gap:16px;flex-wrap:wrap}.cms-checks label{display:flex;gap:8px;align-items:center}.cms-page .btn{display:inline-flex;gap:8px;align-items:center;justify-content:center}@media(max-width:760px){.cms-header,.cms-card__head{display:grid}.cms-header .btn{width:100%}.cms-grid,.cms-repeat__row,.cms-repeat__row--faq{grid-template-columns:1fr}.cms-repeat__row>button{margin:0}.cms-upload{align-items:stretch;flex-direction:column}.cms-upload img{width:100%}}`}</style>
   </div>
 }

@@ -2731,3 +2731,86 @@ html { scrollbar-gutter: stable; }
 .public-shell .booking-review { scroll-margin-top: 88px; }
 .public-shell .booking-review__heading h3:focus { outline: none; }
 .public-shell .booking-review__grid :is(dd, strong, span, div) { min-width: 0; overflow-wrap: anywhere; }
+
+/* ============================================================
+   OWNER REVISIONS — October 2026
+   ============================================================ */
+
+/* "What I do": an informational list (title + description), not button-like chips. */
+.public-shell .home-about__skills { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 clamp(24px, 4vw, 48px); border-top: 1px solid var(--c-hairline); }
+.public-shell .home-about__skills li,
+.public-shell .home-about__skills li:first-child {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  min-height: 0;
+  padding: 16px 0;
+  border: 0;
+  border-bottom: 1px solid var(--c-hairline);
+  border-radius: 0;
+  background: none;
+  font-size: inherit;
+  font-weight: inherit;
+}
+.public-shell .home-about__skill-index { padding-top: 4px; color: var(--c-gray); font-size: .72rem; font-weight: 700; letter-spacing: .08em; }
+.public-shell .home-about__skill-title { margin: 0; color: var(--c-black); font-size: clamp(1rem, 1.3vw, 1.12rem); font-weight: 700; line-height: 1.3; letter-spacing: -.01em; }
+.public-shell .home-about__skill-desc { max-width: 46ch; margin: 4px 0 0; color: #5F5F5A; font-size: .94rem; line-height: 1.55; }
+@media (max-width: 760px) {
+  .public-shell .home-about__skills { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Studio address: one source (brand.address), wraps without breaking words. */
+.studio-address { font-style: normal; overflow-wrap: break-word; word-break: normal; }
+.public-shell .home-about__description .studio-address { margin: 0 0 14px; color: var(--c-black); font-weight: 650; }
+
+/* Footer: navigation, contact, and one studio block (address + map). */
+.public-shell .footer__cols { grid-template-columns: minmax(110px, .7fr) minmax(110px, .7fr) minmax(220px, 1.3fr); }
+.public-shell .footer__studio .studio-address { margin: 0 0 14px; color: rgba(247,247,245,.82); font-size: clamp(.88rem, .84rem + .12vw, .96rem); line-height: 1.55; }
+.footer__map { width: 100%; max-width: 420px; aspect-ratio: 16 / 10; max-height: 220px; overflow: hidden; border: 1px solid var(--c-hairline-on-dark); border-radius: var(--radius); background: #161616; }
+.footer__map iframe { display: block; width: 100%; height: 100%; border: 0; }
+.public-shell .footer__col .footer__map-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin: 6px 0 0; padding: 0; color: var(--c-yellow); font-size: .86rem; }
+@media (max-width: 1024px) {
+  .public-shell .footer__cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .public-shell .footer__cols .footer__studio { grid-column: 1 / -1; }
+  .footer__map { max-width: 100%; max-height: 240px; }
+}
+@media (max-width: 560px) {
+  .public-shell .footer__cols { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 20px; }
+  .footer__map { aspect-ratio: 4 / 3; }
+}
+
+/* Contact page: the same studio address as the About section and footer. */
+.contact-studio { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px 16px; max-width: 980px; margin: 28px auto 0; padding: 18px 0; border-top: 1px solid var(--c-hairline); }
+.contact-studio > svg { color: var(--c-yellow-dim); }
+.contact-studio__label { margin: 0 0 2px; color: var(--c-gray); font-size: .78rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.contact-studio .studio-address { color: var(--c-black); font-size: 1rem; line-height: 1.5; }
+@media (max-width: 640px) {
+  .contact-studio { grid-template-columns: auto minmax(0, 1fr); }
+  .contact-studio .text-link { grid-column: 2; justify-self: start; }
+}
+
+/* FAQ: a chevron that points down when closed and up when open.
+   <details>/<summary> keeps the native expanded/collapsed announcement;
+   the whole summary row is the touch target. */
+.public-shell .faq__question { min-height: 44px; }
+.public-shell .faq__toggle {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  border-radius: 0;
+  background: none;
+  color: var(--c-black);
+  transition: transform var(--dur-fast) var(--ease-editorial);
+}
+.public-shell .faq__question:hover .faq__toggle { background: none; color: var(--c-yellow-dim); }
+.public-shell .faq__item[open] .faq__toggle { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) { .public-shell .faq__toggle { transition: none; } }
+
+/* The soundtrack player is always present on public pages. On phones it must
+   never sit on top of form actions or the sticky estimate, so the page keeps a
+   strip of space for it and sticky elements ride above it. */
+@media (max-width: 760px) {
+  .public-shell { --player-clearance: calc(68px + env(safe-area-inset-bottom)); padding-bottom: var(--player-clearance); }
+  .public-shell .estimate-mobile-bar { bottom: var(--player-clearance); }
+}

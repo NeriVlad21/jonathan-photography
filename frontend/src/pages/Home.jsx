@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { getSkillItems } from '../content/defaultSiteContent.js'
+import { getStudioAddress } from '../utils/studioLocation.js'
 import { Link, useLocation } from 'react-router-dom'
 import { Play } from 'lucide-react'
 import Hero from '../components/Hero.jsx'
@@ -23,6 +25,8 @@ export default function Home() {
   const [services, setServices] = useState([])
   const { songs, selectedSong, selectSong, openPlayer } = useMusicPlayer()
   const content = useSiteContent()
+  const skillItems = getSkillItems(content.about)
+  const studioAddress = getStudioAddress(content)
 
   useEffect(() => {
     portfolioApi.categories().then((c) => {
@@ -105,18 +109,26 @@ export default function Home() {
             {content.about.whoParagraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
           </div>
 
-          <div className="home-about__label">{content.about.skillsLabel}</div>
-          <ol className="home-about__skills" aria-label="Creative services">
-            {content.about.skills.map((item, index) => (
-              <li key={item}><span>{String(index + 1).padStart(2, '0')}</span>{item}</li>
+          <div className="home-about__label" id="about-skills-label">{content.about.skillsLabel}</div>
+          <ol className="home-about__skills" aria-labelledby="about-skills-label">
+            {skillItems.map((item, index) => (
+              <li key={`${item.title}-${index}`}>
+                <span className="home-about__skill-index" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+                <div>
+                  <h3 className="home-about__skill-title">{item.title}</h3>
+                  {item.description && <p className="home-about__skill-desc">{item.description}</p>}
+                </div>
+              </li>
             ))}
           </ol>
 
-          <div className="home-about__label">{content.about.locationLabel}</div>
-          <div className="home-about__description">
-            <p>{content.about.locationText}</p>
-            <Link to="/portfolio" className="text-link">{content.about.linkLabel}</Link>
-          </div>
+          {studioAddress && <>
+            <div className="home-about__label">{content.about.studioLocationLabel}</div>
+            <div className="home-about__description">
+              <address className="studio-address">{studioAddress}</address>
+              {content.about.locationText && <p>{content.about.locationText}</p>}
+            </div>
+          </>}
 
         </div>
       </section>
@@ -125,7 +137,6 @@ export default function Home() {
       <section id="selected-work" className="section section--tight">
         <div className="container">
           <SectionHeader
-            eyebrow={content.selectedWork.eyebrow}
             title={content.selectedWork.title}
             desc={content.selectedWork.description}
             action={<Link to="/portfolio" className="text-link">{content.selectedWork.linkLabel}</Link>}

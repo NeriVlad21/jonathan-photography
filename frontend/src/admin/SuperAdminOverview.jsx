@@ -48,7 +48,7 @@ export default function SuperAdminOverview() {
 
         <div className="super-admin-stats">
           <article><WalletCards size={20}/><span>Platform fees due</span><strong>{peso(data.total_due)}</strong><small>{data.overdue_cycles} overdue cycle(s)</small></article>
-          <article><AlertTriangle size={20}/><span>Open support reports</span><strong>{data.open_support_reports}</strong><small>Open or in progress</small></article>
+          <article><AlertTriangle size={20}/><span>Active support reports</span><strong>{data.open_support_reports}</strong><small>New or in progress</small></article>
           <article><UserRoundCog size={20}/><span>Current owner</span><strong>{data.owner?.username || 'Not assigned'}</strong><small>{data.owner?.email || 'Transfer ownership to create one'}</small></article>
         </div>
 
@@ -58,7 +58,7 @@ export default function SuperAdminOverview() {
             <form onSubmit={(event) => { event.preventDefault(); run('notification', { action: 'notification_email', ...notification }, () => setNotification((v) => ({ ...v, super_admin_password: '' }))) }}>
               <label>Recipient email<input type="email" required maxLength="160" value={notification.email} onChange={(e)=>setNotification({...notification,email:e.target.value})}/></label>
               <label>Confirm with your password<input type="password" required autoComplete="current-password" value={notification.super_admin_password} onChange={(e)=>setNotification({...notification,super_admin_password:e.target.value})}/></label>
-              <button className="btn btn--primary" disabled={saving !== ''}>{saving === 'notification' ? 'Saving…' : 'Update recipient'}</button>
+              <button className="btn admin-btn--primary" disabled={saving !== ''}>{saving === 'notification' ? 'Saving…' : 'Update recipient'}</button>
             </form>
           </section>
 
@@ -68,7 +68,7 @@ export default function SuperAdminOverview() {
               <label>New temporary password<input type="password" required minLength="12" value={reset.new_password} onChange={(e)=>setReset({...reset,new_password:e.target.value})}/></label>
               <label>Confirm new password<input type="password" required minLength="12" value={reset.confirm_password} onChange={(e)=>setReset({...reset,confirm_password:e.target.value})}/></label>
               <label>Confirm with your password<input type="password" required autoComplete="current-password" value={reset.super_admin_password} onChange={(e)=>setReset({...reset,super_admin_password:e.target.value})}/></label>
-              <button className="btn btn--secondary" disabled={saving !== ''}>{saving === 'reset' ? 'Resetting…' : 'Reset owner password'}</button>
+              <button className="btn admin-btn--secondary" disabled={saving !== ''}>{saving === 'reset' ? 'Resetting…' : 'Reset owner password'}</button>
             </form>
           </section>
         </div>
@@ -82,7 +82,7 @@ export default function SuperAdminOverview() {
             <label>Confirm temporary password<input type="password" required minLength="12" value={transfer.confirm_password} onChange={(e)=>setTransfer({...transfer,confirm_password:e.target.value})}/></label>
             <label className="super-admin-check"><input type="checkbox" checked={transfer.use_as_notification_email} onChange={(e)=>setTransfer({...transfer,use_as_notification_email:e.target.checked})}/>Send booking notifications to the new owner email</label>
             <label>Confirm with your Super Admin password<input type="password" required autoComplete="current-password" value={transfer.super_admin_password} onChange={(e)=>setTransfer({...transfer,super_admin_password:e.target.value})}/></label>
-            <div className="super-admin-transfer__action"><button className="btn btn--primary" disabled={saving !== ''}>{saving === 'transfer' ? 'Transferring…' : 'Transfer ownership'}</button></div>
+            <div className="super-admin-transfer__action"><button className="btn admin-btn--danger" disabled={saving !== ''}>{saving === 'transfer' ? 'Transferring…' : 'Transfer ownership'}</button></div>
           </form>
         </section>
 

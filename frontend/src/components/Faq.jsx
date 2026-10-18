@@ -1,3 +1,4 @@
+import { ChevronDown } from 'lucide-react'
 import { useSiteContent } from '../context/SiteContentContext.jsx'
 
 const FALLBACK_FAQS = [
@@ -41,7 +42,7 @@ export default function Faq() {
             <details className="faq__item" key={question}>
               <summary className="faq__question">
                 <span>{question}</span>
-                <span className="faq__toggle" aria-hidden="true">+</span>
+                <span className="faq__toggle" aria-hidden="true"><ChevronDown size={22} strokeWidth={2} /></span>
               </summary>
               <p className="faq__answer">{answer}</p>
             </details>

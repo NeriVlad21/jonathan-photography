@@ -1973,3 +1973,138 @@ body .admin-login-page {
 @media (min-width: 901px) and (pointer: coarse) {
   .admin-shell .admin-sidebar__link { min-height: 44px; }
 }
+
+/* Account card = the single route to Profile for both roles. */
+.admin-shell .admin-sidebar__profile-action { display: block; margin-top: 2px; color: var(--c-yellow); font-size: .74rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.admin-shell .admin-sidebar__profile.is-active { background: rgba(255,255,255,.1); outline: 1px solid rgba(242,203,5,.55); }
+.admin-shell .admin-sidebar__profile { min-height: 44px; border-radius: 4px; }
+
+/* ============================================================
+   ACTION HIERARCHY (Admin + Super Admin)
+   primary = yellow/black · secondary = white/black outline ·
+   neutral = view actions · warning = flag/advisory · danger = destructive
+   ============================================================ */
+.admin-shell .btn,
+.admin-dialog .btn { min-height: 40px; padding: 8px 16px; border-radius: 4px; gap: 8px; line-height: 1.15; }
+.admin-shell .btn > svg,
+.admin-dialog .btn > svg { flex: 0 0 auto; width: 16px; height: 16px; }
+.admin-shell .btn.admin-btn--primary,
+.admin-dialog .btn.admin-btn--primary { background: var(--c-yellow); border-color: var(--c-yellow); color: var(--c-black); }
+.admin-shell .btn.admin-btn--primary:hover:not(:disabled),
+.admin-dialog .btn.admin-btn--primary:hover:not(:disabled) { background: var(--c-black); border-color: var(--c-black); color: var(--c-yellow); }
+.admin-shell .btn.admin-btn--secondary,
+.admin-dialog .btn.admin-btn--secondary,
+.admin-dialog .btn.btn--secondary { background: #fff; border-color: var(--c-black); color: var(--c-black); }
+.admin-shell .btn.admin-btn--secondary:hover:not(:disabled),
+.admin-dialog .btn.btn--secondary:hover:not(:disabled) { background: var(--c-black); color: #fff; }
+.admin-shell .btn.admin-btn--neutral { background: #F1F0EC; border-color: #D9D7CF; color: var(--c-black); }
+.admin-shell .btn.admin-btn--neutral:hover:not(:disabled) { background: #E6E4DD; border-color: #BDBAB1; }
+.admin-shell .btn.admin-btn--warning,
+.admin-dialog .btn.admin-btn--warning { background: #FFF4C2; border-color: #A88D00; color: #3D3100; }
+.admin-shell .btn.admin-btn--warning:hover:not(:disabled),
+.admin-dialog .btn.admin-btn--warning:hover:not(:disabled) { background: #FBE58A; }
+.admin-shell .btn.admin-btn--danger,
+.admin-dialog .btn.admin-btn--danger { background: #B3261E; border-color: #B3261E; color: #fff; }
+.admin-shell .btn.admin-btn--danger:hover:not(:disabled),
+.admin-dialog .btn.admin-btn--danger:hover:not(:disabled) { background: #8E1E18; border-color: #8E1E18; }
+.admin-shell .btn:disabled,
+.admin-dialog .btn:disabled { background: #ECEAE4; border-color: #DDD9CF; color: #85827A; opacity: 1; cursor: not-allowed; transform: none; }
+@media (pointer: coarse), (max-width: 760px) {
+  .admin-shell .btn,
+  .admin-dialog .btn { min-height: 44px; }
+}
+
+/* Shared button row: consistent gaps, wraps on tablets, full width on phones. */
+.admin-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.admin-actions--end { justify-content: flex-end; }
+.admin-actions__spacer { flex: 1 1 auto; }
+@media (max-width: 560px) {
+  .admin-actions { align-items: stretch; }
+  .admin-actions > .btn { flex: 1 1 100%; justify-content: center; }
+  .admin-actions__spacer { display: none; }
+}
+
+/* ============================================================
+   SHARED DIALOG
+   ============================================================ */
+.admin-dialog-backdrop { position: fixed; inset: 0; z-index: 400; display: grid; place-items: center; padding: 16px; background: rgba(10,10,10,.55); }
+.admin-dialog { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; width: 100%; max-height: calc(100svh - 32px); border: 1px solid #D9D7CF; border-radius: 6px; background: #fff; color: var(--c-black); box-shadow: 0 18px 48px rgba(0,0,0,.22); outline: none; }
+.admin-dialog--sm { max-width: 440px; }
+.admin-dialog--md { max-width: 540px; }
+.admin-dialog__header { padding: 22px 24px 0; }
+.admin-dialog__header h2 { margin: 0; font-size: 1.15rem; font-weight: 750; letter-spacing: -.01em; line-height: 1.3; }
+.admin-dialog__header p { margin: 6px 0 0; color: #5F5F5A; font-size: .9rem; line-height: 1.5; }
+.admin-dialog__body { display: grid; gap: 16px; padding: 18px 24px; overflow-y: auto; }
+.admin-dialog__footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px 10px; padding: 14px 24px 20px; border-top: 1px solid #ECEAE4; }
+.admin-dialog__summary { display: grid; gap: 0; margin: 0; border-top: 1px solid #ECEAE4; }
+.admin-dialog__summary > div { display: grid; grid-template-columns: minmax(96px, 30%) minmax(0, 1fr); gap: 12px; padding: 8px 0; border-bottom: 1px solid #ECEAE4; }
+.admin-dialog__summary dt { color: #6B6861; font-size: .8rem; font-weight: 600; }
+.admin-dialog__summary dd { margin: 0; font-size: .88rem; line-height: 1.45; overflow-wrap: break-word; }
+.admin-dialog__field { display: grid; gap: 6px; }
+.admin-dialog__field label { display: flex; align-items: baseline; gap: 8px; font-size: .88rem; font-weight: 650; }
+.admin-dialog__marker { color: #6B6861; font-size: .72rem; font-weight: 600; }
+.admin-dialog__field input,
+.admin-dialog__field select,
+.admin-dialog__field textarea { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #C9C4BA; border-radius: 4px; background: #fff; color: var(--c-black); font: inherit; font-size: .94rem; }
+.admin-dialog__field textarea { resize: vertical; line-height: 1.5; }
+.admin-dialog__field input:focus-visible,
+.admin-dialog__field select:focus-visible,
+.admin-dialog__field textarea:focus-visible { outline: 2px solid var(--c-black); outline-offset: 1px; }
+.admin-dialog__field.has-error input,
+.admin-dialog__field.has-error select,
+.admin-dialog__field.has-error textarea { border-color: #B3261E; }
+.admin-dialog__hint { display: flex; justify-content: space-between; gap: 12px; color: #6B6861; font-size: .78rem; }
+.admin-dialog__error { margin: 0; color: #B3261E; font-size: .82rem; font-weight: 600; }
+@media (max-width: 560px) {
+  .admin-dialog-backdrop { align-items: end; padding: 8px; }
+  .admin-dialog__header { padding: 18px 18px 0; }
+  .admin-dialog__body { padding: 14px 18px; }
+  .admin-dialog__footer { padding: 12px 18px 16px; }
+  .admin-dialog__footer .btn { flex: 1 1 140px; justify-content: center; }
+  .admin-dialog__summary > div { grid-template-columns: 1fr; gap: 2px; }
+}
+
+/* Advisory flag: restrained amber, always with the word "Flagged". */
+.status-badge--FLAGGED { background: #FFF4C2; color: #5C4A00; box-shadow: inset 0 0 0 1px #E2C64A; }
+
+/* Support report status badges (shared mapping in admin/supportStatus.jsx). */
+.support-status { display: inline-flex; align-items: center; min-height: 22px; padding: 2px 8px; border-radius: 3px; font-size: .7rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+.support-status--new { background: #E3EEFA; color: #1F4E7A; box-shadow: inset 0 0 0 1px #B7CFEA; }
+.support-status--progress { background: #FFF4C2; color: #5C4A00; box-shadow: inset 0 0 0 1px #E2C64A; }
+.support-status--resolved { background: #DBF3DE; color: #1E6B2C; box-shadow: inset 0 0 0 1px #A9D9B1; }
+.support-status--closed { background: #E5E3DD; color: #34322D; box-shadow: inset 0 0 0 1px #C9C6BE; }
+.support-status--archived { background: #F1F0EC; color: #6B6861; box-shadow: inset 0 0 0 1px #DDD9CF; }
+.support-status--urgent { background: #FBE4E2; color: #8A2222; box-shadow: inset 0 0 0 1px #E8B4AF; }
+.admin-shell .support-card__badges { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.admin-shell .support-card footer { align-items: center; }
+.admin-shell .support-form__count { display: block; margin-top: 4px; color: var(--admin-muted); font-size: .76rem; font-weight: 500; }
+
+/* Filter bar: search grows, controls stay aligned, wraps cleanly. */
+.admin-shell .support-filterbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.admin-shell .support-filterbar__search { flex: 1 1 260px; }
+.admin-shell .support-filterbar select,
+.admin-shell .support-filterbar input[type="date"] { flex: 0 1 170px; min-height: 40px; }
+.admin-shell .support-filterbar__clear { flex: 0 0 auto; }
+.admin-shell .support-empty { display: grid; justify-items: start; gap: 10px; }
+.admin-shell .support-empty p { margin: 0; }
+@media (max-width: 640px) {
+  .admin-shell .support-filterbar select,
+  .admin-shell .support-filterbar input[type="date"] { flex: 1 1 calc(50% - 4px); }
+  .admin-shell .support-filterbar__clear { flex: 1 1 100%; justify-content: center; }
+}
+.admin-shell .portfolio-admin__control-button.is-flag,
+.admin-shell .portfolio-admin__image-action.is-flag { background: #FFF4C2; border-color: #A88D00; color: #3D3100; }
+.admin-shell .portfolio-admin__control-button.is-flag:disabled,
+.admin-shell .portfolio-admin__image-action.is-flag:disabled { background: #ECEAE4; border-color: #DDD9CF; color: #85827A; }
+/* Long action labels wrap on phones instead of widening their panel. */
+@media (max-width: 560px) {
+  .admin-shell .btn { white-space: normal; text-align: center; }
+  .admin-shell .booking-status-workflow > * { min-width: 0; }
+}
+.admin-dialog__hint > span:last-child { flex: 0 0 auto; white-space: nowrap; }
+@media (max-width: 560px) {
+  .admin-shell .support-card header { flex-direction: column; gap: 8px; }
+  .admin-shell .support-card__badges { justify-content: flex-start; }
+  .admin-shell .support-card footer { flex-direction: column; align-items: stretch; gap: 10px; }
+  .admin-shell .support-card footer time { text-align: left; }
+}

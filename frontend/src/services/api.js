@@ -751,7 +751,7 @@ export const superSearchApi = {
 }
 
 export const supportApi = {
-  list: () => get('/support/reports.php'),
+  list: ({ includeArchived = false } = {}) => get(`/support/reports.php${includeArchived ? '?include_archived=1' : ''}`),
   create: (data) => post('/support/reports.php', data),
   update: (data) => put('/support/reports.php', data)
 }

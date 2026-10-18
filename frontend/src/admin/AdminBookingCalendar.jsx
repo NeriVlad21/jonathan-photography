@@ -62,7 +62,7 @@ function CalendarEventDialog({ date, events, onClose, onEventUpdated, returnLoca
                     <h3>{event.name}</h3>
                   </div>
                   <span className={`calendar-progress calendar-progress--${progress.toLowerCase()}`}>{progress}</span>
-                  {Number(event.open_flag_count) > 0 && <span className="status-badge status-badge--PENDING" title={event.latest_flag_reason}>Flagged</span>}
+                  {Number(event.open_flag_count) > 0 && <span className="status-badge status-badge--FLAGGED" title={event.latest_flag_reason}>Flagged</span>}
                 </div>
                 <dl>
                   <div><dt>Service</dt><dd>{event.shoot_type || '—'}</dd></div>
@@ -76,7 +76,7 @@ function CalendarEventDialog({ date, events, onClose, onEventUpdated, returnLoca
                 {event.message && <p>{event.message}</p>}
                 <div className="calendar-event-card__actions">
                   {event.booking_id && <Link to={`${readOnly ? '/admin/oversight/bookings' : '/admin/bookings'}/${event.booking_id}`} state={{ from: returnLocation }} className="text-link">Open booking request →</Link>}
-                  {readOnly && event.calendar_event_id && <button type="button" className="btn btn--secondary" disabled={flaggingId === event.calendar_event_id || Number(event.open_flag_count) > 0} onClick={() => onFlag(event)}>{flaggingId === event.calendar_event_id ? 'Flagging…' : Number(event.open_flag_count) > 0 ? 'Flagged' : 'Flag calendar entry'}</button>}
+                  {readOnly && event.calendar_event_id && <button type="button" className="btn admin-btn--warning" disabled={flaggingId === event.calendar_event_id || Number(event.open_flag_count) > 0} onClick={() => onFlag(event)}>{flaggingId === event.calendar_event_id ? 'Flagging…' : Number(event.open_flag_count) > 0 ? 'Flagged' : 'Flag calendar entry'}</button>}
                   {!readOnly && event.status === 'REQUESTED' && event.calendar_event_id && (
                     <div className="calendar-event-card__status-actions">
                       <button type="button" className="calendar-event-confirm" onClick={() => onEventUpdated(event.calendar_event_id, 'BOOKED')}>
@@ -286,19 +286,24 @@ function CalendarWorkspace({ archive = false, readOnly = false }) {
     }
   }
 
-  const [askReason, reasonDialog] = useReasonDialog()
+  const [openFlagDialog, reasonDialog] = useReasonDialog()
 
-  const flagEvent = async (event) => {
-    const reason = await askReason({ title: 'Flag this calendar entry' })
-    if (!reason) return
-    setFlaggingId(event.calendar_event_id)
-    try {
-      const result = await oversightApi.createFlag({ entity_type: 'CALENDAR_EVENT', entity_id: event.calendar_event_id, reason })
-      setEvents((current) => current.map((item) => item.calendar_event_id === event.calendar_event_id ? { ...item, open_flag_count: 1, latest_flag_reason: reason } : item))
-      showToast(result.message)
-    } catch (error) { showToast(error.message || 'Unable to flag this calendar entry.', 'error') }
-    finally { setFlaggingId(null) }
-  }
+  const flagEvent = (event) => openFlagDialog({
+    title: 'Flag this calendar entry',
+    summary: [
+      { label: 'Entry', value: [event.reference_code, event.shoot_type].filter(Boolean).join(' · ') },
+      { label: 'Date', value: event.event_date || event.preferred_date || event.agreed_date },
+      { label: 'Current state', value: 'No open flag' },
+    ],
+    onSubmit: async (reason) => {
+      setFlaggingId(event.calendar_event_id)
+      try {
+        const result = await oversightApi.createFlag({ entity_type: 'CALENDAR_EVENT', entity_id: event.calendar_event_id, reason })
+        setEvents((current) => current.map((item) => item.calendar_event_id === event.calendar_event_id ? { ...item, open_flag_count: 1, latest_flag_reason: reason } : item))
+        showToast(result.message)
+      } finally { setFlaggingId(null) }
+    },
+  })
 
   const exportCalendar = async () => {
     const range = archive ? 'monthly' : exportRange

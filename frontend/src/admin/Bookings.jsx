@@ -1149,7 +1149,7 @@ export default function Bookings({ readOnly = false, detailBase = '/admin/bookin
                                   'Unnamed Client'}
                               </strong>
 
-                              {Number(booking.open_flag_count) > 0 && <span className="status-badge status-badge--PENDING" title={booking.latest_flag_reason || 'Oversight warning'}>Flagged</span>}
+                              {Number(booking.open_flag_count) > 0 && <span className="status-badge status-badge--FLAGGED" title={booking.latest_flag_reason || 'Oversight warning'}>Flagged</span>}
 
                               <span className="bookings-row__email">
                                 {booking.email ||

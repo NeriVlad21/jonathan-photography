@@ -5,6 +5,7 @@ import { superArchiveApi } from '../services/api.js'
 import { useToast } from '../context/ToastContext.jsx'
 import LoadingState from '../components/LoadingState.jsx'
 import { formatDate, peso } from '../utils/format.js'
+import { SupportStatusBadge } from './supportStatus.jsx'
 
 export default function SuperAdminArchives(){
   const {showToast}=useToast();const [params,setParams]=useSearchParams();const [data,setData]=useState(null)
@@ -21,7 +22,7 @@ export default function SuperAdminArchives(){
       const entity=type==='cycles'?'cycle':type==='ledger'?'ledger':'support';const id=row.id
       const title=type==='cycles'?`${formatDate(row.cycle_start)} – ${formatDate(row.cycle_end)}`:type==='ledger'?`${row.reference_code} · ${row.name}`:`#${row.id} · ${row.subject}`
       const detail=type==='cycles'?`${peso(row.total_owed)} · ${row.booking_count} booking(s)`:type==='ledger'?`${row.invoice_number} · ${peso(row.fee_amount)}`:`${row.category} · ${row.submitted_by_username}`
-      return <article key={`${type}-${id}`}><div><span>{type.replace('reports','support report').replace('cycles','billing cycle').replace('ledger','fee ledger')}</span><h3>{title}</h3><p>{detail}</p></div><div><em>{row.status||row.cycle_status}</em><time>Archived {formatDate(row.archived_at)}</time><button className="btn btn--secondary" onClick={()=>restore(entity,id)}><ArchiveRestore size={15}/>Restore</button></div></article>}) : <div className="support-empty">No archived records match these filters.</div>}</section>
+      return <article key={`${type}-${id}`}><div><span>{type.replace('reports','support report').replace('cycles','billing cycle').replace('ledger','fee ledger')}</span><h3>{title}</h3><p>{detail}</p></div><div>{type==='reports'?<SupportStatusBadge status={row.status}/>:<em>{row.status||row.cycle_status}</em>}<time>Archived {formatDate(row.archived_at)}</time><button type="button" className="btn admin-btn--secondary" onClick={()=>restore(entity,id)}><ArchiveRestore size={15}/>Restore</button></div></article>}) : <div className="support-empty">No archived records match these filters.</div>}</section>
   </div></section>
 }
 

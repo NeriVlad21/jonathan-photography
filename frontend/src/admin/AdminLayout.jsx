@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
 import {
-  Link,
   NavLink,
   Outlet,
   useNavigate,
@@ -96,11 +95,8 @@ const NAV = [
       { to: '/admin/archive', label: 'Archive & Logs', icon: Archive },
       { to: '/admin/oversight-log', label: 'Oversight & Flags', icon: ScrollText }
     ]
-  },
-  {
-    section: 'Account',
-    links: [{ to: '/admin/profile', label: 'Profile', icon: User }]
   }
+  // Profile is reached from the account card at the foot of the sidebar only.
 ]
 
 export default function AdminLayout() {
@@ -1386,10 +1382,10 @@ export default function AdminLayout() {
 
         <div className="admin-sidebar__footer">
 
-          <Link
+          <NavLink
             to="/admin/profile"
-            className="admin-sidebar__profile"
-            aria-label="Open admin profile"
+            className={({ isActive }) => `admin-sidebar__profile ${isActive ? 'is-active' : ''}`}
+            aria-label={`${admin?.role === 'SUPER_ADMIN' ? 'Superadmin' : 'Studio'} profile and security for ${admin?.username || 'this account'}`}
           >
 
             <div className="admin-sidebar__avatar">
@@ -1413,9 +1409,11 @@ export default function AdminLayout() {
                 {admin?.username || 'Admin'}!
               </div>
 
+              <span className="admin-sidebar__profile-action">Profile &amp; security</span>
+
             </div>
 
-          </Link>
+          </NavLink>
 
           <button
             type="button"

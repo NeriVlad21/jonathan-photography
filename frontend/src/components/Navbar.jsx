@@ -2,15 +2,12 @@ import { useEffect, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { CalendarPlus, Menu, X } from 'lucide-react'
 import { useSiteContent } from '../context/SiteContentContext.jsx'
+import { PUBLIC_NAV_ORDER } from '../content/publicNavigation.js'
 
 export default function Navbar() {
   const { brand, navigation } = useSiteContent()
-  const links = [
-    { to: '/portfolio', label: navigation.work },
-    { to: '/services', label: navigation.services },
-    { to: '/#about', label: navigation.about },
-    { to: '/contact', label: navigation.contact },
-  ]
+  // Owner-requested order; the footer reuses PUBLIC_NAV_ORDER so both stay in step.
+  const links = PUBLIC_NAV_ORDER.map(({ key, to }) => ({ to, label: navigation[key] }))
   const location = useLocation()
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)

@@ -106,4 +106,11 @@ $stmt = $pdo->prepare(
      ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = CURRENT_TIMESTAMP'
 );
 $stmt->execute(['key' => CONTENT_KEY, 'value' => $json]);
+
+// brand.address is the single studio address. Booking emails and new invoices
+// read business_address, so keep it in step; an empty field never erases it.
+$studioAddress = trim((string) ($clean['brand']['address'] ?? ''));
+if ($studioAddress !== '') {
+    $stmt->execute(['key' => 'business_address', 'value' => $studioAddress]);
+}
 json_success(['content' => $clean, 'updated_at' => date('Y-m-d H:i:s')]);

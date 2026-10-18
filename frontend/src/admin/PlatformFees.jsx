@@ -7,6 +7,7 @@ import { peso, formatDate } from '../utils/format.js'
 import { FEE_RESPONSIBILITY_LABELS, formatRate } from '../utils/billing.js'
 import { useToast } from '../context/ToastContext.jsx'
 import LoadingState from '../components/LoadingState.jsx'
+import AdminDialog, { AdminDialogSummary } from '../components/AdminDialog.jsx'
 import { notifyAdminDataChanged } from '../utils/adminDataSync.js'
 import { useAdminAuth } from '../context/AdminAuthContext.jsx'
 
@@ -20,6 +21,8 @@ export default function PlatformFees() {
   const [data, setData] = useState(null)
   const canManage = data?.can_manage ?? admin?.role === 'OWNER'
   const [paying, setPaying] = useState(null)
+  const [archiving, setArchiving] = useState(null)
+  const [archiveBusy, setArchiveBusy] = useState(false)
   const [saving, setSaving] = useState(false)
   const payDialogRef = useDialog(Boolean(paying), () => { if (!saving) setPaying(null) })
   const [settingsSaving, setSettingsSaving] = useState(false)
@@ -61,10 +64,17 @@ export default function PlatformFees() {
     catch (error) { showToast(error.message || 'Unable to update the platform-fee default.', 'error') }
     finally { setSettingsSaving(false) }
   }
-  const archiveRecord = async (entity, id) => {
-    if (!window.confirm('Move this settled record to Super Admin Archives?')) return
-    try { const result = await superArchiveApi.update({ entity, id, operation: 'archive' }); showToast(result.message); await load() }
-    catch (error) { showToast(error.message || 'Unable to archive this record.', 'error') }
+  const archiveRecord = (entity, id, label) => setArchiving({ entity, id, label })
+  const confirmArchive = async () => {
+    setArchiveBusy(true)
+    try {
+      const result = await superArchiveApi.update({ entity: archiving.entity, id: archiving.id, operation: 'archive' })
+      await load()
+      setArchiveBusy(false)
+      setArchiving(null)
+      showToast(result.message)
+    } catch (error) { showToast(error.message || 'Unable to archive this record.', 'error') }
+    finally { setArchiveBusy(false) }
   }
 
   const exportCycle = async (cycle) => {
@@ -117,9 +127,22 @@ export default function PlatformFees() {
   return <section className="platform-fees-page"><div className="admin-content">
     <header className="platform-fees-hero"><div><span>Billing / Commission</span><h2>Platform Fees</h2><p>{canManage ? 'Manage client pass-through defaults and record externally settled billing cycles.' : 'Read-only ledger oversight. Only the Owner can change settings or mark a cycle paid.'}</p></div><WalletCards size={34} /></header>
     <div className="platform-fees-summary"><div><span>Total currently due</span><strong>{peso(data.total_due)}</strong></div><label>30-day cycles begin<input type="date" disabled={!canManage || settingsSaving} value={data.settings.cycle_start_date} onChange={updateStart} /></label>{canManage && <label className="platform-fee-toggle"><input type="checkbox" disabled={settingsSaving} checked={Boolean(data.settings.pass_platform_fee_to_client_default)} onChange={updatePassThrough}/> Pass platform fee to client by default</label>}</div>
-    <div className="super-filterbar"><label><Search size={16} aria-hidden="true"/><input aria-label="Search billing records" value={filters.q} onChange={(e)=>setFilters({...filters,q:e.target.value})} placeholder="Search reference, client, invoice, cycle…"/></label><select aria-label="Filter by status" value={filters.status} onChange={(e)=>setFilters({...filters,status:e.target.value})}><option value="ALL">All statuses</option><option value="OPEN">Open</option><option value="DUE">Due</option><option value="PAID">Paid</option></select><input type="date" aria-label="From date" value={filters.from} onChange={(e)=>setFilters({...filters,from:e.target.value})}/><input type="date" aria-label="To date" value={filters.to} onChange={(e)=>setFilters({...filters,to:e.target.value})}/>{Object.values(filters).some(Boolean)&&<button className="btn btn--secondary" onClick={()=>setFilters(INITIAL_FILTERS)}>Clear</button>}</div>
-    <section className="platform-fees-panel"><h3>Active billing cycles <small>{filteredCycles.length}</small></h3><div className="platform-cycle-grid">{filteredCycles.length ? filteredCycles.map((cycle) => <article key={cycle.id} className={`platform-cycle platform-cycle--${cycle.status.toLowerCase()}`}><div><span>{formatDate(cycle.cycle_start)} – {formatDate(cycle.cycle_end)}</span><strong>{peso(cycle.total_owed)}</strong><small>{cycle.booking_count} booking(s) · Due {formatDate(cycle.due_date)} · {cycle.status}</small></div><div><button className="btn btn--secondary" type="button" disabled={Boolean(exportingKey)} onClick={() => exportCycle(cycle)}><Download size={15}/>{exportingKey === `cycle-${cycle.id}` ? 'Preparing…' : 'Statement'}</button>{canManage && cycle.status !== 'PAID' && <button className="btn btn--primary" type="button" onClick={() => setPaying(cycle)}>Mark Paid</button>}{canManage && cycle.status === 'PAID' && <button className="btn btn--secondary" onClick={()=>archiveRecord('cycle',cycle.id)}><Archive size={15}/>Archive</button>}</div></article>) : <p>No active billing cycles match these filters.</p>}</div></section>
-    <section className="platform-fees-panel"><h3>Active fee ledger <small>{filteredLedger.length}</small><button type="button" className="btn btn--secondary" disabled={!filteredLedger.length || Boolean(exportingKey)} onClick={exportLedger}><Download size={15}/>{exportingKey === 'ledger' ? 'Preparing…' : 'Export range'}</button></h3><div className="platform-fee-ledger">{filteredLedger.length ? filteredLedger.map((entry) => { const content=<><span>{entry.reference_code}<small>{entry.name} · {entry.invoice_number}</small></span><span>{peso(entry.agreed_total)}<small>{formatRate(entry.fee_rate)} rate · {entry.fee_responsibility === 'CLIENT' ? 'Client pays' : 'Studio absorbs'}</small></span><strong>{peso(entry.fee_amount)}</strong><em>{entry.voided_at ? 'Voided' : entry.cycle_status}</em></>; return canManage ? <div key={entry.id} className={entry.voided_at ? 'is-voided' : ''}>{content}{(entry.voided_at||entry.cycle_status==='PAID')&&<button className="icon-btn" title="Archive fee record" onClick={()=>archiveRecord('ledger',entry.id)}><Archive size={15}/></button>}</div> : <Link key={entry.id} to={`/admin/oversight/bookings/${entry.booking_id}`} state={{ from: { ...location, state: { ...(location.state || {}), feeFilters: filters, scrollY: window.scrollY } } }} className={entry.voided_at ? 'is-voided' : ''}>{content}</Link> }) : <p>No active fee records match these filters.</p>}</div></section>
+    <div className="super-filterbar"><label><Search size={16} aria-hidden="true"/><input aria-label="Search billing records" value={filters.q} onChange={(e)=>setFilters({...filters,q:e.target.value})} placeholder="Search reference, client, invoice, cycle…"/></label><select aria-label="Filter by status" value={filters.status} onChange={(e)=>setFilters({...filters,status:e.target.value})}><option value="ALL">All statuses</option><option value="OPEN">Open</option><option value="DUE">Due</option><option value="PAID">Paid</option></select><input type="date" aria-label="From date" value={filters.from} onChange={(e)=>setFilters({...filters,from:e.target.value})}/><input type="date" aria-label="To date" value={filters.to} onChange={(e)=>setFilters({...filters,to:e.target.value})}/>{Object.values(filters).some(Boolean)&&<button type="button" className="btn admin-btn--secondary" onClick={()=>setFilters(INITIAL_FILTERS)}>Clear</button>}</div>
+    <section className="platform-fees-panel"><h3>Active billing cycles <small>{filteredCycles.length}</small></h3><div className="platform-cycle-grid">{filteredCycles.length ? filteredCycles.map((cycle) => <article key={cycle.id} className={`platform-cycle platform-cycle--${cycle.status.toLowerCase()}`}><div><span>{formatDate(cycle.cycle_start)} – {formatDate(cycle.cycle_end)}</span><strong>{peso(cycle.total_owed)}</strong><small>{cycle.booking_count} booking(s) · Due {formatDate(cycle.due_date)} · {cycle.status}</small></div><div className="admin-actions"><button className="btn admin-btn--neutral" type="button" disabled={Boolean(exportingKey)} onClick={() => exportCycle(cycle)}><Download size={15}/>{exportingKey === `cycle-${cycle.id}` ? 'Preparing…' : 'Statement'}</button>{canManage && cycle.status !== 'PAID' && <button className="btn admin-btn--primary" type="button" onClick={() => setPaying(cycle)}>Mark Paid</button>}{canManage && cycle.status === 'PAID' && <button type="button" className="btn admin-btn--secondary" onClick={()=>archiveRecord('cycle',cycle.id,`${formatDate(cycle.cycle_start)} – ${formatDate(cycle.cycle_end)} · ${peso(cycle.total_owed)}`)}><Archive size={15}/>Archive</button>}</div></article>) : <p>No active billing cycles match these filters.</p>}</div></section>
+    <section className="platform-fees-panel"><h3>Active fee ledger <small>{filteredLedger.length}</small><button type="button" className="btn btn--secondary" disabled={!filteredLedger.length || Boolean(exportingKey)} onClick={exportLedger}><Download size={15}/>{exportingKey === 'ledger' ? 'Preparing…' : 'Export range'}</button></h3><div className="platform-fee-ledger">{filteredLedger.length ? filteredLedger.map((entry) => { const content=<><span>{entry.reference_code}<small>{entry.name} · {entry.invoice_number}</small></span><span>{peso(entry.agreed_total)}<small>{formatRate(entry.fee_rate)} rate · {entry.fee_responsibility === 'CLIENT' ? 'Client pays' : 'Studio absorbs'}</small></span><strong>{peso(entry.fee_amount)}</strong><em>{entry.voided_at ? 'Voided' : entry.cycle_status}</em></>; return canManage ? <div key={entry.id} className={entry.voided_at ? 'is-voided' : ''}>{content}{(entry.voided_at||entry.cycle_status==='PAID')&&<button className="icon-btn" title="Archive fee record" onClick={()=>archiveRecord('ledger',entry.id,`${entry.reference_code} · ${peso(entry.fee_amount)}`)}><Archive size={15}/></button>}</div> : <Link key={entry.id} to={`/admin/oversight/bookings/${entry.booking_id}`} state={{ from: { ...location, state: { ...(location.state || {}), feeFilters: filters, scrollY: window.scrollY } } }} className={entry.voided_at ? 'is-voided' : ''}>{content}</Link> }) : <p>No active fee records match these filters.</p>}</div></section>
+    <AdminDialog
+      open={Boolean(archiving)}
+      size="sm"
+      title="Archive this settled record?"
+      description="Moves it to Financial Archives. It stays searchable there and can be restored at any time."
+      onClose={() => { if (!archiveBusy) setArchiving(null) }}
+      onSubmit={confirmArchive}
+      busy={archiveBusy}
+      busyLabel="Archiving…"
+      submitLabel="Archive record"
+    >
+      <AdminDialogSummary items={archiving ? [{ label: archiving.entity === 'cycle' ? 'Billing cycle' : 'Ledger entry', value: archiving.label }] : []} />
+    </AdminDialog>
     {paying && <div className="invoice-preview-modal" onMouseDown={() => !saving && setPaying(null)}><form ref={payDialogRef} role="dialog" aria-modal="true" aria-label="Mark cycle paid" onSubmit={markPaid} onMouseDown={(event) => event.stopPropagation()}><h2>Mark cycle paid</h2><p>{formatDate(paying.cycle_start)} – {formatDate(paying.cycle_end)} · {peso(paying.total_owed)}</p><label>Date paid<input type="date" required value={payment.paid_at} onChange={(e)=>setPayment({...payment,paid_at:e.target.value})}/></label><label>Note<textarea maxLength="500" rows="3" value={payment.note} onChange={(e)=>setPayment({...payment,note:e.target.value})}/></label><div className="booking-action-form__actions"><button type="button" className="btn btn--secondary" onClick={()=>setPaying(null)}>Cancel</button><button type="submit" className="btn btn--primary" disabled={saving}>{saving?'Saving…':'Confirm paid'}</button></div><small>{cycleEntries.length} fee record(s) in this statement.</small></form></div>}
   </div></section>
 }

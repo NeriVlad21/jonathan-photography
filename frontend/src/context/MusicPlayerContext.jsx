@@ -21,36 +21,35 @@ export function MusicPlayerProvider({ children }) {
   const siteContent = useSiteContent()
   const songs = siteContent.music?.songs?.length ? siteContent.music.songs : FAVORITE_SONGS
   const [selectedSong, setSelectedSong] = useState(songs[0])
-  const [isOpen, setIsOpen] = useState(false)
+  // The player is always available to visitors; `hasStarted` only controls when the
+  // YouTube engine is loaded, so nothing plays until the visitor presses play.
+  const [hasStarted, setHasStarted] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
 
   const selectAt = (index) => {
     const wrappedIndex = (index + songs.length) % songs.length
     setSelectedSong(songs[wrappedIndex])
-    setIsOpen(true)
+    setHasStarted(true)
     setIsPlaying(true)
   }
 
   const value = useMemo(() => ({
     songs,
     selectedSong,
-    isOpen,
+    hasStarted,
     isPlaying,
     selectSong(song) {
       setSelectedSong(song)
-      setIsOpen(true)
+      setHasStarted(true)
       setIsPlaying(true)
     },
     openPlayer() {
-      setIsOpen(true)
+      setHasStarted(true)
       setIsPlaying(true)
     },
     togglePlayback() {
-      setIsOpen(true)
+      setHasStarted(true)
       setIsPlaying((playing) => !playing)
-    },
-    stopPlayback() {
-      setIsPlaying(false)
     },
     nextSong() {
       selectAt(songs.findIndex((song) => song.youtubeId === selectedSong.youtubeId) + 1)
@@ -58,7 +57,7 @@ export function MusicPlayerProvider({ children }) {
     previousSong() {
       selectAt(songs.findIndex((song) => song.youtubeId === selectedSong.youtubeId) - 1)
     }
-  }), [selectedSong, isOpen, isPlaying, songs])
+  }), [selectedSong, hasStarted, isPlaying, songs])
 
   useEffect(() => {
     if (!songs.some((song) => song.youtubeId === selectedSong?.youtubeId)) setSelectedSong(songs[0])

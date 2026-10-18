@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useDialog } from '../components/useDialog.js'
+import AdminDialog, { AdminDialogField, AdminDialogSummary } from '../components/AdminDialog.jsx'
 import { AlertTriangle, Flag, Search, ShieldCheck } from 'lucide-react'
 import { assetUrl, contentOversightApi } from '../services/api.js'
 import { DEFAULT_SITE_CONTENT, mergeSiteContent } from '../content/defaultSiteContent.js'
@@ -55,7 +55,7 @@ export default function ContentOversight() {
   const [activeTab, setActiveTab] = useState('home')
   const [review, setReview] = useState(null)
   const [saving, setSaving] = useState(false)
-  const reviewDialogRef = useDialog(Boolean(review), () => { if (!saving) setReview(null) })
+  const [reasonError, setReasonError] = useState('')
   const [filters, setFilters] = useState({ q: '', status: 'ALL', from: '', to: '' })
 
   const load = () => contentOversightApi.list().then((result) => setData({ ...result, content: mergeSiteContent(result.content) })).catch((error) => showToast(error.message || 'Unable to load website content.', 'error'))
@@ -77,15 +77,29 @@ export default function ContentOversight() {
     })
   }, [activeDefinition, data, filters])
 
-  const saveWarning = async (event) => {
-    event.preventDefault()
+  const openReview = (section, status) => { setReasonError(''); setReview({ ...section, status, reason: '' }) }
+
+  const saveWarning = async () => {
+    const reason = review.reason.trim()
+    if (review.status === 'FLAGGED' && reason.length < 5) {
+      setReasonError(reason ? 'Enter at least 5 characters.' : 'Enter a reason for this warning.')
+      return
+    }
     setSaving(true)
     try {
-      const result = await contentOversightApi.update({ entity_key: review.key, status: review.status, reason: review.reason })
-      showToast(result.message)
+      const result = await contentOversightApi.update({ entity_key: review.key, status: review.status, reason })
+      // Update the affected section in place; no reload of the workspace.
+      setData((current) => {
+        const warnings = { ...(current.warnings || {}) }
+        if (result.moderation_status === 'FLAGGED') warnings[review.key] = { ...(warnings[review.key] || {}), reason: result.moderation_reason, updated_at: new Date().toISOString() }
+        else delete warnings[review.key]
+        return { ...current, warnings }
+      })
+      setSaving(false)
       setReview(null)
-      await load()
+      showToast(result.message)
     } catch (error) {
+      setReasonError(error.message || 'Unable to update the warning.')
       showToast(error.message || 'Unable to update the warning.', 'error')
     } finally { setSaving(false) }
   }
@@ -96,19 +110,43 @@ export default function ContentOversight() {
     <header className="platform-fees-hero"><div><span>Website / Read-only review</span><h2>Content Oversight</h2><p>Review the same website copy managed by the Owner. Issue a warning when a section may be inappropriate or unsafe; only the Owner can edit and publish the content.</p></div><ShieldCheck size={34} /></header>
     <div className="content-safety-note"><ShieldCheck size={18} /><span>{data.sanitization_note}</span></div>
 
-    <div className="super-filterbar oversight-filterbar"><label><Search size={16} /><input value={filters.q} onChange={(event) => setFilters({ ...filters, q: event.target.value })} placeholder="Search website content…" /></label><select value={filters.status} onChange={(event) => setFilters({ ...filters, status: event.target.value })}><option value="ALL">All review states</option><option value="CLEAR">No warning</option><option value="FLAGGED">Warning issued</option></select><input type="date" aria-label="Updated from" value={filters.from} onChange={(event) => setFilters({ ...filters, from: event.target.value })} /><input type="date" aria-label="Updated to" value={filters.to} onChange={(event) => setFilters({ ...filters, to: event.target.value })} /></div>
+    <div className="super-filterbar support-filterbar oversight-filterbar"><label className="support-filterbar__search"><Search size={16} aria-hidden="true" /><input aria-label="Search website content" value={filters.q} onChange={(event) => setFilters({ ...filters, q: event.target.value })} placeholder="Search website content…" /></label><select aria-label="Filter by review state" value={filters.status} onChange={(event) => setFilters({ ...filters, status: event.target.value })}><option value="ALL">All review states</option><option value="CLEAR">No warning</option><option value="FLAGGED">Warning issued</option></select><input type="date" aria-label="Updated from" value={filters.from} onChange={(event) => setFilters({ ...filters, from: event.target.value })} /><input type="date" aria-label="Updated to" value={filters.to} onChange={(event) => setFilters({ ...filters, to: event.target.value })} /></div>
 
     <div className="oversight-workspace">
       <nav className="oversight-tabs" aria-label="Website content sections"><span>Choose a section</span>{CONTENT_TABS.map((tab) => <button key={tab.id} type="button" className={activeTab === tab.id ? 'is-active' : ''} onClick={() => setActiveTab(tab.id)}><strong>{tab.label}</strong><small>{tab.description}</small></button>)}</nav>
       <div className="oversight-content">
         <header><div><span>Read-only owner content</span><h3>{activeDefinition.label}</h3></div><time>Last updated {formatDate(data.content_updated_at)}</time></header>
         {sections.length ? sections.map((section) => <article className={`oversight-section ${section.warning ? 'has-warning' : ''}`} key={section.key}>
-          <div className="oversight-section__head"><div><h4>{section.title}</h4>{section.warning && <p><AlertTriangle size={16} /><span><strong>Review warning:</strong> {section.warning.reason}</span></p>}</div>{section.warning ? <button className="btn btn--secondary" type="button" onClick={() => setReview({ ...section, status: 'CLEAR', reason: '' })}>Clear warning</button> : <button className="btn btn--outline" type="button" onClick={() => setReview({ ...section, status: 'FLAGGED', reason: '' })}><Flag size={16} /> Issue warning</button>}</div>
+          <div className="oversight-section__head"><div><h4>{section.title}</h4>{section.warning && <p><AlertTriangle size={16} /><span><strong>Review warning:</strong> {section.warning.reason}</span></p>}</div>{section.warning ? <button className="btn admin-btn--secondary" type="button" onClick={() => openReview(section, 'CLEAR')}>Clear warning</button> : <button className="btn admin-btn--warning" type="button" onClick={() => openReview(section, 'FLAGGED')}><Flag size={16} aria-hidden="true" /> Issue warning</button>}</div>
           <ReadOnlyContent value={section.value} />
         </article>) : <div className="support-empty">No content in this section matches the current filters.</div>}
       </div>
     </div>
 
-    {review && <div className="invoice-preview-modal" onMouseDown={() => !saving && setReview(null)}><form ref={reviewDialogRef} role="dialog" aria-modal="true" aria-label={review.status === 'CLEAR' ? 'Clear content warning' : 'Issue content warning'} onSubmit={saveWarning} onMouseDown={(event) => event.stopPropagation()}><h2>{review.status === 'CLEAR' ? 'Clear content warning' : 'Issue content warning'}</h2><p><strong>{review.title}</strong><br />This action never changes or hides the Owner’s website content.</p>{review.status === 'FLAGGED' && <label>Reason for warning<textarea required minLength="5" maxLength="500" rows="4" value={review.reason} onChange={(event) => setReview({ ...review, reason: event.target.value })} placeholder="Explain what the owner should review…" /></label>}<div className="booking-action-form__actions"><button type="button" className="btn btn--secondary" onClick={() => setReview(null)}>Cancel</button><button className="btn btn--primary" disabled={saving}>{saving ? 'Saving…' : review.status === 'CLEAR' ? 'Clear warning' : 'Send warning'}</button></div></form></div>}
+    <AdminDialog
+      open={Boolean(review)}
+      title={review?.status === 'CLEAR' ? 'Clear content warning' : 'Issue content warning'}
+      description={review?.status === 'CLEAR' ? 'Removes the advisory warning from this section. The Owner’s content is not changed.' : 'Asks the Owner to review this section. The content is never changed or hidden by this action.'}
+      onClose={() => { if (!saving) setReview(null) }}
+      onSubmit={saveWarning}
+      busy={saving}
+      submitLabel={review?.status === 'CLEAR' ? 'Clear warning' : 'Send warning'}
+      submitTone={review?.status === 'CLEAR' ? 'primary' : 'warning'}
+    >
+      <AdminDialogSummary items={review ? [
+        { label: 'Section', value: review.title },
+        { label: 'Current state', value: review.warning ? `Warning issued: ${review.warning.reason}` : 'No warning' },
+      ] : []} />
+      {review?.status === 'FLAGGED' && <AdminDialogField
+        label="Warning reason"
+        value={review.reason}
+        onChange={(value) => { setReview((current) => ({ ...current, reason: value })); if (reasonError) setReasonError('') }}
+        required
+        multiline
+        maxLength={500}
+        hint="At least 5 characters. The Owner sees this reason."
+        error={reasonError}
+      />}
+    </AdminDialog>
   </section>
 }

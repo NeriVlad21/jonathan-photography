@@ -477,20 +477,27 @@ export default function PortfolioManager({ readOnly = false }) {
         !!image.visible
     ).length || 0
 
-  const [askReason, reasonDialog] = useReasonDialog()
+  const [openFlagDialog, reasonDialog] = useReasonDialog()
 
-  const flagItem = async (entityType, entityId) => {
-    const reason = await askReason({ title: 'Flag this portfolio item' })
-    if (!reason) return
-    const key = `${entityType}-${entityId}`
-    setFlaggingKey(key)
-    try {
-      const result = await oversightApi.createFlag({ entity_type: entityType, entity_id: entityId, reason })
-      if (entityType === 'PORTFOLIO_SHOOT') setShoots((current) => current.map((item) => item.id === entityId ? { ...item, open_flag_count: 1, latest_flag_reason: reason } : item))
-      if (entityType === 'PORTFOLIO_IMAGE') setImages((current) => current.map((item) => item.id === entityId ? { ...item, open_flag_count: 1, latest_flag_reason: reason } : item))
-      showToast(result.message)
-    } catch (error) { showToast(error.message || 'Unable to create this warning.', 'error') }
-    finally { setFlaggingKey('') }
+  const flagItem = (entityType, entityId) => {
+    const isShoot = entityType === 'PORTFOLIO_SHOOT'
+    const item = (isShoot ? shoots : images)?.find((row) => row.id === entityId)
+    openFlagDialog({
+      title: isShoot ? 'Flag this portfolio shoot' : 'Flag this portfolio photo',
+      summary: [
+        { label: isShoot ? 'Shoot' : 'Photo', value: item?.title || item?.caption || `#${entityId}` },
+        { label: 'Current state', value: item?.visible === false || Number(item?.visible) === 0 ? 'Hidden · no open flag' : 'Published · no open flag' },
+      ],
+      onSubmit: async (reason) => {
+        setFlaggingKey(`${entityType}-${entityId}`)
+        try {
+          const result = await oversightApi.createFlag({ entity_type: entityType, entity_id: entityId, reason })
+          if (isShoot) setShoots((current) => current.map((row) => row.id === entityId ? { ...row, open_flag_count: 1, latest_flag_reason: reason } : row))
+          else setImages((current) => current.map((row) => row.id === entityId ? { ...row, open_flag_count: 1, latest_flag_reason: reason } : row))
+          showToast(result.message)
+        } finally { setFlaggingKey('') }
+      },
+    })
   }
 
   return (
@@ -2063,7 +2070,7 @@ export default function PortfolioManager({ readOnly = false }) {
 
                   <div className="portfolio-admin__controls">
 
-                    {readOnly && <button type="button" className="portfolio-admin__control-button" disabled={flaggingKey === `PORTFOLIO_SHOOT-${activeShoot.id}` || Number(activeShoot.open_flag_count) > 0} onClick={() => flagItem('PORTFOLIO_SHOOT', activeShoot.id)}>{flaggingKey === `PORTFOLIO_SHOOT-${activeShoot.id}` ? 'Flagging…' : Number(activeShoot.open_flag_count) > 0 ? 'Flagged' : 'Flag shoot'}</button>}
+                    {readOnly && <button type="button" className="portfolio-admin__control-button is-flag" disabled={flaggingKey === `PORTFOLIO_SHOOT-${activeShoot.id}` || Number(activeShoot.open_flag_count) > 0} onClick={() => flagItem('PORTFOLIO_SHOOT', activeShoot.id)}>{flaggingKey === `PORTFOLIO_SHOOT-${activeShoot.id}` ? 'Flagging…' : Number(activeShoot.open_flag_count) > 0 ? 'Flagged' : 'Flag shoot'}</button>}
 
                     {!readOnly && <label
                       className="portfolio-admin__control-button"
@@ -2273,7 +2280,7 @@ export default function PortfolioManager({ readOnly = false }) {
 
                               <div className="portfolio-admin__image-actions">
 
-                                {readOnly && <button type="button" className="portfolio-admin__image-action" disabled={flaggingKey === `PORTFOLIO_IMAGE-${image.id}` || Number(image.open_flag_count) > 0} onClick={() => flagItem('PORTFOLIO_IMAGE', image.id)}>{flaggingKey === `PORTFOLIO_IMAGE-${image.id}` ? 'Flagging…' : Number(image.open_flag_count) > 0 ? 'Flagged' : 'Flag photo'}</button>}
+                                {readOnly && <button type="button" className="portfolio-admin__image-action is-flag" disabled={flaggingKey === `PORTFOLIO_IMAGE-${image.id}` || Number(image.open_flag_count) > 0} onClick={() => flagItem('PORTFOLIO_IMAGE', image.id)}>{flaggingKey === `PORTFOLIO_IMAGE-${image.id}` ? 'Flagging…' : Number(image.open_flag_count) > 0 ? 'Flagged' : 'Flag photo'}</button>}
 
                                 {!readOnly && <button
                                   type="button"

@@ -117,19 +117,24 @@ export default function BookingDetails({ readOnly = false }) {
     finally { setRevealingContact(false) }
   }
 
-  const [askReason, reasonDialog] = useReasonDialog()
+  const [openFlagDialog, reasonDialog] = useReasonDialog()
 
-  const flagBooking = async () => {
-    const reason = await askReason({ title: 'Flag this booking' })
-    if (!reason) return
-    setFlagging(true)
-    try {
-      const result = await oversightApi.createFlag({ entity_type: 'BOOKING', entity_id: Number(id), reason })
-      setBooking((current) => ({ ...current, flags: [...(current.flags || []), { entity_type: 'BOOKING', entity_id: Number(id), reason, status: 'OPEN' }] }))
-      showToast(result.message)
-    } catch (error) { showToast(error.message || 'Unable to flag this booking.', 'error') }
-    finally { setFlagging(false) }
-  }
+  const flagBooking = () => openFlagDialog({
+    title: 'Flag this booking',
+    summary: [
+      { label: 'Booking', value: booking?.reference_code },
+      { label: 'Service', value: booking?.shoot_type },
+      { label: 'Current state', value: booking?.status ? `${booking.status.toLowerCase()} · no open flag` : '' },
+    ],
+    onSubmit: async (reason) => {
+      setFlagging(true)
+      try {
+        const result = await oversightApi.createFlag({ entity_type: 'BOOKING', entity_id: Number(id), reason })
+        setBooking((current) => ({ ...current, flags: [...(current.flags || []), { entity_type: 'BOOKING', entity_id: Number(id), reason, status: 'OPEN' }] }))
+        showToast(result.message)
+      } finally { setFlagging(false) }
+    },
+  })
 
   useEffect(() => {
     load()
@@ -1217,7 +1222,7 @@ export default function BookingDetails({ readOnly = false }) {
 
             <div className="booking-details-hero__status">
 
-              {readOnly && <button type="button" className="btn btn--secondary" disabled={flagging || (booking.flags || []).some((flag) => flag.status === 'OPEN')} onClick={flagBooking}>{flagging ? 'Flagging…' : (booking.flags || []).some((flag) => flag.status === 'OPEN') ? 'Flagged' : 'Flag booking'}</button>}
+              {readOnly && <button type="button" className="btn admin-btn--warning" disabled={flagging || (booking.flags || []).some((flag) => flag.status === 'OPEN')} onClick={flagBooking}>{flagging ? 'Flagging…' : (booking.flags || []).some((flag) => flag.status === 'OPEN') ? 'Flagged' : 'Flag booking'}</button>}
 
               <span
                 className={`
@@ -1413,7 +1418,7 @@ export default function BookingDetails({ readOnly = false }) {
                 </form>
               )}
 
-              {invoices.length > 0 && <div className="booking-invoice-list">{invoices.map((invoice) => <article key={invoice.id} className={invoice.voided_at ? 'is-voided' : ''}><div><span>{invoice.invoice_type === 'FINAL_PAYMENT' ? 'Final receipt' : 'Down payment invoice'}</span><strong>{invoice.invoice_number}</strong><small>{invoice.voided_at ? 'Voided — preserved snapshot' : invoice.sent_at ? `Sent ${formatDateTime(invoice.sent_at)}` : 'Draft — ready to preview'}</small></div><div><button type="button" className="btn btn--secondary" onClick={() => setPreviewInvoice(invoice)}><Eye size={15} /> Preview</button><button type="button" className="btn btn--secondary" onClick={() => downloadInvoice(invoice)}><Download size={15} /> PDF</button>{!readOnly && !invoice.voided_at && <button type="button" className="btn btn--secondary" onClick={() => resendInvoice(invoice.id)} disabled={sendingInvoice}><Send size={15} /> {invoice.sent_at ? 'Resend' : 'Send'}</button>}</div></article>)}</div>}
+              {invoices.length > 0 && <div className="booking-invoice-list">{invoices.map((invoice) => <article key={invoice.id} className={invoice.voided_at ? 'is-voided' : ''}><div><span>{invoice.invoice_type === 'FINAL_PAYMENT' ? 'Final receipt' : 'Down payment invoice'}</span><strong>{invoice.invoice_number}</strong><small>{invoice.voided_at ? 'Voided — preserved snapshot' : invoice.sent_at ? `Sent ${formatDateTime(invoice.sent_at)}` : 'Draft — ready to preview'}</small></div><div><button type="button" className="btn admin-btn--neutral" onClick={() => setPreviewInvoice(invoice)}><Eye size={15} /> Preview</button><button type="button" className="btn btn--secondary" onClick={() => downloadInvoice(invoice)}><Download size={15} /> PDF</button>{!readOnly && !invoice.voided_at && <button type="button" className="btn btn--secondary" onClick={() => resendInvoice(invoice.id)} disabled={sendingInvoice}><Send size={15} /> {invoice.sent_at ? 'Resend' : 'Send'}</button>}</div></article>)}</div>}
             </div>
           </section>
 
@@ -1467,7 +1472,7 @@ export default function BookingDetails({ readOnly = false }) {
 
                 </div>
 
-                {readOnly && booking.contact_masked && <button type="button" className="btn btn--secondary" aria-describedby="contact-reveal-note" disabled={revealingContact} onClick={revealContact}>{revealingContact ? 'Revealing…' : 'Reveal contact details'}</button>}
+                {readOnly && booking.contact_masked && <button type="button" className="btn admin-btn--secondary" aria-describedby="contact-reveal-note" disabled={revealingContact} onClick={revealContact}>{revealingContact ? 'Revealing…' : 'Reveal contact details'}</button>}
 
               </div>
 
@@ -1679,9 +1684,9 @@ export default function BookingDetails({ readOnly = false }) {
             <div className="booking-details-panel__body">
               <p className="booking-workflow-note">Copy a clear response, then send it through the client’s preferred contact channel. No message is sent automatically.</p>
               <div className="booking-template-actions">
-                <button type="button" className="btn btn--secondary" onClick={() => copyResponse('acknowledge')}>Copy acknowledgement</button>
-                <button type="button" className="btn btn--secondary" onClick={() => copyResponse('confirm')}>Copy confirmation</button>
-                <button type="button" className="btn btn--secondary" onClick={() => copyResponse('cancel')}>Copy cancellation</button>
+                <button type="button" className="btn admin-btn--neutral" onClick={() => copyResponse('acknowledge')}>Copy acknowledgement</button>
+                <button type="button" className="btn admin-btn--neutral" onClick={() => copyResponse('confirm')}>Copy confirmation</button>
+                <button type="button" className="btn admin-btn--neutral" onClick={() => copyResponse('cancel')}>Copy cancellation</button>
               </div>
             </div>
           </section>

@@ -1,16 +1,21 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Camera } from 'lucide-react'
+import { Camera, ExternalLink } from 'lucide-react'
 import { contactsApi } from '../services/api.js'
 import EditorialDoodles from './EditorialDoodles.jsx'
 import { useSiteContent } from '../context/SiteContentContext.jsx'
+import { PUBLIC_NAV_ORDER } from '../content/publicNavigation.js'
+import { getStudioAddress, getStudioMapUrls } from '../utils/studioLocation.js'
 
 const CONTACT_FALLBACK = [
   { id: 'contact-page', label: 'Contact details', link: '/contact', internal: true }
 ]
 
 export default function Footer() {
-  const { brand, footer, navigation } = useSiteContent()
+  const content = useSiteContent()
+  const { brand, footer, navigation } = content
+  const studioAddress = getStudioAddress(content)
+  const map = getStudioMapUrls(studioAddress)
   const [platforms, setPlatforms] = useState(CONTACT_FALLBACK)
 
   useEffect(() => {
@@ -31,10 +36,7 @@ export default function Footer() {
         <div className="footer__cols">
           <div className="footer__col">
             <h5>{footer.exploreTitle}</h5>
-            <Link to="/portfolio">{navigation.work}</Link>
-            <Link to="/services">{navigation.services}</Link>
-            <Link to="/#about">{navigation.about}</Link>
-            <Link to="/booking">{navigation.booking}</Link>
+            {PUBLIC_NAV_ORDER.map(({ key, to }) => <Link key={key} to={to}>{navigation[key]}</Link>)}
           </div>
           <div className="footer__col">
             <h5>{footer.connectTitle}</h5>
@@ -48,10 +50,23 @@ export default function Footer() {
               <span className="visually-hidden">Open the hidden photobooth</span>
             </Link>
           </div>
-          <div className="footer__col">
+          {studioAddress && <div className="footer__col footer__studio">
             <h5>{footer.studioTitle}</h5>
-            <p>{brand.address}</p>
-          </div>
+            <address className="studio-address">{studioAddress}</address>
+            <div className="footer__map">
+              <iframe
+                src={map.embed}
+                title="Jonathan Photography studio location"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                allowFullScreen
+              />
+            </div>
+            <a className="footer__map-link" href={map.link} target="_blank" rel="noreferrer">
+              View on Google Maps <ExternalLink size={13} aria-hidden="true" />
+              <span className="visually-hidden">(opens in a new tab)</span>
+            </a>
+          </div>}
         </div>
       </div>
       <div className="footer__bottom">

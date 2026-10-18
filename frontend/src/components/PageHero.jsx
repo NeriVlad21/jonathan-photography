@@ -9,7 +9,6 @@ export default function PageHero({ eyebrow, title, intro, note }) {
         <h1>{title}</h1>
         <div className="page-hero__bottom">
           <p>{intro}</p>
-          <span aria-hidden="true">↘</span>
         </div>
       </div>
     </header>

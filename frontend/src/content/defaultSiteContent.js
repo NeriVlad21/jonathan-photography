@@ -46,8 +46,13 @@ export const DEFAULT_SITE_CONTENT = {
     ],
     skillsLabel: 'what I do',
     skills: ['Photography', 'Videography', 'Editing', 'Layout Design'],
+    // Title + description pairs for "What I do". Empty means "derive from `skills`",
+    // so records saved before this field existed keep their own titles.
+    skillItems: [],
+    // The value under this label is always brand.address (the single studio address).
+    studioLocationLabel: 'Studio location',
     locationLabel: 'based in Sison',
-    locationText: 'I currently reside in Brgy. Tara-tara, Sison, Pangasinan, where I have dedicated over a decade to photography and multimedia. With years of experience capturing life’s most meaningful moments, I strive to turn every occasion into lasting memories through creative, timeless photographs and videos.',
+    locationText: 'Based in Sison, Pangasinan, I have dedicated over a decade to photography and multimedia. With years of experience capturing life’s most meaningful moments, I strive to turn every occasion into lasting memories through creative, timeless photographs and videos.',
     linkLabel: 'Explore the stories I have captured →'
   },
   selectedWork: { eyebrow: 'Selected Work', title: 'Selected work', description: 'A few moments from recent celebrations, portraits, and events.', linkLabel: 'View All →', categorySlugs: [] },
@@ -94,4 +99,22 @@ export function mergeSiteContent(value = {}) {
     return Object.fromEntries(Object.entries(base).map(([key, item]) => [key, merge(item, incoming?.[key])]))
   }
   return merge(DEFAULT_SITE_CONTENT, value)
+}
+
+// Fallback descriptions for the default "What I do" titles only. Owner-added
+// titles without a saved description simply show the title.
+const DEFAULT_SKILL_DESCRIPTIONS = {
+  photography: 'Weddings, portraits, celebrations, and events, edited for natural, honest colour.',
+  videography: 'Event and session films that keep the movement, voices, and atmosphere of the day.',
+  editing: 'Careful colour correction and retouching so every image in a set feels consistent.',
+  'layout design': 'Albums, invitations, frames, and tarpaulins designed around your photographs.',
+}
+
+export function getSkillItems(about = {}) {
+  const saved = Array.isArray(about.skillItems) ? about.skillItems.filter((item) => String(item?.title || '').trim()) : []
+  if (saved.length) return saved.map((item) => ({ title: String(item.title).trim(), description: String(item.description || '').trim() }))
+  return (Array.isArray(about.skills) ? about.skills : [])
+    .map((title) => String(title || '').trim())
+    .filter(Boolean)
+    .map((title) => ({ title, description: DEFAULT_SKILL_DESCRIPTIONS[title.toLowerCase()] || '' }))
 }
