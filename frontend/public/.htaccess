@@ -1,10 +1,17 @@
 Options -Indexes
 ServerSignature Off
 
-<IfModule mod_headers.c>
-  Header always set X-Content-Type-Options "nosniff"
-  Header always set X-Frame-Options "DENY"
-  Header always set Referrer-Policy "strict-origin-when-cross-origin"
-  Header always set Permissions-Policy "camera=(self), microphone=(), geolocation=()"
-  Header always set Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; frame-src https://www.youtube-nocookie.com https://www.google.com https://maps.google.com; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: http://localhost:*; media-src 'self' blob:; connect-src 'self' http://localhost:* https:;"
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Keep Vite's published assets out of the React SPA fallback. If an asset is
+  # missing, return a real 404 instead of HTML that the browser cannot style/run.
+  RewriteRule ^assets/ - [L]
+
+  # Let Apache serve real files and directories, including /backend.
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+
+  # React Router fallback for direct links and browser refreshes.
+  RewriteRule ^ index.html [L]
 </IfModule>

@@ -32,11 +32,10 @@ class Database
         );
 
         $lastError = null;
-        // The browser API client already retries safe GET requests once. Keep
-        // the server-side connection attempt singular so an offline local
-        // MariaDB instance produces a useful response quickly instead of
-        // making every page wait through stacked retry loops.
-        $maxAttempts = 1;
+        // Shared MySQL hosts can briefly drop or restart connections. Retry
+        // connection setup (before any query can write data), but keep the
+        // limit and backoff small so a real configuration error fails quickly.
+        $maxAttempts = 3;
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
             try {
                 $connection = new PDO($dsn, $db['user'], $db['password'], [
@@ -58,6 +57,9 @@ class Database
             } catch (PDOException $e) {
                 self::$connection = null;
                 $lastError = $e;
+                if ($attempt < $maxAttempts) {
+                    usleep(200_000 * $attempt);
+                }
             }
         }
 

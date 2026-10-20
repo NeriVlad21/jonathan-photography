@@ -32,7 +32,9 @@ if ($method === 'GET') {
         require_admin();
         $stmt = $pdo->query('SELECT * FROM portfolio_categories ORDER BY sort_order ASC, id ASC');
     } else {
-        $stmt = $pdo->query("SELECT * FROM portfolio_categories c WHERE visible = 1 AND NOT EXISTS (SELECT 1 FROM content_moderation cm WHERE cm.entity_type='PORTFOLIO_CATEGORY' AND cm.entity_key=CAST(c.id AS CHAR) AND cm.status='HIDDEN') ORDER BY sort_order ASC, id ASC");
+        // Public pages select only category metadata; legacy demo cover paths
+        // stay available to the owner in the admin response, never public JSON.
+        $stmt = $pdo->query("SELECT c.id, c.name, c.slug, c.description, NULL AS cover_image, c.sort_order, c.visible, c.created_at, c.updated_at FROM portfolio_categories c WHERE visible = 1 AND NOT EXISTS (SELECT 1 FROM content_moderation cm WHERE cm.entity_type='PORTFOLIO_CATEGORY' AND cm.entity_key=CAST(c.id AS CHAR) AND cm.status='HIDDEN') ORDER BY sort_order ASC, id ASC");
     }
     json_success($stmt->fetchAll());
 }

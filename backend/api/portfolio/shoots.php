@@ -38,7 +38,7 @@ function fetch_shoot_images(PDO $pdo, int $shootId, bool $includeHidden = false)
     if ($includeHidden) {
         $columns = "pi.*, (SELECT COUNT(*) FROM entity_flags ef WHERE ef.entity_type='PORTFOLIO_IMAGE' AND ef.entity_id=pi.id AND ef.status='OPEN') open_flag_count, (SELECT reason FROM entity_flags ef WHERE ef.entity_type='PORTFOLIO_IMAGE' AND ef.entity_id=pi.id AND ef.status='OPEN' ORDER BY ef.created_at DESC LIMIT 1) latest_flag_reason";
     }
-    $sql = 'SELECT ' . $columns . ' FROM portfolio_images pi WHERE shoot_id = :id' . ($includeHidden ? '' : " AND visible = 1 AND NOT EXISTS (SELECT 1 FROM content_moderation cm WHERE cm.entity_type='PORTFOLIO_IMAGE' AND cm.entity_key=CAST(pi.id AS CHAR) AND cm.status='HIDDEN')") . ' ORDER BY sort_order ASC, id ASC';
+    $sql = 'SELECT ' . $columns . ' FROM portfolio_images pi WHERE shoot_id = :id' . ($includeHidden ? '' : " AND visible = 1 AND image_path NOT LIKE '%/demo/%' AND NOT EXISTS (SELECT 1 FROM content_moderation cm WHERE cm.entity_type='PORTFOLIO_IMAGE' AND cm.entity_key=CAST(pi.id AS CHAR) AND cm.status='HIDDEN')") . ' ORDER BY sort_order ASC, id ASC';
     $stmt = $pdo->prepare($sql);
     $stmt->execute(['id' => $shootId]);
     return $stmt->fetchAll();
@@ -154,6 +154,7 @@ if ($method === 'GET') {
                AND c.visible = 1
                AND s.visible = 1
                AND pi.visible = 1
+               AND pi.image_path NOT LIKE '%/demo/%'
                AND NOT EXISTS (SELECT 1 FROM content_moderation cm WHERE cm.entity_type='PORTFOLIO_IMAGE' AND cm.entity_key=CAST(pi.id AS CHAR) AND cm.status='HIDDEN')
                AND NOT EXISTS (SELECT 1 FROM content_moderation cm WHERE cm.entity_type='PORTFOLIO_SHOOT' AND cm.entity_key=CAST(s.id AS CHAR) AND cm.status='HIDDEN')
                AND NOT EXISTS (SELECT 1 FROM content_moderation cm WHERE cm.entity_type='PORTFOLIO_CATEGORY' AND cm.entity_key=CAST(c.id AS CHAR) AND cm.status='HIDDEN')
@@ -178,6 +179,7 @@ if ($method === 'GET') {
                      FROM portfolio_images pi
                      WHERE pi.shoot_id = s.id
                        AND pi.is_cover = 1
+                       AND pi.image_path NOT LIKE '%/demo/%'
                      LIMIT 1) AS cover_image_path
              FROM portfolio_shoots s
              JOIN portfolio_categories c

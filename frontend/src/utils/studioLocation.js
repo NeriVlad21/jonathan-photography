@@ -6,14 +6,20 @@ export function getStudioAddress(content) {
 
 const MAPS_EMBED_KEY = import.meta.env.VITE_GOOGLE_MAPS_EMBED_KEY || ''
 
-export function getStudioMapUrls(address) {
+export function getStudioMapUrls(address, latitude, longitude) {
   if (!address) return null
-  const query = encodeURIComponent(address)
+  const lat = Number(latitude)
+  const lng = Number(longitude)
+  const hasPin = String(latitude ?? '').trim() !== '' && String(longitude ?? '').trim() !== ''
+    && Number.isFinite(lat) && Number.isFinite(lng)
+    && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180
+  const query = encodeURIComponent(hasPin ? `${lat},${lng}` : address)
+  const zoom = hasPin ? 18 : 15
   return {
     // Maps Embed API when a key is configured; otherwise the keyless query embed.
     embed: MAPS_EMBED_KEY
       ? `https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(MAPS_EMBED_KEY)}&q=${query}`
-      : `https://maps.google.com/maps?q=${query}&z=15&output=embed`,
+      : `https://maps.google.com/maps?q=${query}&z=${zoom}&output=embed`,
     link: `https://www.google.com/maps/search/?api=1&query=${query}`,
   }
 }

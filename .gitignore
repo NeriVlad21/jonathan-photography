@@ -9,6 +9,7 @@ backend/vendor/
 backend/.env
 backend/uploads/portfolio/*
 !backend/uploads/portfolio/.gitkeep
+!backend/uploads/portfolio/.htaccess
 backend/uploads/portfolio/demo/
 backend/storage/portfolio-originals/*
 !backend/storage/portfolio-originals/.htaccess

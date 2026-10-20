@@ -30,6 +30,7 @@ if ($method === 'GET' && isset($_GET['id'])) {
          LEFT JOIN portfolio_shoots s ON s.id = pi.shoot_id
          LEFT JOIN portfolio_categories c ON c.id = s.category_id
          WHERE pi.id = :id
+           AND pi.image_path NOT LIKE '%/demo/%'
            AND pi.visible = 1
            AND (s.id IS NULL OR s.visible = 1)
            AND (c.id IS NULL OR c.visible = 1)

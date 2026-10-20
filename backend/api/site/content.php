@@ -84,6 +84,12 @@ foreach ($workflowSteps as $step) {
     }
 }
 
+$latitude = trim((string) ($content['brand']['mapLatitude'] ?? ''));
+$longitude = trim((string) ($content['brand']['mapLongitude'] ?? ''));
+if (($latitude !== '' || $longitude !== '') && ($latitude === '' || $longitude === '' || !is_numeric($latitude) || !is_numeric($longitude) || (float) $latitude < -90 || (float) $latitude > 90 || (float) $longitude < -180 || (float) $longitude > 180)) {
+    json_error('Enter both map coordinates using a valid latitude and longitude.', 422);
+}
+
 $portfolioVideos = $content['portfolioPage']['videos'] ?? [];
 if (!is_array($portfolioVideos) || count($portfolioVideos) > 6) {
     json_error('The portfolio can contain up to six videos.', 422);

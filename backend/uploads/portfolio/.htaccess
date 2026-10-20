@@ -1,0 +1,10 @@
+Options -Indexes -ExecCGI
+
+<FilesMatch "\.(php|phtml|phar|cgi|pl|py|sh|htaccess)$">
+  Require all denied
+</FilesMatch>
+
+RemoveHandler .php .phtml .phar
+RemoveType .php .phtml .phar
+
+Header set X-Content-Type-Options "nosniff"

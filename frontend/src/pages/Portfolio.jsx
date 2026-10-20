@@ -4,7 +4,6 @@ import LoadingState from '../components/LoadingState.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import ErrorState from '../components/ErrorState.jsx'
 import { assetUrl, portfolioApi } from '../services/api.js'
-import { temporaryPhotosForCategory } from '../data/temporaryPortfolio.js'
 import { useSiteContent } from '../context/SiteContentContext.jsx'
 
 const SLIDE_DURATION = 4600
@@ -30,6 +29,7 @@ export default function Portfolio() {
   const { portfolioPage } = useSiteContent()
   const [categories, setCategories] = useState(null)
   const [photos, setPhotos] = useState([])
+  const [photosLoaded, setPhotosLoaded] = useState(false)
   const [loadError, setLoadError] = useState(false)
   const [activeSlide, setActiveSlide] = useState(0)
   const galleryRef = useRef(null)
@@ -38,6 +38,7 @@ export default function Portfolio() {
   useEffect(() => {
     let cancelled = false
     setLoadError(false)
+    setPhotosLoaded(false)
 
     document.title = 'Jonathan Photography — Work'
 
@@ -63,7 +64,10 @@ export default function Portfolio() {
           })
         )
 
-        if (!cancelled) setPhotos(imageGroups.flat())
+        if (!cancelled) {
+          setPhotos(imageGroups.flat())
+          setPhotosLoaded(true)
+        }
       })
       .catch(() => {
         if (!cancelled) {
@@ -76,22 +80,17 @@ export default function Portfolio() {
   }, [])
 
   const galleryItems = useMemo(() => {
-    return (categories || []).flatMap((category) => [
-      ...temporaryPhotosForCategory(category.slug, category.name),
-      ...photos.filter((photo) => photo.categorySlug === category.slug),
-    ])
-  }, [categories, photos])
+    return photos
+  }, [photos])
 
   const heroImages = useMemo(() => {
-    const firstPass = (categories || []).map((category) =>
-      temporaryPhotosForCategory(category.slug, category.name)[0]
-    )
-    const secondPass = (categories || []).map((category) =>
-      temporaryPhotosForCategory(category.slug, category.name)[1]
-    )
+    return photos.slice(0, 8)
+  }, [photos])
 
-    return [...firstPass, ...secondPass].slice(0, 8)
-  }, [categories])
+  const removeUnavailablePhoto = (image) => {
+    // A stale database row should never remain as a black, clickable gallery tile.
+    setPhotos((current) => current.filter((photo) => photo.id !== image.id))
+  }
 
   useEffect(() => {
     if (heroImages.length < 2) return undefined
@@ -150,7 +149,15 @@ export default function Portfolio() {
 
   return (
     <section className="work-page">
-      <header className="work-intro">
+      <header className={`work-intro${photosLoaded && heroImages.length === 0 ? ' work-intro--empty' : ''}`}>
+        {photosLoaded && heroImages.length === 0 ? (
+          <div className="work-intro__empty">
+            <p className="work-intro__kicker">{portfolioPage.kicker}</p>
+            <h1>{portfolioPage.title}</h1>
+            <p>{portfolioPage.intro}</p>
+            <p className="work-intro__empty-note">The studio is preparing its portfolio. Please check back soon.</p>
+          </div>
+        ) : (
         <div ref={frameRef} className="work-intro__frame" aria-live="polite">
           <div className="work-intro__placeholder" />
           {heroImages.length > 0 && (
@@ -161,7 +168,7 @@ export default function Portfolio() {
                 src={assetUrl(image.image_path)}
                 alt=""
                 aria-hidden={index !== activeSlide}
-                onError={(event) => event.currentTarget.classList.add('is-missing')}
+                onError={() => removeUnavailablePhoto(image)}
               />
             ))
           )}
@@ -173,6 +180,7 @@ export default function Portfolio() {
             <p>{portfolioPage.intro}</p>
           </div>
         </div>
+        )}
 
         <button
           type="button"
@@ -203,6 +211,12 @@ export default function Portfolio() {
           </div>
         )}
 
+        {!loadError && photosLoaded && categories?.length > 0 && galleryItems.length === 0 && (
+          <div className="work-gallery__state">
+            <EmptyState title="The portfolio is being prepared." body="The studio will add photographs here soon." />
+          </div>
+        )}
+
         {galleryItems.map((item, index) => (
           <Link
             key={`${item.id}-${index}`}
@@ -215,8 +229,7 @@ export default function Portfolio() {
               alt={item.title || `${item.categoryName} photograph`}
               loading={index < 6 ? 'eager' : 'lazy'}
               onError={(event) => {
-                event.currentTarget.classList.add('is-missing')
-                event.currentTarget.parentElement?.classList.add('has-missing-image')
+                removeUnavailablePhoto(item)
               }}
             />
             <span className="work-gallery__overlay" aria-hidden="true">
@@ -227,7 +240,7 @@ export default function Portfolio() {
         ))}
       </div>
 
-      {categories && categories.length > 0 && (
+      {categories && categories.some((category) => photos.some((photo) => photo.categorySlug === category.slug)) && (
         <nav className="work-index" aria-label="Portfolio categories">
           <div className="work-index__heading">
             <p>{portfolioPage.indexEyebrow}</p>
@@ -235,18 +248,22 @@ export default function Portfolio() {
             <span>{portfolioPage.indexText}</span>
           </div>
           <div className="work-index__grid">
-            {categories.map((category, index) => (
-              <Link key={category.id} to={`/portfolio/${category.slug}`} className="work-index__card">
-                <img
-                  src={assetUrl(temporaryPhotosForCategory(category.slug, category.name)[0].image_path)}
-                  alt=""
-                  loading="lazy"
-                />
-                <span className="work-index__shade" aria-hidden="true" />
-                <span className="work-index__name">{category.name}</span>
-                <span className="work-index__arrow" aria-hidden="true">↗</span>
-              </Link>
-            ))}
+            {categories.filter((category) => photos.some((photo) => photo.categorySlug === category.slug)).map((category) => {
+              const cover = photos.find((photo) => photo.categorySlug === category.slug)
+              return (
+                <Link key={category.id} to={`/portfolio/${category.slug}`} className="work-index__card">
+                  <img
+                    src={assetUrl(cover.image_path)}
+                    alt={cover.title || `${category.name} portfolio cover`}
+                    loading="lazy"
+                    onError={() => removeUnavailablePhoto(cover)}
+                  />
+                  <span className="work-index__shade" aria-hidden="true" />
+                  <span className="work-index__name">{category.name}</span>
+                  <span className="work-index__arrow" aria-hidden="true">↗</span>
+                </Link>
+              )
+            })}
           </div>
         </nav>
       )}

@@ -17,11 +17,23 @@ $originHost = strtolower((string) parse_url($normalizedOrigin, PHP_URL_HOST));
 $originPort = (int) (parse_url($normalizedOrigin, PHP_URL_PORT) ?: 0);
 $originScheme = strtolower((string) parse_url($normalizedOrigin, PHP_URL_SCHEME));
 $isConfiguredOrigin = $normalizedOrigin !== '' && hash_equals($configuredOrigin, $normalizedOrigin);
+$requestHost = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
+$requestScheme = strtolower((string) (
+    $_SERVER['REQUEST_SCHEME']
+    ?? ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (int) ($_SERVER['SERVER_PORT'] ?? 0) === 443
+        ? 'https'
+        : 'http')
+));
+$originAuthority = $originHost . ($originPort > 0 ? ':' . $originPort : '');
+$isSameOrigin = $normalizedOrigin !== ''
+    && $requestHost !== ''
+    && hash_equals($requestHost, $originAuthority)
+    && hash_equals($requestScheme, $originScheme);
 $isLocalViteOrigin = in_array($originHost, ['localhost', '127.0.0.1'], true)
     && $originScheme === 'http'
     && $originPort >= 5173
     && $originPort <= 5199;
-$isAllowedOrigin = $isConfiguredOrigin || $isLocalViteOrigin;
+$isAllowedOrigin = $isConfiguredOrigin || $isSameOrigin || $isLocalViteOrigin;
 
 if ($isAllowedOrigin) {
     header('Access-Control-Allow-Origin: ' . $normalizedOrigin);

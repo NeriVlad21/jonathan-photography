@@ -4,7 +4,6 @@ import EditorialImage from '../components/EditorialImage.jsx'
 import LoadingState from '../components/LoadingState.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import { portfolioApi } from '../services/api.js'
-import { temporaryPhotosForCategory } from '../data/temporaryPortfolio.js'
 
 export default function PortfolioCategory() {
   const { category } = useParams()
@@ -25,17 +24,12 @@ export default function PortfolioCategory() {
       .then((data) => {
         if (cancelled) return
 
-        setImages([
-          ...temporaryPhotosForCategory(category, category),
-          ...(Array.isArray(data) ? data : [])
-        ])
+        setImages(Array.isArray(data) ? data : [])
       })
       .catch(() => {
         if (cancelled) return
 
-        setImages(
-          temporaryPhotosForCategory(category, category)
-        )
+        setImages([])
       })
 
     portfolioApi
@@ -221,7 +215,7 @@ export default function PortfolioCategory() {
             originalIndex
           ] = element
         }}
-        className={`portfolio-photo ${image.isTemporary ? `portfolio-photo--${image.orientation}` : ''}`}
+        className="portfolio-photo"
       >
         <EditorialImage
           src={image.image_path}

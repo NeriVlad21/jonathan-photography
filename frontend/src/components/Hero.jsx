@@ -7,13 +7,14 @@ export default function Hero() {
   return (
     <section className="hero">
       <div className="hero__stage">
-        <img
+        {hero.image && !String(hero.image).includes('/demo/') && <img
           className="hero__image"
           src={assetUrl(hero.image)}
           alt={hero.imageAlt}
           fetchpriority="high"
           decoding="async"
-        />
+          onError={(event) => event.currentTarget.remove()}
+        />}
         <div className="hero__veil" />
         <div className="hero__content">
           <span className="hero__eyebrow">{hero.eyebrow}</span>

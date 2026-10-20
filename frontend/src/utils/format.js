@@ -23,7 +23,8 @@ export function formatDateTime(dateStr) {
 export function imageUrl(path) {
   if (!path) return ''
   if (path.startsWith('http')) return path
-  if (path.startsWith('/demo/')) return path
+  // Hide legacy demo assets rather than silently presenting them as studio work.
+  if (path.startsWith('/demo/')) return ''
 
   // VITE_API_URL is usually left unset in dev (Vite's proxy forwards /api
   // for us), but that meant this function had nothing to fall back to and
@@ -35,8 +36,10 @@ export function imageUrl(path) {
   // depend on whether VITE_API_URL happens to be set. Set it in
   // frontend/.env, e.g.:
   //   VITE_BACKEND_URL=http://localhost/jonathan-photography/backend
-  const apiBase = import.meta.env.VITE_API_URL || ''
-  const explicitBackend = import.meta.env.VITE_BACKEND_URL || ''
+  const apiBase = import.meta.env.VITE_API_URL ||
+    (import.meta.env.DEV ? '' : '/backend/api')
+  const explicitBackend = import.meta.env.VITE_BACKEND_URL ||
+    (import.meta.env.DEV ? '' : '/backend')
 
   const backendOrigin = apiBase
     ? apiBase.replace(/\/api\/?$/, '')

@@ -39,8 +39,13 @@ function load_env(string $path): void
             $value = substr($value, 1, -1);
         }
         if ($key !== '') {
-            putenv("{$key}={$value}");
+            // Some shared hosts disable putenv(). Keep the parsed value in
+            // PHP's superglobals as well, so env() can still resolve it.
+            if (function_exists('putenv')) {
+                @putenv("{$key}={$value}");
+            }
             $_ENV[$key] = $value;
+            $_SERVER[$key] = $value;
         }
     }
 
@@ -53,5 +58,17 @@ load_env(__DIR__ . '/../.env');
 function env(string $key, $default = null)
 {
     $value = getenv($key);
-    return $value === false ? $default : $value;
+    if ($value !== false) {
+        return $value;
+    }
+
+    if (array_key_exists($key, $_ENV)) {
+        return $_ENV[$key];
+    }
+
+    if (array_key_exists($key, $_SERVER)) {
+        return $_SERVER[$key];
+    }
+
+    return $default;
 }

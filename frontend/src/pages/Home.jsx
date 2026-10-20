@@ -5,23 +5,14 @@ import { Link, useLocation } from 'react-router-dom'
 import { Play } from 'lucide-react'
 import Hero from '../components/Hero.jsx'
 import SectionHeader from '../components/SectionHeader.jsx'
-import EditorialImage from '../components/EditorialImage.jsx'
 import Faq from '../components/Faq.jsx'
 import { portfolioApi, servicesApi } from '../services/api.js'
-import { temporaryPhotosForCategory } from '../data/temporaryPortfolio.js'
 import { useMusicPlayer } from '../context/MusicPlayerContext.jsx'
 import { useSiteContent } from '../context/SiteContentContext.jsx'
 
-const FALLBACK_CATEGORIES = [
-  { id: 'fallback-weddings', name: 'Weddings', slug: 'weddings' },
-  { id: 'fallback-engagement', name: 'Engagement', slug: 'engagement' },
-  { id: 'fallback-portraits', name: 'Portraits', slug: 'portraits' },
-  { id: 'fallback-events', name: 'Events', slug: 'events' }
-]
-
 export default function Home() {
   const location = useLocation()
-  const [categories, setCategories] = useState(FALLBACK_CATEGORIES)
+  const [categories, setCategories] = useState([])
   const [services, setServices] = useState([])
   const { songs, selectedSong, selectSong, openPlayer } = useMusicPlayer()
   const content = useSiteContent()
@@ -32,7 +23,13 @@ export default function Home() {
     portfolioApi.categories().then((c) => {
       const selected = content.selectedWork.categorySlugs || []
       const ordered = selected.length ? selected.map((slug) => c.find((item) => item.slug === slug)).filter(Boolean) : c
-      setCategories(ordered.slice(0, 4))
+      Promise.all(ordered.slice(0, 8).map(async (category) => {
+        try {
+          const images = await portfolioApi.imagesByCategory(category.slug)
+          const cover = Array.isArray(images) ? images.find((image) => image.image_path && !String(image.image_path).includes('/demo/')) : null
+          return cover ? { ...category, cover } : null
+        } catch { return null }
+      })).then((items) => setCategories(items.filter(Boolean).slice(0, 4)))
     }).catch(() => {})
     servicesApi.list().then((s) => setServices(s.slice(0, 4))).catch(() => {})
   }, [content.selectedWork.categorySlugs])
@@ -142,20 +139,19 @@ export default function Home() {
             action={<Link to="/portfolio" className="text-link">{content.selectedWork.linkLabel}</Link>}
           />
         </div>
-        <div className="container">
+        {categories.length > 0 && <div className="container">
           <div className="preview-strip">
             {categories.map((c) => (
               <Link key={c.id} to={`/portfolio/${c.slug}`} className="preview-strip__item">
-                <EditorialImage
-                  src={temporaryPhotosForCategory(c.slug, c.name)[0].image_path}
-                  alt={c.name}
-                  caption={c.name}
-                  style={{ height: '100%' }}
+                <img
+                  src={c.cover.image_path}
+                  alt={c.cover.title || c.name}
+                  loading="lazy"
                 />
               </Link>
             ))}
           </div>
-        </div>
+        </div>}
       </section>
 
       {/* Services teaser */}

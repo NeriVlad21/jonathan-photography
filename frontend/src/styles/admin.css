@@ -483,6 +483,10 @@
 .platform-fees-summary input { padding: 10px; border: 1px solid var(--admin-ink); background: #fff; }
 .platform-fees-panel { margin-top: 22px; padding: 24px; background: var(--admin-panel); border: 1px solid var(--admin-line); border-radius: 10px; }
 .platform-fees-panel h3 { margin: 0 0 18px; }
+.platform-fees-panel__header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px 22px; margin-bottom: 18px; }
+.platform-fees-panel__header h3 { display: flex; align-items: center; gap: 9px; min-width: 0; margin: 0; }
+.platform-fees-panel__header h3 small { color: var(--admin-muted); font-size: .76rem; font-weight: 600; }
+.platform-fees-panel__header .btn { flex: 0 0 auto; }
 .platform-cycle-grid,.platform-fee-ledger { display: grid; gap: 10px; }
 .platform-cycle { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 17px; border: 1px solid var(--admin-line); }
 .platform-cycle > div:first-child { display: grid; gap: 4px; }
@@ -661,9 +665,7 @@
 }
 
 body .admin-login-page {
-  background:
-    linear-gradient(90deg, rgba(17,17,15,0.9), rgba(17,17,15,0.55)),
-    url('/demo/portfolio/weddings/01.jpg') center / cover;
+  background: radial-gradient(ellipse at 70% 20%, #282824 0, #11110f 62%);
 }
 
 .admin-login-page .admin-login-card {
@@ -854,6 +856,9 @@ body .admin-login-page {
 .archive-page .booking-calendar-workspace { border-radius: 3px; }
 
 @media (max-width: 760px) {
+  .platform-fees-panel { padding: 18px; }
+  .platform-fees-panel__header { align-items: flex-start; }
+  .platform-fees-panel__header .btn { width: 100%; justify-content: center; }
   .booking-calendar-toolbar { align-items: stretch; flex-direction: column; }
   .booking-calendar-toolbar__actions { width: 100%; }
   .booking-calendar-toolbar__actions select,

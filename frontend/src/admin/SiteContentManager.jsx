@@ -155,6 +155,8 @@ export default function SiteContentManager() {
       <Field label="Brand name" value={content.brand.name} maxLength={30} onChange={(v) => set('brand.name', v)} />
       <Field label="Brand accent" value={content.brand.accent} maxLength={30} onChange={(v) => set('brand.accent', v)} />
       <Field label="Studio address" value={content.brand.address} maxLength={220} multiline help="The one studio address. It appears in the About section, Contact page, footer and map, and is used for booking emails and new invoices." onChange={(v) => set('brand.address', v)} />
+      <Field label="Map pin latitude" value={content.brand.mapLatitude || ''} maxLength={18} help="Optional exact pin from Google Maps. Open the studio location, right-click the entrance, and copy the first coordinate." onChange={(v) => set('brand.mapLatitude', v.trim())} />
+      <Field label="Map pin longitude" value={content.brand.mapLongitude || ''} maxLength={18} help="Enter the second coordinate from Google Maps. When both coordinates are saved, the public map uses this exact pin." onChange={(v) => set('brand.mapLongitude', v.trim())} />
       <Field label="Hero eyebrow" value={content.hero.eyebrow} maxLength={70} onChange={(v) => set('hero.eyebrow', v)} />
       <Field label="Hero title" value={content.hero.title} maxLength={90} multiline help="Use one line break where you want the title to wrap." onChange={(v) => set('hero.title', v)} />
       <Field label="Hero description" value={content.hero.subtitle} maxLength={240} multiline onChange={(v) => set('hero.subtitle', v)} />

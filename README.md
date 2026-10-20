@@ -59,7 +59,7 @@ jonathan-photography/
 ├── database/
 │   ├── migrations/          # Updates for existing installations
 │   ├── schema.sql           # Database structure
-│   └── seed.sql             # Development and demonstration data
+│   └── seed.sql             # Optional additive baseline catalog
 ├── frontend/
 │   ├── src/admin/           # Administration pages
 │   ├── src/components/      # Reusable interface components
@@ -102,14 +102,15 @@ Open the XAMPP Control Panel and start **Apache** and **MySQL**.
 
 ### 3. Create the database
 
-Import the schema followed by the optional development seed data:
+For a **new, empty database only**, import the schema and optional baseline catalog:
 
 ```bash
-mysql -u root -p < database/schema.sql
+mysql -u root -p -e "CREATE DATABASE jonathan_photography CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+mysql -u root -p jonathan_photography < database/schema.sql
 mysql -u root -p jonathan_photography < database/seed.sql
 ```
 
-The seed file resets the application tables and must not be imported into a database containing production records.
+`schema.sql` recreates tables and must never be imported over an existing database. `seed.sql` is additive: it does not remove bookings, client records, administrator accounts, uploaded portfolio images, or owner-managed settings. It inserts baseline catalog values only when missing. For an existing installation, make a backup and run only the applicable migration files; do not run `schema.sql`.
 
 For an existing installation, review and execute the applicable files in `database/migrations/` instead of recreating the database.
 
@@ -287,7 +288,7 @@ Booking data is committed before email delivery is attempted. Confirm the SMTP v
 
 ## Data Privacy
 
-Do not commit database exports containing client names, email addresses, phone numbers, private messages, submission tokens, password hashes, or SMTP credentials. Use anonymized records for demonstrations, testing, screenshots, and academic documentation.
+Do not commit database exports containing client names, email addresses, phone numbers, private messages, submission tokens, password hashes, or SMTP credentials. Use anonymized records for demonstrations, testing, screenshots, and academic documentation. Transfer the schema and application files separately, then move the owner's approved database backup through a secure channel.
 
 ## Contributing
 

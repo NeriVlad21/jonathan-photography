@@ -462,7 +462,7 @@ CREATE TABLE estimator_leads (
 DROP TABLE IF EXISTS site_settings;
 CREATE TABLE site_settings (
   setting_key VARCHAR(80) PRIMARY KEY,
-  setting_value TEXT NULL,
+  setting_value TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 

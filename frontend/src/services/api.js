@@ -11,12 +11,15 @@
 // ============================================================
 
 const BASE_URL =
-  import.meta.env.VITE_API_URL || '/api'
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV ? '/api' : '/backend/api')
 
 // Full backend URL used for uploaded assets.
 const BACKEND_URL = (
   import.meta.env.VITE_BACKEND_URL ||
-  'http://localhost/jonathan-photography/backend'
+  (import.meta.env.DEV
+    ? 'http://localhost/jonathan-photography/backend'
+    : '/backend')
 ).replace(/\/$/, '')
 
 // ============================================================
@@ -31,9 +34,9 @@ export function assetUrl(path) {
     return path
   }
 
-  // Frontend-only temporary portfolio assets in public/demo.
+  // Do not render legacy demo assets if an old database still references them.
   if (path.startsWith('/demo/')) {
-    return path
+    return ''
   }
 
   return `${BACKEND_URL}${
@@ -68,6 +71,42 @@ class ApiError extends Error {
   }
 }
 
+// InfinityFree may occasionally return its browser-verification HTML to an
+// XHR/fetch request instead of the API's JSON (for example after a stale
+// verification cookie or an IP change). Fetch cannot execute that HTML. Load
+// the same-origin endpoint in a hidden, ordinary browsing context so the host
+// challenge can run, then the original API request can be retried once.
+function isInfinityFreeChallenge(responseText) {
+  return /(?:\/aes\.js|__test=|slowAES\.decrypt)/i.test(responseText)
+}
+
+function completeInfinityFreeChallenge(path) {
+  const url = new URL(`${BASE_URL}${path}`, window.location.href)
+  if (url.origin !== window.location.origin) return Promise.resolve(false)
+
+  return new Promise((resolve) => {
+    const frame = document.createElement('iframe')
+    let finished = false
+    const finish = (loaded) => {
+      if (finished) return
+      finished = true
+      window.clearTimeout(timeout)
+      frame.remove()
+      resolve(loaded)
+    }
+    const timeout = window.setTimeout(() => finish(false), 8000)
+
+    frame.setAttribute('aria-hidden', 'true')
+    frame.tabIndex = -1
+    frame.title = 'Browser security check'
+    frame.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;left:-10px;bottom:0;border:0'
+    frame.addEventListener('load', () => finish(true), { once: true })
+    frame.addEventListener('error', () => finish(false), { once: true })
+    document.body.appendChild(frame)
+    frame.src = url.href
+  })
+}
+
 // ============================================================
 // REQUEST
 // ============================================================
@@ -97,6 +136,7 @@ async function request(
   let res
   let json
   const maxAttempts = method === 'GET' ? 2 : 1
+  let challengeRetryUsed = false
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const controller = new AbortController()
@@ -133,9 +173,24 @@ async function request(
 
     window.clearTimeout(timeout)
 
+    const responseText = await res.text()
     try {
-      json = await res.json()
+      json = JSON.parse(responseText)
     } catch {
+      if (!challengeRetryUsed && isInfinityFreeChallenge(responseText)) {
+        challengeRetryUsed = true
+        const challengeCompleted = await completeInfinityFreeChallenge(path)
+        if (challengeCompleted) {
+          // Retry this attempt without consuming the normal transient-GET
+          // retry budget. A second challenge still fails closed below.
+          attempt -= 1
+          continue
+        }
+        throw new ApiError(
+          'InfinityFree interrupted the request with a browser security check. Reload the page and try again.',
+          res.status
+        )
+      }
       throw new ApiError(
         'The server returned an unexpected response.',
         res.status

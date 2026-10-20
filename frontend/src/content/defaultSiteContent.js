@@ -1,9 +1,9 @@
 export const DEFAULT_SITE_CONTENT = {
-  brand: { name: 'jonathan', accent: 'photography', address: '0013 Mc Arthur Hi-way, Brgy. Asan Norte, Sison, Pangasinan' },
+  brand: { name: 'jonathan', accent: 'photography', address: '0013 Mc Arthur Hi-way, Brgy. Asan Norte, Sison, Pangasinan', mapLatitude: '', mapLongitude: '' },
   navigation: { work: 'Work', services: 'Services', about: 'About', contact: 'Contact', booking: 'Book a session' },
   hero: {
-    image: '/demo/portfolio/weddings/01.jpg',
-    imageAlt: 'Newlyweds standing together in a mountain landscape',
+    image: '',
+    imageAlt: '',
     eyebrow: 'Digital photo + video coverage',
     title: 'Stories worth\nkeeping.',
     subtitle: 'Honest photographs of weddings, portraits, and the people at the center of them.',
