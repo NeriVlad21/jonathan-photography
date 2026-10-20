@@ -4,9 +4,11 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { resolveAssetUrl, resolveBackendBase } from '../src/utils/assetPath.js'
 
-const src = new URL('../src/', import.meta.url).pathname
+const projectDir = fileURLToPath(new URL('../', import.meta.url))
+const src = join(projectDir, 'src')
 const read = (relative) => readFileSync(join(src, relative), 'utf8')
 
 test('upload paths map to the same-host backend in production', () => {
@@ -48,10 +50,9 @@ test('backend base precedence: explicit, then API-derived, then default', () => 
 })
 
 test('production builds do not inherit development env values', () => {
-  const root = new URL('../', import.meta.url).pathname
-  const envFiles = readdirSync(root).filter((name) => name === '.env' || name === '.env.production')
+  const envFiles = readdirSync(projectDir).filter((name) => name === '.env' || name === '.env.production')
   for (const name of envFiles) {
-    assert.doesNotMatch(readFileSync(join(root, name), 'utf8'), /^\s*VITE_(BACKEND|API)_URL\s*=\s*\S*localhost/m,
+    assert.doesNotMatch(readFileSync(join(projectDir, name), 'utf8'), /^\s*VITE_(BACKEND|API)_URL\s*=\s*\S*localhost/m,
       `${name} would bake a localhost backend into production builds`)
   }
 })
