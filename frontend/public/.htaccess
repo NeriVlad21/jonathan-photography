@@ -4,6 +4,9 @@ ServerSignature Off
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
+  # Backward compatibility for portfolio image URLs emitted by older builds.
+  RewriteRule ^uploads/(.*)$ backend/uploads/$1 [L]
+
   # Keep Vite's published assets out of the React SPA fallback. If an asset is
   # missing, return a real 404 instead of HTML that the browser cannot style/run.
   RewriteRule ^assets/ - [L]

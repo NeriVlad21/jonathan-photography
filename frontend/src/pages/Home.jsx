@@ -6,7 +6,7 @@ import { Play } from 'lucide-react'
 import Hero from '../components/Hero.jsx'
 import SectionHeader from '../components/SectionHeader.jsx'
 import Faq from '../components/Faq.jsx'
-import { portfolioApi, servicesApi } from '../services/api.js'
+import { assetUrl, portfolioApi, servicesApi } from '../services/api.js'
 import { useMusicPlayer } from '../context/MusicPlayerContext.jsx'
 import { useSiteContent } from '../context/SiteContentContext.jsx'
 
@@ -144,7 +144,7 @@ export default function Home() {
             {categories.map((c) => (
               <Link key={c.id} to={`/portfolio/${c.slug}`} className="preview-strip__item">
                 <img
-                  src={c.cover.image_path}
+                  src={assetUrl(c.cover.image_path)}
                   alt={c.cover.title || c.name}
                   loading="lazy"
                 />
