@@ -1,10 +1,11 @@
-Options -Indexes -ExecCGI
+# Public portfolio previews: serve images only, never run scripts or list files.
+# Kept to directives shared hosts allow; the parent uploads/.htaccess applies too.
+Options -Indexes
 
-<FilesMatch "\.(php|phtml|phar|cgi|pl|py|sh|htaccess)$">
+<FilesMatch "\.(php|phtml|phar|php\d|cgi|pl|py|sh|htaccess)$">
   Require all denied
 </FilesMatch>
 
-RemoveHandler .php .phtml .phar
-RemoveType .php .phtml .phar
-
-Header set X-Content-Type-Options "nosniff"
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+</IfModule>
