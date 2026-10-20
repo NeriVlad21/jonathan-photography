@@ -1,3 +1,5 @@
+import { assetUrl } from '../services/api.js'
+
 // Whole pesos (₱1,500). Amounts that are not whole pesos (older records)
 // keep their centavos so the display never hides money.
 export function peso(amount) {
@@ -20,30 +22,8 @@ export function formatDateTime(dateStr) {
   return d.toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 }
 
+// Same resolution as assetUrl() in services/api.js: one helper for every page,
+// so a stored path can never map to different URLs on different screens.
 export function imageUrl(path) {
-  if (!path) return ''
-  if (path.startsWith('http')) return path
-  // Hide legacy demo assets rather than silently presenting them as studio work.
-  if (path.startsWith('/demo/')) return ''
-
-  // VITE_API_URL is usually left unset in dev (Vite's proxy forwards /api
-  // for us), but that meant this function had nothing to fall back to and
-  // returned a bare "/uploads/..." path — which the browser resolves
-  // against the frontend's own origin (localhost:5173) instead of the PHP
-  // backend, so every image 404'd.
-  //
-  // VITE_BACKEND_URL is a required, explicit backend origin that doesn't
-  // depend on whether VITE_API_URL happens to be set. Set it in
-  // frontend/.env, e.g.:
-  //   VITE_BACKEND_URL=http://localhost/jonathan-photography/backend
-  const apiBase = import.meta.env.VITE_API_URL ||
-    (import.meta.env.DEV ? '' : '/backend/api')
-  const explicitBackend = import.meta.env.VITE_BACKEND_URL ||
-    (import.meta.env.DEV ? '' : '/backend')
-
-  const backendOrigin = apiBase
-    ? apiBase.replace(/\/api\/?$/, '')
-    : explicitBackend.replace(/\/$/, '')
-
-  return `${backendOrigin}${path}`
+  return assetUrl(path)
 }

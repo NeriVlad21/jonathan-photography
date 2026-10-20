@@ -60,14 +60,34 @@ function log_server_error(string $context, Throwable $e): void
     error_log(sprintf('[%s] %s in %s:%d', $context, $e->getMessage(), $e->getFile(), $e->getLine()));
 }
 
+/**
+ * True when a PDO error means the database connection was refused or lost
+ * (SQLSTATE class 08, or MySQL/MariaDB client/server connection error codes),
+ * as opposed to a query the server rejected.
+ */
+function is_database_unavailable(PDOException $e): bool
+{
+    $sqlState = (string) ($e->errorInfo[0] ?? $e->getCode());
+    $driverCode = (int) ($e->errorInfo[1] ?? 0);
+    if (str_starts_with($sqlState, '08')) return true;
+    if ($driverCode === 0 && preg_match('/\b(2002|2003|2006|2013|1040|1203)\b/', $e->getMessage())) return true;
+    return in_array($driverCode, [1040, 1203, 2002, 2003, 2006, 2013], true);
+}
+
 // Keep every API failure inside the documented JSON envelope. In particular,
 // a database process that restarts between connect() and the first query must
 // not leak a PHP fatal-error page to the React client.
 set_exception_handler(static function (Throwable $e): void {
     log_server_error('UNHANDLED_API_EXCEPTION', $e);
 
-    if ($e instanceof PDOException) {
+    // Only a lost or refused connection is "temporarily unavailable" (503).
+    // A rejected query (data too long, bad charset, missing column) is a 500,
+    // so a failed save is not misreported as a database outage.
+    if ($e instanceof PDOException && is_database_unavailable($e)) {
         json_error('The database is temporarily unavailable. Please retry in a moment.', 503);
+    }
+    if ($e instanceof PDOException) {
+        json_error('The server could not save or load that data. Please try again or contact support.', 500);
     }
 
     json_error('The server could not complete that request. Please try again.', 500);

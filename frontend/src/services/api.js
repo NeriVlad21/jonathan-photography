@@ -10,38 +10,27 @@
 //
 // ============================================================
 
+import { resolveAssetUrl, resolveBackendBase } from '../utils/assetPath.js'
+
 const BASE_URL =
   import.meta.env.VITE_API_URL ||
   (import.meta.env.DEV ? '/api' : '/backend/api')
 
-// Full backend URL used for uploaded assets.
-const BACKEND_URL = (
-  import.meta.env.VITE_BACKEND_URL ||
-  (import.meta.env.DEV
-    ? 'http://localhost/jonathan-photography/backend'
-    : '/backend')
-).replace(/\/$/, '')
+// Backend base for uploaded assets. Shared with utils/format.js imageUrl() so
+// every page resolves upload paths the same way (see utils/assetPath.js).
+const BACKEND_URL = resolveBackendBase({
+  backendUrl: import.meta.env.VITE_BACKEND_URL,
+  apiUrl: import.meta.env.VITE_API_URL,
+  dev: import.meta.env.DEV,
+  pageHostname: typeof window !== 'undefined' ? window.location.hostname : '',
+})
 
 // ============================================================
 // ASSET URL HELPER
 // ============================================================
 
 export function assetUrl(path) {
-  if (!path) return ''
-
-  // Already an absolute URL
-  if (/^https?:\/\//i.test(path)) {
-    return path
-  }
-
-  // Do not render legacy demo assets if an old database still references them.
-  if (path.startsWith('/demo/')) {
-    return ''
-  }
-
-  return `${BACKEND_URL}${
-    path.startsWith('/') ? path : `/${path}`
-  }`
+  return resolveAssetUrl(path, BACKEND_URL)
 }
 
 // ============================================================

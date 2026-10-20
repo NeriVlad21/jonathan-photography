@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
-import { Navigate, Routes, Route } from 'react-router-dom'
+import { Navigate, Routes, Route, useLocation } from 'react-router-dom'
+import RouteErrorBoundary from './components/RouteErrorBoundary.jsx'
 import { ToastProvider } from './context/ToastContext.jsx'
 import { AdminAuthProvider } from './context/AdminAuthContext.jsx'
 
@@ -63,9 +64,12 @@ function NotFound() {
 }
 
 export default function App() {
+  // A failed page's error is cleared when the visitor navigates elsewhere.
+  const { pathname } = useLocation()
   return (
     <ToastProvider>
       <AdminAuthProvider>
+        <RouteErrorBoundary resetKey={pathname}>
         <Suspense fallback={<div className="route-loading" role="status">Loading page…</div>}>
           <Routes>
           {/* Public site */}
@@ -131,6 +135,7 @@ export default function App() {
           </Route>
           </Routes>
         </Suspense>
+        </RouteErrorBoundary>
       </AdminAuthProvider>
     </ToastProvider>
   )
