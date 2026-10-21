@@ -226,6 +226,9 @@ export default function PortfolioCategory() {
             }`
           }
         />
+        {image.caption && (
+          <p className="portfolio-photo__caption">{image.caption}</p>
+        )}
 
       </article>
     )
@@ -394,6 +397,14 @@ export default function PortfolioCategory() {
           will-change:
             opacity,
             transform;
+        }
+
+        .portfolio-photo__caption {
+          margin: 0;
+          padding: 12px 16px 18px;
+          color: var(--c-gray);
+          font-size: 0.82rem;
+          line-height: 1.55;
         }
 
         .portfolio-photo--visible {

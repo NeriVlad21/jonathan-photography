@@ -984,7 +984,9 @@ html.public-scroll-theme::-webkit-scrollbar-button { display: none; width: 0; he
 .preview-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 @media (max-width: 760px) { .preview-strip { grid-template-columns: repeat(2, 1fr); } }
 .preview-strip__item { aspect-ratio: 3/4; }
+.preview-strip__item { position: relative; overflow: hidden; }
 .preview-strip__item > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.preview-strip__caption { position: absolute; inset: auto 0 0; z-index: 1; padding: 36px 16px 16px; background: linear-gradient(transparent, rgba(10,10,10,.76)); color: #fff; font-family: var(--font-display); font-size: clamp(.78rem, .72rem + .18vw, .9rem); font-weight: 700; letter-spacing: .12em; line-height: 1.4; text-transform: uppercase; text-shadow: 0 1px 4px rgba(0,0,0,.4); }
 
 /* ---------- Modal ---------- */
 .modal-backdrop {

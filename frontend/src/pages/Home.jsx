@@ -9,6 +9,7 @@ import Faq from '../components/Faq.jsx'
 import { assetUrl, portfolioApi, servicesApi } from '../services/api.js'
 import { useMusicPlayer } from '../context/MusicPlayerContext.jsx'
 import { useSiteContent } from '../context/SiteContentContext.jsx'
+import { pickPortfolioCover } from '../utils/portfolioCover.js'
 
 export default function Home() {
   const location = useLocation()
@@ -26,7 +27,7 @@ export default function Home() {
       Promise.all(ordered.slice(0, 8).map(async (category) => {
         try {
           const images = await portfolioApi.imagesByCategory(category.slug)
-          const cover = Array.isArray(images) ? images.find((image) => image.image_path && !String(image.image_path).includes('/demo/')) : null
+          const cover = pickPortfolioCover(images)
           return cover ? { ...category, cover } : null
         } catch { return null }
       })).then((items) => setCategories(items.filter(Boolean).slice(0, 4)))
@@ -145,9 +146,12 @@ export default function Home() {
               <Link key={c.id} to={`/portfolio/${c.slug}`} className="preview-strip__item">
                 <img
                   src={assetUrl(c.cover.image_path)}
-                  alt={c.cover.title || c.name}
+                  alt={c.cover.caption || c.cover.title || c.name}
                   loading="lazy"
                 />
+                <span className="preview-strip__caption">
+                  {c.cover.caption || c.cover.title || c.name}
+                </span>
               </Link>
             ))}
           </div>

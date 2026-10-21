@@ -11,6 +11,7 @@
 // ============================================================
 
 import { resolveAssetUrl, resolveBackendBase } from '../utils/assetPath.js'
+import { shouldRetryUpload, uploadRetryDelay } from '../utils/uploadRetry.js'
 
 const BASE_URL =
   import.meta.env.VITE_API_URL ||
@@ -124,7 +125,10 @@ async function request(
 
   let res
   let json
-  const maxAttempts = method === 'GET' ? 2 : 1
+  // Only retry uploads after an explicit JSON 429/503 rejection. Do not retry
+  // network or HTML errors: the server may have stored the file before the
+  // response was interrupted, and a blind retry could create duplicates.
+  const maxAttempts = method === 'GET' ? 2 : isForm ? 3 : 1
   let challengeRetryUsed = false
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -181,13 +185,23 @@ async function request(
         )
       }
       throw new ApiError(
-        'The server returned an unexpected response.',
+        res.status === 403
+          ? 'The server blocked this request (HTTP 403) and returned an HTML error instead of the site API response. Reload the admin and sign in again; if this repeats for uploads, the hosting server must be checked.'
+          : res.status === 413
+            ? 'The server rejected this upload because the request is too large (HTTP 413). Try a smaller image.'
+            : res.status === 429
+              ? 'The server is temporarily limiting requests (HTTP 429). Wait a minute, then retry the failed photo.'
+              : `The server returned an unexpected non-JSON response (HTTP ${res.status}).`,
         res.status
       )
     }
 
-    if (res.status === 503 && attempt < maxAttempts) {
-      await new Promise((resolve) => setTimeout(resolve, 250))
+    if (
+      (isForm && shouldRetryUpload(res.status, attempt, maxAttempts)) ||
+      (method === 'GET' && res.status === 503 && attempt < maxAttempts)
+    ) {
+      const delay = isForm ? uploadRetryDelay(res, attempt) : 250
+      await new Promise((resolve) => setTimeout(resolve, delay))
       continue
     }
 

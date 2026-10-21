@@ -37,6 +37,9 @@ export default function PortfolioManager({ readOnly = false }) {
 
   const [images, setImages] = useState(null)
   const [uploading, setUploading] = useState(false)
+  const [uploadQueue, setUploadQueue] = useState([])
+  const [imageEdits, setImageEdits] = useState({})
+  const [savingImageId, setSavingImageId] = useState(null)
 
   const fileInputRef = useRef(null)
 
@@ -283,7 +286,7 @@ export default function PortfolioManager({ readOnly = false }) {
   // ==========================================================
 
   const handleFileSelect =
-    async (e) => {
+    (e) => {
       const files = Array.from(
         e.target.files || []
       )
@@ -295,56 +298,68 @@ export default function PortfolioManager({ readOnly = false }) {
         return
       }
 
-      setUploading(true)
+      const additions = files.map((file) => ({
+        id: `${file.name}:${file.size}:${file.lastModified}`,
+        file,
+        title: '',
+        caption: '',
+        error: ''
+      }))
+      setUploadQueue((current) => {
+        const existingIds = new Set(current.map((item) => item.id))
+        return [...current, ...additions.filter((item) => !existingIds.has(item.id))]
+      })
+
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+
+  const updateQueuedImage = (id, changes) => {
+    setUploadQueue((current) => current.map((item) =>
+      item.id === id ? { ...item, ...changes, error: '' } : item
+    ))
+  }
+
+  const uploadQueuedImages = async () => {
+    if (uploading || !activeShootId || uploadQueue.length === 0) return
+    setUploading(true)
+    let uploadedCount = 0
+    const failedIds = new Set()
+
+    // Continue after an individual failure. Successful files are removed from
+    // the queue, so retrying later cannot accidentally duplicate them.
+    for (const item of uploadQueue) {
+      if (!item.caption.trim()) {
+        failedIds.add(item.id)
+        updateQueuedImage(item.id, { error: 'Add a short description of this photo.' })
+        continue
+      }
+
+      const formData = new FormData()
+      formData.append('original', item.file)
+      formData.append('shoot_id', activeShootId)
+      formData.append('title', item.title.trim())
+      formData.append('caption', item.caption.trim())
 
       try {
-        for (
-          const file of files
-        ) {
-          const formData =
-            new FormData()
-
-          formData.append(
-            'original',
-            file
-          )
-
-          formData.append(
-            'shoot_id',
-            activeShootId
-          )
-
-          await portfolioApi.uploadImage(
-            formData
-          )
-        }
-
-        showToast(
-          `${files.length} image${
-            files.length > 1
-              ? 's'
-              : ''
-          } uploaded.`
-        )
-
-        loadImages()
-        loadShoots()
+        await portfolioApi.uploadImage(formData)
+        uploadedCount += 1
+        setUploadQueue((current) => current.filter((queued) => queued.id !== item.id))
       } catch (err) {
-        showToast(
-          err.message,
-          'error'
-        )
-      } finally {
-        setUploading(false)
-
-        if (
-          fileInputRef.current
-        ) {
-          fileInputRef.current.value =
-            ''
-        }
+        failedIds.add(item.id)
+        updateQueuedImage(item.id, { error: err.message || 'Upload failed. Please retry this photo.' })
       }
     }
+
+    setUploading(false)
+    if (uploadedCount) {
+      showToast(`${uploadedCount} photo${uploadedCount === 1 ? '' : 's'} uploaded.`)
+      loadImages()
+      loadShoots()
+    }
+    if (failedIds.size) {
+      showToast(`${failedIds.size} photo${failedIds.size === 1 ? '' : 's'} still need attention. Failed files remain in the queue; successful files were saved.`, 'error')
+    }
+  }
 
   const setCover = async (
     image
@@ -361,6 +376,31 @@ export default function PortfolioManager({ readOnly = false }) {
         err.message,
         'error'
       )
+    }
+  }
+
+  const saveImageDescription = async (image) => {
+    const values = imageEdits[image.id] || {}
+    const title = (values.title ?? image.title ?? '').trim()
+    const caption = (values.caption ?? image.caption ?? '').trim()
+    if (!caption) {
+      showToast('Add a short description of what is shown in the photo.', 'error')
+      return
+    }
+    setSavingImageId(image.id)
+    try {
+      await portfolioApi.updateImage({ id: image.id, title, caption })
+      showToast('Photo description saved.')
+      setImageEdits((current) => {
+        const next = { ...current }
+        delete next[image.id]
+        return next
+      })
+      loadImages()
+    } catch (err) {
+      showToast(err.message, 'error')
+    } finally {
+      setSavingImageId(null)
     }
   }
 
@@ -1196,14 +1236,17 @@ export default function PortfolioManager({ readOnly = false }) {
 
         .portfolio-admin__image {
           position: relative;
+          min-width: 0;
+          overflow: visible;
+          background: #fff;
+          border: 1px solid var(--portfolio-border);
+        }
 
-          aspect-ratio:
-            1 / 1;
-
+        .portfolio-admin__image-preview {
+          position: relative;
+          aspect-ratio: 1 / 1;
           overflow: hidden;
-
-          background:
-            #f2f2f2;
+          background: #f2f2f2;
         }
 
         .portfolio-admin__image img {
@@ -1219,7 +1262,7 @@ export default function PortfolioManager({ readOnly = false }) {
             opacity 0.25s ease;
         }
 
-        .portfolio-admin__image:hover img {
+        .portfolio-admin__image:hover .portfolio-admin__image-preview img {
           transform:
             scale(1.025);
         }
@@ -1268,8 +1311,8 @@ export default function PortfolioManager({ readOnly = false }) {
             opacity 0.25s ease;
         }
 
-        .portfolio-admin__image:hover
-        .portfolio-admin__image-overlay {
+        .portfolio-admin__image:hover .portfolio-admin__image-overlay,
+        .portfolio-admin__image:focus-within .portfolio-admin__image-overlay {
           opacity: 1;
         }
 
@@ -2165,9 +2208,18 @@ export default function PortfolioManager({ readOnly = false }) {
 
                 {!readOnly && <div
                   className="portfolio-admin__upload"
-                  onClick={() =>
+                  onClick={() => !uploading &&
                     fileInputRef.current?.click()
                   }
+                  role="button"
+                  tabIndex={uploading ? -1 : 0}
+                  onKeyDown={(event) => {
+                    if (!uploading && (event.key === 'Enter' || event.key === ' ')) {
+                      event.preventDefault()
+                      fileInputRef.current?.click()
+                    }
+                  }}
+                  aria-disabled={uploading}
                 >
 
                   <div>
@@ -2178,15 +2230,11 @@ export default function PortfolioManager({ readOnly = false }) {
                     />
 
                     <div className="portfolio-admin__upload-title">
-                      {uploading
-                        ? 'Uploading…'
-                        : 'Upload photographs'}
+                      Add photographs
                     </div>
 
                     <div className="portfolio-admin__upload-subtitle">
-                      JPG, PNG, WEBP ·
-                      Multiple files
-                      supported
+                    Select one or more JPG, PNG, or WEBP files. Add a description to each photo before uploading.
                     </div>
 
                   </div>
@@ -2207,6 +2255,34 @@ export default function PortfolioManager({ readOnly = false }) {
                   />
 
                 </div>}
+
+                {!readOnly && uploadQueue.length > 0 && (
+                  <section className="portfolio-upload-queue" aria-label="Photos ready to upload">
+                    <h3>Describe each photo</h3>
+                    <p>Descriptions appear with the photo on its story page. Uploads run one at a time; failed files stay here for retry.</p>
+                    {uploadQueue.map((item) => (
+                      <div className="portfolio-upload-queue__item" key={item.id}>
+                        <div className="portfolio-upload-queue__file">
+                          <strong>{item.file.name}</strong>
+                          <span>{(item.file.size / (1024 * 1024)).toFixed(2)} MB</span>
+                          <button type="button" className="portfolio-upload-queue__remove" disabled={uploading} onClick={() => setUploadQueue((current) => current.filter((queued) => queued.id !== item.id))}>Remove</button>
+                        </div>
+                        <label>
+                          Photo title <span>(optional)</span>
+                          <input maxLength={160} value={item.title} disabled={uploading} placeholder="e.g. The couple’s first dance" onChange={(event) => updateQueuedImage(item.id, { title: event.target.value })} />
+                        </label>
+                        <label>
+                          What is happening in this photo? <span>(required)</span>
+                          <textarea maxLength={2000} required value={item.caption} disabled={uploading} placeholder="Describe the moment, people, or setting shown." onChange={(event) => updateQueuedImage(item.id, { caption: event.target.value })} />
+                        </label>
+                        {item.error && <p className="portfolio-upload-queue__error" role="alert">{item.error}</p>}
+                      </div>
+                    ))}
+                    <button type="button" className="btn btn--sm btn--primary" disabled={uploading || uploadQueue.some((item) => !item.caption.trim())} onClick={uploadQueuedImages}>
+                      {uploading ? 'Uploading photos one at a time…' : `Upload ${uploadQueue.length} photo${uploadQueue.length === 1 ? '' : 's'}`}
+                    </button>
+                  </section>
+                )}
 
                 {images === null && (
                   <div
@@ -2247,23 +2323,14 @@ export default function PortfolioManager({ readOnly = false }) {
                             key={image.id}
                           >
 
-                            <img
-                              src={imageUrl(
-                                image.image_path
-                              )}
-                              alt={
-                                image.title ||
-                                'Portfolio photograph'
-                              }
-                              style={{
-                                opacity:
-                                  image.visible
-                                    ? 1
-                                    : 0.35
-                              }}
-                            />
+                            <div className="portfolio-admin__image-preview">
+                              <img
+                                src={imageUrl(image.image_path)}
+                                alt={image.title || image.caption || 'Portfolio photograph'}
+                                style={{ opacity: image.visible ? 1 : 0.35 }}
+                              />
 
-                            <div className="portfolio-admin__image-overlay">
+                              <div className="portfolio-admin__image-overlay">
 
                               {image.is_cover && (
                                 <span className="portfolio-admin__image-cover">
@@ -2357,7 +2424,30 @@ export default function PortfolioManager({ readOnly = false }) {
 
                               </div>
 
+                              </div>
                             </div>
+
+                            {!readOnly && (() => {
+                              const values = imageEdits[image.id] || {}
+                              const title = values.title ?? image.title ?? ''
+                              const caption = values.caption ?? image.caption ?? ''
+                              const changed = title !== (image.title || '') || caption !== (image.caption || '')
+                              return (
+                                <div className="portfolio-admin__image-description">
+                                  <label>
+                                    Photo title <span>(optional)</span>
+                                    <input maxLength={160} value={title} disabled={savingImageId === image.id} onChange={(event) => setImageEdits((current) => ({ ...current, [image.id]: { ...current[image.id], title: event.target.value } }))} />
+                                  </label>
+                                  <label>
+                                    What is happening in this photo? <span>(required)</span>
+                                    <textarea maxLength={2000} value={caption} disabled={savingImageId === image.id} placeholder="Describe the moment, people, or setting shown." onChange={(event) => setImageEdits((current) => ({ ...current, [image.id]: { ...current[image.id], caption: event.target.value } }))} />
+                                  </label>
+                                  <button type="button" className="btn btn--sm btn--outline" disabled={!changed || savingImageId === image.id || !caption.trim()} onClick={() => saveImageDescription(image)}>
+                                    {savingImageId === image.id ? 'Saving…' : changed ? 'Save photo text' : caption ? 'Description saved' : 'Add description'}
+                                  </button>
+                                </div>
+                              )
+                            })()}
 
                           </article>
                         )

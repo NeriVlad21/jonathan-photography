@@ -135,6 +135,29 @@
 }
 .upload-dropzone:hover { border-color: var(--c-black); color: var(--c-black); }
 
+.portfolio-upload-queue { display: grid; gap: 12px; margin: 0 20px 20px; padding: 18px; border: 1px solid var(--admin-line); background: #fff; }
+.portfolio-upload-queue > h3 { margin: 0; font-size: 1rem; }
+.portfolio-upload-queue > p { margin: 0; color: var(--admin-muted); font-size: 0.8rem; line-height: 1.5; }
+.portfolio-upload-queue__item { display: grid; gap: 12px; padding: 14px; border: 1px solid var(--admin-line); background: var(--admin-paper); }
+.portfolio-upload-queue__file { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 0.78rem; }
+.portfolio-upload-queue__file strong { min-width: 0; overflow-wrap: anywhere; }
+.portfolio-upload-queue__file span,
+.portfolio-upload-queue__item label span { color: var(--admin-muted); font-weight: 400; }
+.portfolio-upload-queue__file span { margin-left: auto; white-space: nowrap; }
+.portfolio-upload-queue__remove { border: 0; padding: 5px; background: transparent; color: #a22; cursor: pointer; }
+.portfolio-upload-queue__item label,
+.portfolio-admin__image-description label { display: grid; gap: 6px; font-size: 0.75rem; font-weight: 700; }
+.portfolio-upload-queue__item input,
+.portfolio-upload-queue__item textarea,
+.portfolio-admin__image-description input,
+.portfolio-admin__image-description textarea { width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid var(--admin-line); border-radius: 4px; background: #fff; color: var(--admin-ink); font: inherit; font-weight: 400; }
+.portfolio-upload-queue__item textarea,
+.portfolio-admin__image-description textarea { min-height: 74px; resize: vertical; }
+.portfolio-upload-queue__error { margin: 0; color: #9e2424; font-size: 0.78rem; }
+.portfolio-admin__image-description { display: grid; gap: 9px; padding: 12px; }
+.portfolio-admin__image-description .btn { justify-self: start; }
+.portfolio-upload-queue .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
 .inline-edit-row { display: flex; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--c-hairline); flex-wrap: wrap; }
 .inline-edit-row input[type="text"], .inline-edit-row input[type="number"] { padding: 8px 10px; border: 1px solid var(--c-hairline); border-radius: var(--radius); font-size: 0.86rem; }
 .switch { position: relative; display: inline-block; width: 38px; height: 22px; flex-shrink: 0; }
