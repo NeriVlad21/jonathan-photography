@@ -1,5 +1,5 @@
 export const DEFAULT_SITE_CONTENT = {
-  brand: { name: 'jonathan', accent: 'photography', address: '0013 Mc Arthur Hi-way, Brgy. Asan Norte, Sison, Pangasinan', mapLatitude: '', mapLongitude: '' },
+  brand: { name: 'jonathan', accent: 'photography', address: '0013 Mc Arthur Hi-way, Brgy. Asan Norte, Sison, Pangasinan', mapLatitude: '', mapLongitude: '', mapLink: 'https://maps.app.goo.gl/MD5i4bsgUS8Q3xXT8' },
   navigation: { work: 'Work', services: 'Services', about: 'About', contact: 'Contact', booking: 'Book a session' },
   hero: {
     image: '',

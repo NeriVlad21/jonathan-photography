@@ -9,7 +9,7 @@ export default function Contact() {
   const content = useSiteContent()
   const { contactPage } = content
   const studioAddress = getStudioAddress(content)
-  const map = getStudioMapUrls(studioAddress, content.brand?.mapLatitude, content.brand?.mapLongitude)
+  const map = getStudioMapUrls(studioAddress, content.brand?.mapLatitude, content.brand?.mapLongitude, content.brand?.mapLink)
   useEffect(() => {
     document.title = 'Jonathan Photography — Contact'
   }, [])

@@ -15,7 +15,7 @@ export default function Footer() {
   const content = useSiteContent()
   const { brand, footer, navigation } = content
   const studioAddress = getStudioAddress(content)
-  const map = getStudioMapUrls(studioAddress, content.brand?.mapLatitude, content.brand?.mapLongitude)
+  const map = getStudioMapUrls(studioAddress, content.brand?.mapLatitude, content.brand?.mapLongitude, content.brand?.mapLink)
   const [platforms, setPlatforms] = useState(CONTACT_FALLBACK)
 
   useEffect(() => {

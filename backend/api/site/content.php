@@ -90,6 +90,20 @@ if (($latitude !== '' || $longitude !== '') && ($latitude === '' || $longitude =
     json_error('Enter both map coordinates using a valid latitude and longitude.', 422);
 }
 
+// Optional studio Google Maps link (share link or google.com/maps URL), HTTPS only.
+$mapLink = trim((string) ($content['brand']['mapLink'] ?? ''));
+if ($mapLink !== '') {
+    $mapHost = strtolower((string) parse_url($mapLink, PHP_URL_HOST));
+    $mapPath = (string) parse_url($mapLink, PHP_URL_PATH);
+    $isMapsLink = $mapHost === 'maps.app.goo.gl'
+        || ($mapHost === 'goo.gl' && str_starts_with($mapPath, '/maps'))
+        || $mapHost === 'maps.google.com'
+        || (in_array($mapHost, ['google.com', 'www.google.com'], true) && str_starts_with($mapPath, '/maps'));
+    if (strlen($mapLink) > 300 || !filter_var($mapLink, FILTER_VALIDATE_URL) || strtolower((string) parse_url($mapLink, PHP_URL_SCHEME)) !== 'https' || !$isMapsLink) {
+        json_error('Enter a Google Maps link (for example https://maps.app.goo.gl/…), or leave it empty.', 422);
+    }
+}
+
 $portfolioVideos = $content['portfolioPage']['videos'] ?? [];
 if (!is_array($portfolioVideos) || count($portfolioVideos) > 6) {
     json_error('The portfolio can contain up to six videos.', 422);

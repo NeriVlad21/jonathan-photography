@@ -155,6 +155,7 @@ export default function SiteContentManager() {
       <Field label="Brand name" value={content.brand.name} maxLength={30} onChange={(v) => set('brand.name', v)} />
       <Field label="Brand accent" value={content.brand.accent} maxLength={30} onChange={(v) => set('brand.accent', v)} />
       <Field label="Studio address" value={content.brand.address} maxLength={220} multiline help="The one studio address. It appears in the About section, Contact page, footer and map, and is used for booking emails and new invoices." onChange={(v) => set('brand.address', v)} />
+      <Field label="Google Maps link" value={content.brand.mapLink || ''} maxLength={300} help="The studio's Google Maps share link (Share → Copy link). “View on Google Maps” on the Contact page and footer opens it. Leave empty to search the address instead." onChange={(v) => set('brand.mapLink', v.trim())} />
       <Field label="Map pin latitude" value={content.brand.mapLatitude || ''} maxLength={18} help="Optional exact pin from Google Maps. Open the studio location, right-click the entrance, and copy the first coordinate." onChange={(v) => set('brand.mapLatitude', v.trim())} />
       <Field label="Map pin longitude" value={content.brand.mapLongitude || ''} maxLength={18} help="Enter the second coordinate from Google Maps. When both coordinates are saved, the public map uses this exact pin." onChange={(v) => set('brand.mapLongitude', v.trim())} />
       <Field label="Hero eyebrow" value={content.hero.eyebrow} maxLength={70} onChange={(v) => set('hero.eyebrow', v)} />

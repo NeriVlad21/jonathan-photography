@@ -4,9 +4,14 @@ export function getStudioAddress(content) {
   return String(content?.brand?.address || '').replace(/\s+/g, ' ').trim()
 }
 
+import { safeGoogleMapsLink } from './mapLink.js'
+
 const MAPS_EMBED_KEY = import.meta.env.VITE_GOOGLE_MAPS_EMBED_KEY || ''
 
-export function getStudioMapUrls(address, latitude, longitude) {
+// mapLink: optional Google Maps link saved in Website Content. It opens the
+// studio's own Maps listing; the embed still uses the pin or the address because
+// share links cannot be embedded.
+export function getStudioMapUrls(address, latitude, longitude, mapLink) {
   if (!address) return null
   const lat = Number(latitude)
   const lng = Number(longitude)
@@ -20,6 +25,6 @@ export function getStudioMapUrls(address, latitude, longitude) {
     embed: MAPS_EMBED_KEY
       ? `https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(MAPS_EMBED_KEY)}&q=${query}`
       : `https://maps.google.com/maps?q=${query}&z=${zoom}&output=embed`,
-    link: `https://www.google.com/maps/search/?api=1&query=${query}`,
+    link: safeGoogleMapsLink(mapLink) || `https://www.google.com/maps/search/?api=1&query=${query}`,
   }
 }
